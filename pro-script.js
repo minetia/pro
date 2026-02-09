@@ -1,11 +1,19 @@
-// 초기 로드 시 연결 효과 시뮬레이션
 window.addEventListener('load', () => {
-    // 1. 헤더/네비 로드 (필요시 활성화, 현재는 슈퍼헤더가 대체함)
     
-    // 2. 연결 상태 시뮬레이션
+    // [NEW] 자체 헤더 파일(header.html) 연동
+    fetch('header.html')
+        .then(response => {
+            if (!response.ok) throw new Error("Header load failed");
+            return response.text();
+        })
+        .then(data => {
+            document.getElementById('internal-header-slot').innerHTML = data;
+        })
+        .catch(error => console.error('Error loading header:', error));
+
+    // 연결 상태 시뮬레이션
     const statusText = document.getElementById('connection-status');
     const priceText = document.getElementById('coin-price');
-    const latencyVal = document.getElementById('latency-val');
     
     setTimeout(() => {
         statusText.style.color = 'orange';
@@ -16,14 +24,12 @@ window.addEventListener('load', () => {
         statusText.style.color = '#0f0';
         statusText.classList.remove('blink');
         statusText.innerText = "● SYSTEM ONLINE";
-        
-        // 가격 표시 시작
         priceText.innerText = "104,769,000";
         startLatencyUpdate();
     }, 2500);
 });
 
-// Latency 랜덤 업데이트 (생동감 부여)
+// Latency 랜덤 업데이트
 function startLatencyUpdate() {
     setInterval(() => {
         const ms = Math.floor(Math.random() * (15 - 8 + 1)) + 8; // 8~15ms
