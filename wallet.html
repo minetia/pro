@@ -51,23 +51,19 @@
     <div id="transaction-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 id="modal-title" style="color:#fff; margin-bottom:15px; font-weight:bold;">TRANSACTION</h3>
-            
             <input type="number" id="amount-input" class="modal-input" placeholder="Enter Amount">
-            
             <div class="percent-group">
                 <button class="percent-btn" onclick="calcPercent(10)">10%</button>
                 <button class="percent-btn" onclick="calcPercent(25)">25%</button>
                 <button class="percent-btn" onclick="calcPercent(50)">50%</button>
                 <button class="percent-btn" onclick="calcPercent(100)">MAX</button>
             </div>
-
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button class="cyber-btn" onclick="closeModal()" style="background:#333;">CANCEL</button>
                 <button id="modal-confirm-btn" class="cyber-btn" style="background:var(--accent); color:#000;">CONFIRM</button>
             </div>
         </div>
     </div>
-
     <script src="pro-script.js"></script>
 </body>
 </html>
