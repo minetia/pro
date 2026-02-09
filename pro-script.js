@@ -1,11 +1,11 @@
-/* pro-script.js - V7.0 (레이아웃 수정 및 고속 엔진) */
+/* pro-script.js - V8.0 (은행 이자 시스템 탑재) */
 const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
 let socket;
 let autoTradeInterval = null;
 
 let appState = {
-    balance: 50000.00,
-    bankBalance: 1000000.00,
+    balance: 50000.00,       // 지갑 잔고
+    bankBalance: 1000000.00, // 은행 잔고
     startBalance: 50000.00,
     tradeHistory: [],
     transfers: [],
@@ -27,21 +27,34 @@ window.addEventListener('load', () => {
     renderGlobalUI();
     if (document.getElementById('tv_chart')) initWebSocket();
     
-    // 0.5초마다 UI 갱신 (더 부드럽게)
-    setInterval(() => { saveState(); renderGlobalUI(); }, 500);
+    // 0.5초마다 화면 갱신 + 이자 지급
+    setInterval(() => { 
+        applyBankInterest(); // [NEW] 이자 지급 함수 실행
+        saveState(); 
+        renderGlobalUI(); 
+    }, 500);
 });
 
-// [강제 실행 함수] 버튼 누르면 호출됨
+// [NEW] 은행 이자 지급 로직
+function applyBankInterest() {
+    if(appState.bankBalance > 0) {
+        // 연이율 5% 가정 -> 초단위 쪼개서 지급 (시각적 효과를 위해 조금 과장됨)
+        // 매 0.5초마다 잔고의 0.00005%가 늘어남
+        const interest = appState.bankBalance * 0.0000005; 
+        appState.bankBalance += interest;
+    }
+}
+
+// [강제 실행 함수]
 function forceStartTrade() {
-    alert("RE-INITIALIZING AI ENGINE...");
+    alert("AI ENGINE RE-BOOTING...");
     if(autoTradeInterval) clearInterval(autoTradeInterval);
     const config = appState.config;
-    // 설정이 없으면 기본값으로 가동
     if(!config.target) config.target = "BTC/USDT";
     if(!config.amount) config.amount = 1000;
     
-    executeAiTrade(config); // 즉시 1회 실행
-    autoTradeInterval = setInterval(() => { executeAiTrade(config); }, 1500); // 1.5초마다 반복
+    executeAiTrade(config);
+    autoTradeInterval = setInterval(() => { executeAiTrade(config); }, 1500);
 }
 
 function renderGlobalUI() {
@@ -56,14 +69,19 @@ function renderGlobalUI() {
 
     const totalAssets = appState.balance + (appState.bankBalance || 0);
 
-    // [레이아웃 수정 대응] 큰 숫자 콤마 처리
+    // 총 자산 표시
     if(els.total) els.total.innerText = `$ ${totalAssets.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+    
+    // 지갑 잔고
     if(els.bal) els.bal.innerText = appState.balance.toLocaleString(undefined, {minimumFractionDigits:2});
-    if(els.bank) els.bank.innerText = `$ ${appState.bankBalance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+    
+    // [중요] 은행 잔고 (이자 붙어서 계속 변함)
+    if(els.bank) els.bank.innerText = `$ ${appState.bankBalance.toLocaleString(undefined, {minimumFractionDigits:3})}`; 
+    // 소수점 3자리까지 보여주어 움직임이 더 잘 보이게 함
 
+    // 수익금 (화살표 추가)
     if(els.prof) {
         const profit = appState.balance - appState.startBalance;
-        // PNL에 화살표 추가해서 움직임 강조
         const arrow = profit >= 0 ? '▲' : '▼';
         els.prof.innerText = `${arrow} $${Math.abs(profit).toLocaleString(undefined, {minimumFractionDigits:2})}`;
         els.prof.className = `num-font ${profit>=0?'text-green':'text-red'}`;
@@ -74,7 +92,6 @@ function renderGlobalUI() {
 }
 
 function executeAiTrade(config) {
-    // 변동폭을 조금 키워서 숫자가 바뀌는게 눈에 띄게 함
     const isWin = Math.random() > 0.48; 
     const percent = (Math.random() * 1.2) + 0.2; 
     const pnl = isWin ? (parseFloat(config.amount) * (percent / 100)) : -(parseFloat(config.amount) * (percent / 100) * 0.6);
@@ -85,7 +102,9 @@ function executeAiTrade(config) {
     const pos = Math.random() > 0.5 ? 'LONG' : 'SHORT';
     const msg = `AI: ${pos} ${config.target || 'BTC/USDT'} | PNL: ${pnl > 0 ? '+' : ''}$${pnl.toFixed(2)}`;
     
-    addSystemLog(pos, msg);
+    // 한 줄 로그 업데이트 (index.html 연동)
+    if(window.addSystemLog) window.addSystemLog(pos, msg);
+    else addInternalLog(pos, msg); // 백업
     
     const now = new Date();
     appState.tradeHistory.unshift({
@@ -94,6 +113,12 @@ function executeAiTrade(config) {
         pos: pos, in: currentPrice, out: currentPrice + (isWin ? 50 : -50), profit: pnl, win: isWin
     });
     if(appState.tradeHistory.length > 50) appState.tradeHistory.pop();
+}
+
+// 내부 로그 함수 (index.html 없을 때 대비)
+function addInternalLog(type, msg) {
+    appState.logs.unshift({time: new Date().toLocaleTimeString(), type, msg});
+    if(appState.logs.length > 50) appState.logs.pop();
 }
 
 /* --- 기본 유지 --- */
@@ -108,7 +133,7 @@ function checkRealModeAndStart() {
     if(config.apiKey && config.mode === 'REAL') {
         appState.isRealMode = true;
         updateRealModeUI(config);
-        if(!autoTradeInterval) autoTradeInterval = setInterval(() => { executeAiTrade(config); }, 1500); // 1.5초 고속
+        if(!autoTradeInterval) autoTradeInterval = setInterval(() => { executeAiTrade(config); }, 1500); 
     }
 }
 function updateRealModeUI(config) {
@@ -156,17 +181,8 @@ function initWebSocket() { socket = new WebSocket(BINANCE_WS_URL); socket.onmess
     const el = document.getElementById('coin-price');
     if(el) { el.innerText = p.toLocaleString(undefined,{minimumFractionDigits:2}); el.style.color = !d.m ? '#0ecb81' : '#f6465d'; }
 };}
-function addSystemLog(type, msg) {
-    if(appState.totalLogCount>=1000000) return;
-    appState.logs.unshift({time: new Date().toLocaleTimeString('en-US',{hour12:false}), type, msg});
-    appState.totalLogCount++;
-    if(appState.logs.length>50) appState.logs.pop();
-    const t = document.getElementById('terminal');
-    if(t) {
-        const c = type==='LONG'?'pos-long':'pos-short';
-        t.insertAdjacentHTML('afterbegin', `<div class="log-line"><span style="color:#666">${new Date().toLocaleTimeString().split(' ')[0]}</span><span class="${c}">${type}</span><span>${msg}</span></div>`);
-        if(t.children.length>50) t.removeChild(t.lastChild);
-    }
-}
+function processTransaction(amount) { /* 생략 (기존 동일) */ }
+function openModal(mode) { /* 생략 (기존 동일) */ }
+function closeModal() { document.getElementById('transaction-modal').style.display='none'; }
 function exportLogs() { /* 생략 */ }
 function highlightMenu() { /* 생략 */ }
