@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI CORE</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="pro-style.css">
+</head>
+<body class="sub-page theme-blue">
+
+    <header class="cyber-header">
+        <div class="brand-logo">NEURAL <span>CORE</span></div>
+        <div style="font-size:0.7rem; color:#00f3ff; border:1px solid #00f3ff; padding:2px 5px;">
+            V.3.0.1
+        </div>
+    </header>
+
+    <div id="internal-header-slot"></div>
+
+    <div class="main-content">
+        
+        <div class="cyber-panel" style="text-align:center; padding:30px 20px;">
+            <div class="ai-brain-container">
+                <i class="fas fa-brain ai-brain-icon"></i>
+                <div class="ai-pulse-ring"></div>
+            </div>
+            <div style="margin-top:20px;">
+                <div style="font-size:1.2rem; font-weight:bold; color:#fff;">NEURAL ENGINE: <span class="text-green">ACTIVE</span></div>
+                <div style="font-size:0.8rem; color:#888; margin-top:5px;">CONFIDENCE SCORE: 94.2%</div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+            <div class="strategy-card active" onclick="selectStrategy(this)">
+                <div class="st-icon"><i class="fas fa-bolt"></i></div>
+                <div class="st-name">SCALPING</div>
+                <div class="st-desc">High Frequency</div>
+            </div>
+            <div class="strategy-card" onclick="selectStrategy(this)">
+                <div class="st-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="st-name">SWING</div>
+                <div class="st-desc">Trend Follow</div>
+            </div>
+        </div>
+
+        <div class="cyber-panel">
+            <div style="font-size:0.8rem; color:#00f3ff; margin-bottom:15px; font-weight:bold;">
+                <i class="fas fa-sliders-h"></i> PARAMETERS
+            </div>
+            
+            <div style="margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; color:#ccc; font-size:0.8rem; margin-bottom:5px;">
+                    <span>RISK LEVEL</span>
+                    <span id="risk-val">MEDIUM</span>
+                </div>
+                <input type="range" class="cyber-range" min="1" max="3" value="2" oninput="updateRisk(this.value)">
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:20px;">
+                <div style="text-align:center; flex:1; border-right:1px solid #333;">
+                    <div style="font-size:0.7rem; color:#888;">LEVERAGE</div>
+                    <div class="num-font" style="font-size:1.2rem; color:#fff;">x20</div>
+                </div>
+                <div style="text-align:center; flex:1;">
+                    <div style="font-size:0.7rem; color:#888;">AI MODEL</div>
+                    <div class="num-font" style="font-size:1.2rem; color:#fff;">GPT-4o</div>
+                </div>
+            </div>
+        </div>
+
+        <button class="cyber-btn btn-auto" style="width:100%;" onclick="alert('STRATEGY UPDATED')">
+            APPLY STRATEGY
+        </button>
+
+    </div>
+
+    <script src="pro-script.js"></script>
+    <script>
+        // 간단한 UI 인터랙션 스크립트
+        function selectStrategy(el) {
+            document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+        }
+        function updateRisk(val) {
+            const label = document.getElementById('risk-val');
+            if(val == 1) { label.innerText = "LOW"; label.style.color = "#00ff41"; }
+            else if(val == 2) { label.innerText = "MEDIUM"; label.style.color = "#ffd700"; }
+            else { label.innerText = "HIGH"; label.style.color = "#ff003c"; }
+        }
+    </script>
+</body>
+</html>
