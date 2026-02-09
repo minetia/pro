@@ -1,36 +1,31 @@
-/* 기본 테마 및 폰트 */
+/* 전역 설정 */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', 'Consolas', monospace; }
 body { background-color: #000; color: #0f0; overflow-x: hidden; padding-top: 60px; padding-bottom: 70px; }
 
-/* 상하단 고정 레이아웃 */
-#header-placeholder { position: fixed; top: 0; width: 100%; z-index: 1000; height: 60px; }
-#nav-placeholder { position: fixed; bottom: 0; width: 100%; z-index: 1000; height: 65px; }
+[span_3](start_span)/* 상하단 고정 (minetia.github.io 소스 활용)[span_3](end_span) */
+#header-placeholder { position: fixed; top: 0; width: 100%; z-index: 1000; height: 60px; background: #000; }
+#nav-placeholder { position: fixed; bottom: 0; width: 100%; z-index: 1000; height: 65px; background: #000; border-top: 1px solid #333; }
 
-/* 메인 콘텐츠 영역 */
+/* 메인 UI 요소 */
 #tv_chart { height: 35vh; width: 100%; border-bottom: 1px solid #222; }
 .top-bar { background: #111; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
-.mode-title { color: #fff; font-weight: bold; font-size: 1.1rem; }
-.latency { font-size: 0.7rem; color: #666; margin-left: 10px; }
+.mode-title { color: #fff; font-weight: bold; }
 .price-display { font-size: 1.2rem; font-weight: bold; color: #fff; }
 
-/* 자산 현황 섹션 (AI QUANT 스타일) */
+[span_4](start_span)/* 퀀트 스타일 자산 박스[span_4](end_span) */
 .asset-box { margin: 15px; padding: 15px; border: 1px solid #333; background: #0a0a0a; display: flex; justify-content: space-between; border-radius: 4px; }
 .label { font-size: 0.7rem; color: #666; margin-bottom: 5px; }
 .value { font-size: 1.2rem; font-weight: bold; color: #fff; }
 .success { color: #0f0; }
-.text-right { text-align: right; }
 
-/* 터미널 로그 (정밀 결합형) */
-.log-header { margin: 0 15px 5px; font-size: 0.8rem; color: #666; }
-.terminal-box { background: #050505; border: 1px solid #222; margin: 0 15px; height: 250px; overflow-y: auto; padding: 10px; font-size: 0.75rem; }
-.log-line { display: grid; grid-template-columns: 85px 50px 100px 1fr; gap: 8px; border-bottom: 1px solid #111; padding: 6px 0; align-items: center; }
-.log-time { color: #444; }
+[span_5](start_span)/* 정밀 로그 그리드 시스템[span_5](end_span) */
+.terminal-box { background: #050505; border: 1px solid #222; margin: 0 15px; height: 250px; overflow-y: auto; padding: 10px; }
+.log-line { display: grid; grid-template-columns: 85px 50px 100px 1fr; gap: 8px; border-bottom: 1px solid #111; padding: 6px 0; font-size: 0.75rem; }
 .pos-long { color: #00ff88; font-weight: bold; }
 .pos-short { color: #ff3344; font-weight: bold; }
 
-/* 버튼 그룹 */
+/* 제어 버튼 */
 .button-group { padding: 15px; display: flex; gap: 10px; }
-.btn { flex: 1; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 4px; transition: 0.3s; }
-.btn-start { background: #002200; color: #0f0; border: 1px solid #0f0; }
-.btn-start:hover { background: #004400; }
-.btn-stop { background: #220000; color: #f00; border: 1px solid #f00; }
+.btn { flex: 1; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 4px; border: 1px solid transparent; }
+.btn-start { background: #002200; color: #0f0; border-color: #0f0; }
+.btn-stop { background: #220000; color: #f00; border-color: #f00; }
