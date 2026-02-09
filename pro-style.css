@@ -1,17 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
 :root {
-    /* [눈이 편안한 프리미엄 다크 컬러] */
-    --bg-main: #12161c;       /* 아주 깊은 남색 (배경) */
-    --bg-card: #1e2329;       /* 카드 배경 (차분함) */
-    --border-soft: #2b3139;   /* 거의 안 보이는 테두리 */
+    /* [눈이 편안한 딥 네이비 테마] */
+    --bg-main: #12161c;       /* 배경: 아주 깊은 남색 */
+    --bg-card: #1e2329;       /* 카드: 차분한 다크 그레이 */
+    --border-soft: #2b3139;   /* 테두리: 눈에 띄지 않는 선 */
     
-    --text-primary: #eaecef;  /* 메인 글씨 (부드러운 흰색) */
-    --text-secondary: #848e9c;/* 보조 글씨 (회색) */
+    --text-primary: #eaecef;  /* 메인 글씨: 부드러운 흰색 */
+    --text-secondary: #848e9c;/* 보조 글씨: 회색 (눈 안 아픔) */
     
-    --color-up: #0ecb81;      /* 상승 (눈 안 아픈 녹색) */
-    --color-down: #f6465d;    /* 하락 (눈 안 아픈 적색) */
-    --accent: #fcd535;        /* 포인트 (바이낸스 골드) */
+    --color-up: #0ecb81;      /* 상승: 부드러운 녹색 */
+    --color-down: #f6465d;    /* 하락: 부드러운 적색 */
+    --accent: #fcd535;        /* 포인트: 옐로우 골드 */
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -19,17 +19,16 @@
 body { 
     background-color: var(--bg-main); 
     color: var(--text-primary); 
-    font-family: 'Pretendard', sans-serif; /* 가독성 최고 폰트 */
+    font-family: 'Pretendard', sans-serif;
     padding-top: 110px; padding-bottom: 40px; overflow-x: hidden;
     line-height: 1.5;
 }
 
-/* 숫자 전용 폰트 (간격 조정) */
 .num-font { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
 .text-green { color: var(--color-up) !important; }
 .text-red { color: var(--color-down) !important; }
 
-/* [1] 헤더 (테두리 없애고 그림자로 구분) */
+/* [1] 헤더 */
 .cyber-header {
     position: fixed; top: 0; left: 0; width: 100%; height: 55px;
     background: var(--bg-card); 
@@ -41,81 +40,89 @@ body {
 .brand-logo { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
 .brand-logo span { color: var(--accent); }
 
-/* [2] 메뉴바 (탭 스타일) */
+/* [2] 메뉴바 (밀림 방지 강력 적용) */
 .cyber-nav {
     position: fixed; top: 55px; left: 0; width: 100%; height: 45px;
     background: var(--bg-main); 
     border-bottom: 1px solid var(--border-soft);
-    z-index: 3900; display: flex; align-items: center; overflow-x: auto;
+    z-index: 3900; 
+    display: flex; 
+    align-items: center; 
+    overflow-x: auto;      /* 가로 스크롤 허용 */
+    white-space: nowrap;   /* [중요] 줄바꿈 절대 금지 */
+    -webkit-overflow-scrolling: touch; /* 부드러운 스크롤 */
+    padding: 0 10px;
 }
-.cyber-nav::-webkit-scrollbar { display: none; }
+.cyber-nav::-webkit-scrollbar { display: none; } /* 스크롤바 숨김 */
 
 .nav-item {
-    padding: 0 18px; height: 100%; display: flex; align-items: center;
+    flex-shrink: 0;        /* [중요] 공간 부족해도 찌그러지지 않음 */
+    padding: 0 15px; height: 100%; display: flex; align-items: center;
     color: var(--text-secondary); font-weight: 600; font-size: 0.9rem; text-decoration: none; 
     border-bottom: 2px solid transparent; transition: 0.2s;
 }
 .nav-item.active { color: var(--text-primary); border-bottom-color: var(--accent); }
 
-/* [3] 패널 (테두리 대신 부드러움 강조) */
+/* [3] 공통 패널 */
 .main-content { max-width: 800px; margin: 0 auto; padding: 15px; }
 
 .cyber-panel {
     background: var(--bg-card); 
-    border-radius: 12px; /* 둥글게 */
+    border-radius: 12px;
     padding: 20px; margin-bottom: 16px;
-    /* 테두리 삭제, 그림자로 깊이감 */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* 부드러운 그림자 */
+    border: none; /* 테두리 제거 */
 }
 
-/* 상태바 & 텍스트 */
+/* 상태바 */
 .status-bar { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.85rem; color: var(--text-secondary); }
 
-/* 로그 영역 (아주 심플하게) */
+/* 로그 영역 */
 .log-header-area {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-soft);
 }
 .save-tag {
-    background: #2b3139; color: var(--text-primary); padding: 4px 10px; 
+    background: #2b3139; color: var(--text-primary); padding: 5px 12px; 
     font-size: 0.75rem; border-radius: 4px; cursor: pointer;
 }
 
-/* 터미널 (눈부심 없는 배경) */
+/* 터미널 (눈부심 방지) */
 .terminal-window {
     background: #15191f; border-radius: 8px;
     height: 180px; overflow-y: auto; padding: 12px;
     font-family: 'JetBrains Mono'; font-size: 0.75rem; color: var(--text-secondary);
 }
-.log-line { display: grid; grid-template-columns: 60px 40px 1fr; gap: 8px; margin-bottom: 4px; }
-.pos-long { color: var(--color-up); font-weight: 600; }
-.pos-short { color: var(--color-down); font-weight: 600; }
+.log-line { display: grid; grid-template-columns: 60px 45px 1fr; gap: 8px; margin-bottom: 4px; border-bottom: 1px solid #1f252e; padding-bottom:2px;}
 
-/* 버튼 (고급스러운 그라데이션 제거, 플랫 컬러) */
+/* 버튼 (차분한 컬러) */
 .ctrl-group { display: flex; gap: 10px; margin-top: 15px; }
 .cyber-btn {
     flex: 1; padding: 14px; border: none; border-radius: 8px;
     font-weight: 700; font-size: 0.95rem; cursor: pointer; color: #fff;
-    transition: 0.2s;
 }
 .btn-auto { background-color: var(--color-up); }
 .btn-stop { background-color: #2b3139; color: var(--text-secondary); }
 
-/* 테이블 */
-.history-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-.history-table th { text-align: left; color: var(--text-secondary); padding-bottom: 10px; font-weight: 500; }
-.history-table td { padding: 10px 0; border-bottom: 1px solid var(--border-soft); color: var(--text-primary); }
+/* AI CORE 전용 스타일 (카드 정렬 수정) */
+.ai-brain-container { 
+    margin: 20px auto; font-size: 3rem; color: var(--accent); 
+    background: rgba(252, 213, 53, 0.05); width: 80px; height: 80px; 
+    border-radius: 50%; display:flex; align-items:center; justify-content:center;
+}
+.strategy-card {
+    background: var(--bg-main); border: 1px solid var(--border-soft);
+    padding: 20px; border-radius: 10px; text-align: center; cursor: pointer;
+    flex: 1; /* 카드 크기 균등 분할 */
+}
+.strategy-card.active {
+    border-color: var(--accent); background: rgba(252, 213, 53, 0.05);
+}
+.st-name { color: var(--text-primary); font-weight: bold; margin-top: 8px; }
+.st-icon { font-size: 1.5rem; color: var(--text-secondary); }
+.strategy-card.active .st-icon { color: var(--accent); }
 
-/* 모달 */
-.modal-overlay {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;
-    backdrop-filter: blur(2px);
-}
-.modal-box { 
-    background: var(--bg-card); padding: 25px; width: 90%; max-width: 380px; 
-    border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-}
+/* 입력창 스타일 (눈 편안함) */
 .modal-input { 
     width: 100%; padding: 14px; background: var(--bg-main); border: 1px solid var(--border-soft);
     color: var(--text-primary); border-radius: 8px; font-size: 1rem; margin-bottom: 10px;
