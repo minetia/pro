@@ -22,8 +22,10 @@
 
     <div class="main-content">
         <div class="cyber-panel" style="text-align:center; padding: 30px 15px;">
-            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:10px;">TOTAL ASSETS (Wallet + Bank)</div>
-            <div id="total-val" class="hero-number">Loading...</div>
+            <div style="font-size:0.8rem; color:var(--accent); margin-bottom:10px; font-weight:bold;">
+                <i class="fas fa-wallet"></i> TRADING WALLET BALANCE
+            </div>
+            <div id="wallet-display" class="hero-number">Loading...</div>
             
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button class="cyber-btn btn-start" onclick="openModal('deposit')">
@@ -36,8 +38,8 @@
         </div>
 
         <div class="cyber-panel" style="padding:0; overflow:hidden;">
-            <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:var(--accent);">
-                <i class="fas fa-list"></i> RECENT TRADES
+            <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:var(--text-secondary);">
+                <i class="fas fa-history"></i> TRADE HISTORY
             </div>
             <div class="table-header-row">
                 <div style="width:25%">TIME</div><div style="width:25%">POS</div><div style="width:25%; text-align:right;">PRICE</div><div style="width:25%; text-align:right;">PNL</div>
