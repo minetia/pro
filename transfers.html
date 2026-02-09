@@ -11,13 +11,29 @@
     <header class="cyber-header">
         <div class="brand-logo">BANK <span>LINK</span></div>
     </header>
-    <div id="internal-header-slot"></div>
+
+    <nav class="cyber-nav">
+        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i> DASHBOARD</a>
+        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i> WALLET</a>
+        <a href="transfers.html" class="nav-item active"><i class="fas fa-university"></i> TRANSFERS</a>
+        <a href="ai-core.html" class="nav-item"><i class="fas fa-brain"></i> AI-CORE</a>
+    </nav>
+
     <div class="main-content">
         <div class="cyber-panel bank-card-bg">
             <div style="text-align:right;">
                 <div style="font-size:0.7rem; color:#848e9c; margin-bottom:5px;">AVAILABLE CASH</div>
                 <div id="bank-balance-display" class="hero-number">Loading...</div>
             </div>
+        </div>
+        <div class="cyber-panel" style="padding:0; overflow:hidden;">
+            <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:#5d78ff;">
+                <i class="fas fa-exchange-alt"></i> HISTORY
+            </div>
+            <div class="table-header-row">
+                <div style="width:30%">DATE</div><div style="width:30%">TYPE</div><div style="width:40%; text-align:right;">AMOUNT</div>
+            </div>
+            <div id="bank-history-list" style="max-height:400px; overflow-y:auto;"></div>
         </div>
     </div>
     <script src="pro-script.js"></script>
