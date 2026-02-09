@@ -3,44 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Wallet</title>
+    <title>WALLET</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="pro-style.css">
 </head>
-<body>
-    <header class="ai-super-header">
-        <div class="brand-logo">NEURAL <span>WALLET</span></div>
-        <div style="font-size:0.8rem; color:#666;"><i class="fas fa-lock"></i> SECURE</div>
+<body class="sub-page theme-gold">
+
+    <header class="cyber-header">
+        <div class="brand-logo">SECURE <span>VAULT</span></div>
+        <div style="font-size:0.7rem; color:#ffd700; border:1px solid #ffd700; padding:2px 5px;">
+            SYNCED
+        </div>
     </header>
 
-    <div id="internal-header-slot"></div>
+    <nav class="cyber-nav">
+        <a href="index.html" class="nav-item">DASHBOARD</a>
+        <a href="wallet.html" class="nav-item active">WALLET</a>
+        <a href="transfers.html" class="nav-item">TRANSFERS</a>
+        <a href="#" class="nav-item">AI-CORE</a>
+    </nav>
 
     <div class="main-content">
-        <div class="wallet-card">
-            <div class="card-label">TOTAL ASSETS</div>
-            <div class="total-amount num-font" id="total-val">---</div>
-            <div id="win-rate-display" class="num-font" style="text-align:center; color:#888; font-size:0.9rem;">WIN RATE: ---</div>
+        <div class="cyber-panel" style="text-align:center; padding:25px 15px;">
+            <div style="font-size:0.8rem; color:#888; letter-spacing:2px;">TOTAL ASSETS</div>
+            <div class="num-font" id="total-val" style="font-size:2rem; font-weight:bold; color:#fff; margin:10px 0;">---</div>
+            <div class="num-font" id="win-rate-display" style="color:#aaa; font-size:0.9rem;">WIN RATE: ---</div>
             
-            <div class="action-bar" style="margin-top:20px;">
-                <button class="action-btn btn-deposit" onclick="openModal('deposit')">DEPOSIT</button>
-                <button class="action-btn btn-withdraw" onclick="openModal('withdraw')">WITHDRAW</button>
+            <div class="ctrl-group" style="margin-top:20px;">
+                <button class="cyber-btn" onclick="openModal('deposit')" style="background:#003300; color:#0f0; border:1px solid #005500;">DEPOSIT</button>
+                <button class="cyber-btn" onclick="openModal('withdraw')" style="background:#330000; color:#f00; border:1px solid #550000;">WITHDRAW</button>
             </div>
         </div>
 
-        <div style="background:#0a0a0a; border:1px solid #222; border-radius:8px; overflow:hidden;">
-            <div style="padding:15px; border-bottom:1px solid #222; display:flex; justify-content:space-between;">
-                <span style="font-weight:bold; color:#888;">TRADING HISTORY</span>
-                <span class="text-green" style="font-size:0.7rem;">● SYNCED</span>
+        <div class="cyber-panel" style="padding:0; overflow:hidden;">
+            <div style="padding:10px; background:rgba(255,215,0,0.05); border-bottom:1px solid rgba(255,215,0,0.2); font-weight:bold; color:#ffd700; font-size:0.85rem;">
+                <i class="fas fa-list"></i> TRADING HISTORY
             </div>
             <div style="overflow-x:auto;">
                 <table class="history-table">
                     <thead>
-                        <tr>
-                            <th width="20%">TIME</th>
-                            <th width="15%">POS</th>
-                            <th width="35%">PRICE</th>
-                            <th width="30%" style="text-align:right">PNL</th>
-                        </tr>
+                        <tr><th width="20%" style="padding-left:10px;">TIME</th><th width="15%">POS</th><th width="35%">PRICE</th><th width="30%" align="right" style="padding-right:10px;">PNL</th></tr>
                     </thead>
                     <tbody id="history-body"></tbody>
                 </table>
@@ -50,11 +52,11 @@
 
     <div id="transaction-modal" class="modal-overlay">
         <div class="modal-box">
-            <h3 id="modal-title" style="color:#fff; margin-bottom:15px;">DEPOSIT</h3>
+            <h3 id="modal-title" style="color:#fff;">DEPOSIT</h3>
             <input type="number" id="amount-input" class="modal-input" placeholder="0.00">
             <div style="display:flex; gap:10px;">
-                <button class="action-btn" onclick="closeModal()" style="background:#333; color:#ccc;">CANCEL</button>
-                <button id="modal-confirm-btn" class="action-btn btn-deposit">CONFIRM</button>
+                <button class="cyber-btn" onclick="closeModal()" style="background:#333; color:#ccc;">CANCEL</button>
+                <button id="modal-confirm-btn" class="cyber-btn" style="background:#003300; color:#0f0;">CONFIRM</button>
             </div>
         </div>
     </div>
