@@ -1,4 +1,4 @@
-/* pro-script.js - V18.0 (충돌 방지 & 무결점 통합 엔진) */
+/* pro-script.js - V19.0 (코인별 맞춤 가격 & 금액 반영) */
 let appState = {
     balance: 50000.00, bankBalance: 1000000.00, startBalance: 50000.00,
     tradeHistory: [], dataCount: 425102, config: {}, isRealMode: false,
@@ -9,22 +9,14 @@ let dataCounterInterval = null;
 
 window.addEventListener('load', () => {
     loadState();
-    
-    // [변경] 헤더 로드 기능 삭제 (HTML에 직접 넣음) -> 하이라이트만 실행
     highlightMenu();
-
     renderGlobalUI();
     
-    // 메인 차트가 있을 때만 소켓 연결 (에러 방지)
+    // 차트가 있는 메인 화면이면 소켓 연결
     if (document.getElementById('tv_chart')) initWebSocket();
 
-    // 시스템 가동 (팝업 없이 조용히)
     if(appState.isRunning) startSystem(true);
-    
-    // 데이터 카운터 시작
     startDataCounter();
-    
-    // 0.5초마다 UI 갱신
     setInterval(() => { applyBankInterest(); saveState(); renderGlobalUI(); }, 500);
 });
 
@@ -55,32 +47,57 @@ function updateButtonState(isOn) {
     }
 }
 
-/* --- 데이터 로직 --- */
+/* --- [핵심] AI 트레이딩 로직 --- */
 function executeAiTrade(config) {
     if(!appState.isRunning) return;
     
-    // 이자 및 수익 계산
+    // 1. 설정값 가져오기
+    const targetPair = config.target || "BTC/USDT";
+    const symbol = targetPair.split('/')[0]; // "BTC" 추출
+    const tradeAmt = parseFloat(config.amount) || 10000; // 설정된 금액 사용 (없으면 만원)
+
+    // 2. 이자 지급
     if(appState.bankBalance > 0) appState.bankBalance += (appState.bankBalance * 0.0000008);
+
+    // 3. 승패 및 수익 계산
     const isWin = Math.random() > 0.48; 
-    const amt = config.amount || 1000;
-    const percent = (Math.random() * 0.8) + 0.1; 
-    const pnl = isWin ? (amt * (percent / 100)) : -(amt * (percent / 100) * 0.6);
+    const percent = (Math.random() * 0.8) + 0.1; // 0.1% ~ 0.9% 변동
+    const pnl = isWin ? (tradeAmt * (percent / 100)) : -(tradeAmt * (percent / 100) * 0.6);
     
     appState.balance += pnl;
     if(isNaN(appState.balance)) appState.balance = 50000;
 
-    // 기록 추가
+    // 4. [NEW] 코인별 리얼한 가격 생성
+    const currentPrice = getRealisticPrice(symbol);
+    const direction = Math.random() > 0.5 ? 'LONG' : 'SHORT';
+    
+    // 5. [NEW] 포지션 명칭 조합 (예: BTC LONG)
+    const positionLabel = `${symbol} ${direction}`;
+
     const now = new Date();
     appState.tradeHistory.unshift({
         date: `${now.getMonth()+1}/${now.getDate()}`,
         time: now.toLocaleTimeString('en-US',{hour12:false}),
-        pos: Math.random()>0.5?'LONG':'SHORT', 
-        in: 69000 + Math.random()*1000, 
+        pos: positionLabel, // "BTC LONG" 저장
+        in: currentPrice, 
         profit: pnl
     });
     
     if(appState.tradeHistory.length > 500) appState.tradeHistory.pop();
     appState.dataCount++;
+}
+
+// [NEW] 코인별 가격 생성기 (단위 맞춤)
+function getRealisticPrice(symbol) {
+    const jitter = Math.random();
+    switch(symbol) {
+        case 'BTC': return 96000 + (jitter * 500);  // 9만불 대
+        case 'ETH': return 2700 + (jitter * 20);    // 2700불 대
+        case 'SOL': return 180 + (jitter * 5);      // 180불 대
+        case 'XRP': return 2.4 + (jitter * 0.1);    // 2.4불 대
+        case 'DOGE': return 0.28 + (jitter * 0.01); // 0.28불 대
+        default: return 100 + (jitter * 10);
+    }
 }
 
 /* --- 렌더링 --- */
@@ -93,7 +110,6 @@ function renderGlobalUI() {
         prof: document.getElementById('real-profit')
     };
 
-    // 요소가 있을 때만 값 넣기 (에러 방지)
     if(els.total) els.total.innerText = `$ ${totalAssets.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
     if(els.bank) els.bank.innerText = `$ ${appState.bankBalance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
     if(els.prof) {
@@ -102,22 +118,15 @@ function renderGlobalUI() {
         els.prof.className = `num-font ${profit>=0?'text-green':'text-red'}`;
     }
     
-    renderMainLedger();
-    renderWalletLedger(); // 지갑용 리스트
-    renderBankLedger();   // 은행용 리스트
-}
-
-function renderMainLedger() {
-    const list = document.getElementById('main-ledger-list');
-    if(list) renderList(list, appState.tradeHistory);
-}
-function renderWalletLedger() {
-    const list = document.getElementById('wallet-history-list');
-    if(list) renderList(list, appState.tradeHistory);
-}
-function renderBankLedger() {
-    const list = document.getElementById('bank-history-list');
-    if(list && appState.transfers) {
+    // 리스트 그리기
+    const mainList = document.getElementById('main-ledger-list');
+    const walletList = document.getElementById('wallet-history-list');
+    if(mainList) renderList(mainList, appState.tradeHistory);
+    if(walletList) renderList(walletList, appState.tradeHistory);
+    
+    // 은행 리스트
+    const bankList = document.getElementById('bank-history-list');
+    if(bankList && appState.transfers) {
         let html = '';
         appState.transfers.forEach(t => {
             html += `<div class="ledger-row">
@@ -126,20 +135,23 @@ function renderBankLedger() {
                 <div style="width:40%; text-align:right;" class="ledger-price">$${t.amount.toLocaleString()}</div>
             </div>`;
         });
-        list.innerHTML = html;
+        bankList.innerHTML = html;
     }
 }
 
-// 공통 리스트 렌더러
+// [수정] 공통 리스트 렌더러 (포지션 색상 로직 개선)
 function renderList(el, data) {
     let html = '';
     data.slice(0, 50).forEach(t => {
-        const color = t.profit >= 0 ? 'text-green' : 'text-red';
+        const pnlColor = t.profit >= 0 ? 'text-green' : 'text-red';
+        // 포지션 글자에 LONG이 있으면 초록, SHORT면 빨강
+        const posColor = t.pos.includes('LONG') ? 'text-green' : 'text-red';
+        
         html += `<div class="ledger-row">
             <div style="width:25%" class="ledger-date">${t.date}<br><span style="color:#666">${t.time}</span></div>
-            <div style="width:25%" class="ledger-pos ${t.pos==='LONG'?'text-green':'text-red'}">${t.pos}</div>
-            <div style="width:25%" class="ledger-price">${t.in.toFixed(0)}</div>
-            <div style="width:25%" class="ledger-pnl ${color}">${t.profit.toFixed(2)}</div>
+            <div style="width:25%" class="ledger-pos ${posColor}">${t.pos}</div>
+            <div style="width:25%" class="ledger-price">${t.in.toLocaleString(undefined, {maximumFractionDigits:2})}</div>
+            <div style="width:25%" class="ledger-pnl ${pnlColor}">${t.profit.toFixed(2)}</div>
         </div>`;
     });
     el.innerHTML = html;
@@ -177,6 +189,6 @@ function openChartModal() { document.getElementById('chart-modal').style.display
 function closeChartModal() { document.getElementById('chart-modal').style.display='none'; document.getElementById('modal_tv_chart').innerHTML=''; }
 function handleEnter(e) { if(e.key==='Enter') openChartModal(); }
 function initWebSocket() { socket = new WebSocket(BINANCE_WS_URL); socket.onmessage = (e) => { const d=JSON.parse(e.data); const el=document.getElementById('coin-price'); if(el) { el.innerText=parseFloat(d.p).toLocaleString(); el.style.color=!d.m?'#0ecb81':'#f6465d'; } }; }
-function openModal(mode) { document.getElementById('transaction-modal').style.display='flex'; } // 간단 처리
+function openModal(mode) { document.getElementById('transaction-modal').style.display='flex'; }
 function closeModal() { document.getElementById('transaction-modal').style.display='none'; }
 function exportLogs() { /* 생략 */ }
