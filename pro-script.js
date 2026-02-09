@@ -1,35 +1,41 @@
-/* pro-script.js - 데이터 동기화 엔진 (로그 리미트 버전) */
+/* pro-script.js - 데이터 동기화 및 실전 모드 감지 */
 const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
 let socket;
 
-// [1] 전역 데이터 상태
+// 전역 데이터
 let appState = {
     balance: 50000.00,
     startBalance: 50000.00,
-    tradeHistory: [], // 매매 기록
-    transfers: [],    // 입출금 기록
-    logs: [],         // 시스템 로그 배열
-    totalLogCount: 0, // [NEW] 로그 누적 카운터 (최대 1,000,000)
-    lastLogin: Date.now()
+    tradeHistory: [],
+    transfers: [],
+    logs: [],
+    totalLogCount: 0,
+    lastLogin: Date.now(),
+    isRealMode: false // [NEW] 실전 모드 여부
 };
 
-// 페이지 로드 시 실행
 window.addEventListener('load', () => {
-    loadState(); 
-    if(appState.tradeHistory.length === 0) generateInitialData(); 
+    loadState();
+    checkRealMode(); // [NEW] 실전 모드인지 체크
+    
+    if(appState.tradeHistory.length === 0) generateInitialData();
 
-    // 헤더 로드
-    fetch('header.html').then(r => r.text()).then(d => {
-        const slot = document.getElementById('internal-header-slot');
-        if(slot) slot.innerHTML = d;
-        highlightMenu();
-    });
+    // 헤더 메뉴 로드
+    fetch('header.html')
+        .then(response => response.text())
+        .then(data => {
+            const slot = document.getElementById('internal-header-slot');
+            if(slot) {
+                slot.innerHTML = data;
+                highlightMenu();
+            }
+        });
 
-    renderGlobalUI(); 
+    renderGlobalUI();
 
     if (document.getElementById('tv_chart')) {
-        initWebSocket(); // 메인 화면
-    } 
+        initWebSocket();
+    }
     
     setInterval(() => {
         saveState();
@@ -37,20 +43,50 @@ window.addEventListener('load', () => {
     }, 1000);
 });
 
-// 데이터 저장/로드
+// [NEW] 실전 모드 감지 함수
+function checkRealMode() {
+    const config = JSON.parse(localStorage.getItem('neuroConfig') || '{}');
+    if(config.apiKey && config.apiKey.length > 5) {
+        appState.isRealMode = true;
+        
+        // 월렛 페이지라면 UI 즉시 변경
+        const modeText = document.getElementById('system-mode-text');
+        const keyDisplay = document.getElementById('api-key-display');
+        const panel = document.getElementById('api-status-panel');
+        const badge = document.getElementById('header-status-badge');
+
+        if(modeText && keyDisplay && panel) {
+            modeText.innerText = "REAL TRADING (ACTIVE)";
+            modeText.style.color = "#00ff41"; // 녹색
+            
+            // 키의 앞 4자리만 보여주고 나머지는 별표 처리 (보안)
+            const maskedKey = config.apiKey.substring(0, 4) + "****" + config.apiKey.substring(config.apiKey.length-4);
+            keyDisplay.innerText = `API: ${maskedKey}`;
+            keyDisplay.style.color = "#fff";
+            
+            panel.style.borderLeftColor = "#00ff41"; // 패널 왼쪽 선 녹색으로
+        }
+        
+        if(badge) {
+            badge.innerText = "REAL NET";
+            badge.style.borderColor = "#00ff41";
+            badge.style.color = "#00ff41";
+        }
+    }
+}
+
 function saveState() {
     localStorage.setItem('neuroBotData', JSON.stringify(appState));
 }
+
 function loadState() {
     const data = localStorage.getItem('neuroBotData');
     if (data) {
         appState = JSON.parse(data);
-        // 기존 데이터에 카운터가 없으면 초기화
         if(appState.totalLogCount === undefined) appState.totalLogCount = appState.logs.length;
     }
 }
 
-// 초기 데이터
 function generateInitialData() {
     appState.tradeHistory = [];
     for(let i=0; i<15; i++) {
@@ -72,15 +108,13 @@ function generateInitialData() {
     saveState();
 }
 
-// [통합] 화면 렌더링
 function renderGlobalUI() {
-    // 자산 공통
     const els = {
         total: document.getElementById('total-val'),
         bal: document.getElementById('real-balance'),
         prof: document.getElementById('real-profit'),
         win: document.getElementById('win-rate-display'),
-        logCnt: document.getElementById('log-count-display') // 로그 카운터 ID
+        logCnt: document.getElementById('log-count-display')
     };
 
     if(els.total) els.total.innerText = `$ ${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
@@ -92,18 +126,16 @@ function renderGlobalUI() {
         els.prof.className = `num-font ${profit>=0?'text-green':'text-red'}`;
     }
 
-    // [NEW] 로그 카운터 업데이트 (100만 도달 시 빨간색 경고)
     if(els.logCnt) {
         els.logCnt.innerText = `[${appState.totalLogCount.toLocaleString()}]`;
         if(appState.totalLogCount >= 1000000) {
-            els.logCnt.style.color = '#ff003c'; // RED (FULL)
+            els.logCnt.style.color = '#ff003c';
             els.logCnt.innerText += " FULL";
         } else {
             els.logCnt.style.color = '#fff';
         }
     }
 
-    // 지갑 리스트
     const histBody = document.getElementById('history-body');
     if(histBody) {
         let html = '';
@@ -126,7 +158,6 @@ function renderGlobalUI() {
         }
     }
 
-    // 입출금 리스트
     const transBody = document.getElementById('transfer-body');
     if(transBody) {
         let html = '';
@@ -143,7 +174,6 @@ function renderGlobalUI() {
     }
 }
 
-// 입출금 로직
 function processTransaction(amount) {
     if(!amount || amount <= 0) return alert("Invalid Amount");
     if(amount < 0 && (appState.balance + amount) < 0) return alert("Insufficient Funds");
@@ -187,7 +217,6 @@ function openModal(mode) {
 }
 function closeModal() { document.getElementById('transaction-modal').style.display = 'none'; }
 
-// 메인 웹소켓
 function initWebSocket() {
     socket = new WebSocket(BINANCE_WS_URL);
     socket.onmessage = (e) => {
@@ -206,27 +235,20 @@ function initWebSocket() {
         const balEl = document.getElementById('real-balance');
         if(balEl) balEl.innerText = dispBal.toLocaleString(undefined, {minimumFractionDigits:2});
 
-        // 랜덤 로그 생성 (확률)
         if(Math.random() < 0.05) addLog(isBuy?'LONG':'SHORT', `Price ${price.toFixed(1)} Executed`);
     };
     socket.onclose = () => setTimeout(initWebSocket, 2000);
 }
 
-// [핵심] 로그 추가 및 한계 설정 (100만 제한)
 function addLog(type, msg) {
-    // 100만 건 도달 시 로그 생성 중단
     if (appState.totalLogCount >= 1000000) return;
 
     const time = new Date().toLocaleTimeString('en-US',{hour12:false});
-    
-    // 로그 데이터 추가
     appState.logs.unshift({time, type, msg});
-    appState.totalLogCount++; // 카운터 증가
+    appState.totalLogCount++;
 
-    // 메모리 관리를 위해 배열 자체는 500개만 유지 (카운터는 계속 올라감)
     if(appState.logs.length > 500) appState.logs.pop();
     
-    // UI 업데이트 (터미널)
     const terminal = document.getElementById('terminal');
     if(terminal) {
         const color = type==='LONG'?'pos-long':'pos-short';
@@ -236,11 +258,9 @@ function addLog(type, msg) {
     }
 }
 
-// [핵심] 로그 저장 및 카운터 초기화 (Reset)
 function exportLogs() {
     if(appState.logs.length === 0) return alert("No logs to save.");
     
-    // CSV 생성
     let csv = "Time,Type,Message\n";
     appState.logs.forEach(l => csv += `${l.time},${l.type},${l.msg}\n`);
     const blob = new Blob([csv], {type:'text/csv'});
@@ -249,17 +269,14 @@ function exportLogs() {
     link.download = `NeuroLog_${Date.now()}.csv`;
     link.click();
 
-    // [초기화] 저장 후 카운터와 로그 삭제
     appState.logs = [];
     appState.totalLogCount = 0;
     saveState();
     
-    // 터미널 화면도 비우기
     const terminal = document.getElementById('terminal');
     if(terminal) terminal.innerHTML = '';
-    
-    renderGlobalUI(); // 카운터 0으로 갱신
-    alert("DATA SAVED. LOG COUNTER RESET TO 0.");
+    renderGlobalUI();
+    alert("LOGS SAVED & RESET.");
 }
 
 function highlightMenu() {
