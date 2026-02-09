@@ -6,64 +6,6 @@
     <title>CYBER TRADER</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="pro-style.css">
-    <style>
-        /* [추가된 시각화 전용 스타일] */
-        .ai-hud-panel {
-            background: rgba(16, 20, 30, 0.95);
-            border: 1px solid rgba(0, 255, 65, 0.2);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.05);
-        }
-        /* 레이더 애니메이션 */
-        .radar-box {
-            width: 50px; height: 50px;
-            border: 2px solid rgba(0, 243, 255, 0.3);
-            border-radius: 50%;
-            position: relative;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .radar-scan {
-            width: 100%; height: 100%;
-            border-radius: 50%;
-            background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 243, 255, 0.5) 360deg);
-            animation: radar-spin 2s linear infinite;
-            position: absolute; top: 0; left: 0;
-            opacity: 0.3;
-        }
-        .radar-dot {
-            width: 6px; height: 6px; background: #fff; border-radius: 50%;
-            position: absolute; top: 10px; right: 10px;
-            box-shadow: 0 0 10px #fff;
-            animation: blink 1s infinite;
-        }
-        
-        /* 분석 텍스트 라인 */
-        .scan-text-line {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem; color: var(--text-secondary);
-            margin-bottom: 4px; display: flex; justify-content: space-between;
-        }
-        .check-pass { color: var(--color-up); font-weight: bold; }
-        .check-wait { color: var(--accent); }
-        
-        /* 확신도 게이지 */
-        .confidence-bar-bg {
-            width: 100%; height: 6px; background: #222; border-radius: 3px; margin-top: 8px; overflow: hidden;
-        }
-        .confidence-bar-fill {
-            height: 100%; width: 0%; background: var(--color-up);
-            border-radius: 3px;
-            transition: width 0.3s;
-            box-shadow: 0 0 10px var(--color-up);
-        }
-
-        @keyframes radar-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-    </style>
 </head>
 <body>
 
@@ -80,13 +22,28 @@
         
         <div class="status-bar">
             <div class="text-green" style="display:flex; align-items:center; gap:5px;">
-                <i class="fas fa-bolt"></i> BINANCE <span style="color:var(--text-primary);">14ms</span>
+                <i class="fas fa-bolt"></i> BINANCE <span style="color:var(--text-primary);">12ms</span>
             </div>
             <div class="num-font" id="coin-price" style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);">---</div>
         </div>
 
-        <div class="cyber-panel" style="padding:0; overflow:hidden; height:45vh; min-height:400px; margin-bottom:15px;">
+        <div class="cyber-panel" style="padding:0; overflow:hidden; height:45vh; min-height:400px; margin-bottom:10px;">
             <div id="tv_chart"></div>
+        </div>
+
+        <div class="data-mining-panel">
+            <div class="mining-left">
+                <div style="font-size:0.75rem; color:var(--accent); font-weight:bold; letter-spacing:1px; margin-bottom:5px;">
+                    <i class="fas fa-microchip"></i> NEURAL DATA PROCESSED
+                </div>
+                <div class="num-font" id="data-mining-counter" style="font-size:2rem; font-weight:bold; color:#fff; text-shadow:0 0 15px rgba(255,255,255,0.3);">
+                    425,102
+                </div>
+            </div>
+            
+            <button class="save-tag big-btn" onclick="exportLogs()">
+                <i class="fas fa-download"></i> CSV
+            </button>
         </div>
 
         <div class="cyber-panel" style="text-align: center; padding: 25px 15px;">
@@ -106,16 +63,13 @@
                 <div class="radar-box">
                     <div class="radar-scan"></div>
                     <div class="radar-dot"></div>
-                    <i class="fas fa-crosshairs" style="color:rgba(255,255,255,0.7); font-size:1.2rem; position:absolute;"></i>
                 </div>
-                
                 <div style="flex:1;">
                     <div class="scan-text-line">TARGET: <span id="hud-target" style="color:#fff;">SCANNING...</span></div>
                     <div class="scan-text-line">RSI(14): <span id="hud-rsi" class="check-wait">WAIT...</span></div>
                     <div class="scan-text-line">VOL: <span id="hud-vol" class="check-wait">CHECKING</span></div>
                 </div>
             </div>
-
             <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-secondary); margin-bottom:4px;">
                 <span>AI CONFIDENCE</span>
                 <span id="hud-score">0%</span>
@@ -123,12 +77,6 @@
             <div class="confidence-bar-bg">
                 <div id="hud-bar" class="confidence-bar-fill"></div>
             </div>
-        </div>
-
-        <div style="text-align:right; margin-bottom:15px;">
-             <button class="save-tag" onclick="exportLogs()">
-                <i class="fas fa-download" style="color:var(--color-up); margin-right:5px;"></i> DOWNLOAD CSV
-            </button>
         </div>
 
         <div class="ctrl-group">
@@ -155,11 +103,7 @@
     <script src="pro-script.js"></script>
     <script>
         function closeConfig() { document.getElementById('config-modal').style.display = 'none'; }
-        
-        // 로그 헬퍼
-        window.addSystemLog = function(type, msg) {
-            // 이제 메인 화면에는 텍스트 로그를 띄우지 않고 HUD 애니메이션으로 대체합니다.
-        };
+        window.addSystemLog = function(type, msg) {}; // HUD가 대체함
 
         window.addEventListener('load', () => {
             new TradingView.widget({
