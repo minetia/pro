@@ -4,16 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CYBER TRADER</title>
-    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
     <link rel="stylesheet" href="pro-style.css">
 </head>
 <body>
 
     <header class="cyber-header">
         <div class="brand-logo">NEURAL <span>NODE</span></div>
-        <div style="font-size:0.7rem; color:var(--neon-cyan); border:1px solid var(--neon-cyan); padding:2px 6px; border-radius:2px;">
+        <div id="header-status-badge" style="font-size:0.75rem; color:var(--text-secondary); background:var(--bg-main); padding:4px 8px; border-radius:4px;">
             ONLINE
         </div>
     </header>
@@ -24,33 +22,31 @@
         
         <div class="status-bar">
             <div class="text-green" style="display:flex; align-items:center; gap:5px;">
-                <i class="fas fa-bolt"></i> BINANCE <span style="color:#fff;">12ms</span>
+                <i class="fas fa-bolt"></i> BINANCE <span style="color:var(--text-primary);">12ms</span>
             </div>
-            <div class="num-font" id="coin-price" style="font-size:1.1rem; font-weight:bold; color:#fff;">---</div>
+            <div class="num-font" id="coin-price" style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);">---</div>
         </div>
 
-        <div class="cyber-panel" style="padding:0; overflow:hidden; height:55vh; min-height:400px; margin-bottom:15px;">
+        <div class="cyber-panel" style="padding:0; overflow:hidden; height:45vh; min-height:350px; margin-bottom:15px;">
             <div id="tv_chart"></div>
         </div>
 
         <div class="cyber-panel">
             <div style="display:flex; justify-content:space-between; align-items:flex-end;">
                 <div>
-                    <div style="font-size:0.7rem; color:#888; margin-bottom:5px;">EST. BALANCE (USDT)</div>
-                    <div class="num-font" id="real-balance" style="font-size:1.8rem; font-weight:bold; color:#fff; line-height:1;">---</div>
+                    <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:5px;">TOTAL NET WORTH (USDT)</div>
+                    <div class="num-font" id="total-val" style="font-size:1.8rem; font-weight:bold; color:var(--text-primary); line-height:1;">---</div>
                 </div>
                 <div style="text-align:right;">
-                    <div style="font-size:0.7rem; color:#888; margin-bottom:5px;">24H PNL</div>
+                    <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:5px;">24H PNL</div>
                     <div class="num-font" id="real-profit" style="font-size:1.2rem; font-weight:bold; line-height:1;">---</div>
                 </div>
             </div>
         </div>
 
         <div class="log-header-area">
-            <span style="font-size:0.8rem; font-weight:bold; color:#888; display:flex; align-items:center; gap:5px;">
-                <span style="color:var(--neon-green); font-weight:900;">&gt;_</span> 
-                SYSTEM LOGS 
-                <span id="log-count-display" style="color:#fff; font-family:'JetBrains Mono';">[0]</span>
+            <span style="font-size:0.85rem; font-weight:bold; color:var(--text-secondary); display:flex; align-items:center; gap:5px;">
+                <i class="fas fa-terminal"></i> SYSTEM LOGS <span id="log-count-display" style="color:var(--text-primary); font-family:'JetBrains Mono';">[0]</span>
             </span>
             <div class="save-tag" onclick="exportLogs()">
                 <i class="fas fa-download"></i> CSV
@@ -60,19 +56,23 @@
         <div class="terminal-window" id="terminal"></div>
 
         <div class="ctrl-group">
-            <button class="cyber-btn btn-auto" onclick="alert('AUTO TRADING STARTED')">AUTO</button>
-            <button class="cyber-btn btn-stop" onclick="alert('SYSTEM HALTED')">STOP</button>
+            <button class="cyber-btn btn-auto" onclick="alert('AUTO TRADING IS RUNNING...')">
+                AUTO RUNNING
+            </button>
+            <button class="cyber-btn btn-stop" onclick="alert('CANNOT STOP IN REAL MODE')">
+                STOP
+            </button>
         </div>
     </div>
 
-    <div id="config-modal" class="modal-overlay">
+    <div id="config-modal" class="modal-overlay" style="display: none;">
         <div class="modal-box">
-            <h3 style="color:var(--neon-cyan); margin-bottom:15px;">CONFIGURATION</h3>
+            <h3 style="color:var(--text-primary); margin-bottom:15px;">CONFIGURATION</h3>
             <input type="text" id="api-key" class="modal-input" placeholder="API ACCESS KEY">
             <input type="password" id="secret-key" class="modal-input" placeholder="API SECRET KEY">
             <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="cyber-btn" onclick="closeConfig()" style="background:#333;">CANCEL</button>
-                <button class="cyber-btn" onclick="saveConfig()" style="background:var(--neon-cyan); color:#000;">SAVE</button>
+                <button class="cyber-btn btn-stop" onclick="closeConfig()">CANCEL</button>
+                <button class="cyber-btn btn-auto" onclick="saveConfig()">SAVE</button>
             </div>
         </div>
     </div>
@@ -81,10 +81,24 @@
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script src="pro-script.js"></script>
     <script>
+        // 모달 제어 함수 (혹시 몰라 여기에 추가)
+        function closeConfig() { document.getElementById('config-modal').style.display = 'none'; }
+        
         window.addEventListener('load', () => {
             new TradingView.widget({
-                "container_id": "tv_chart", "symbol": "BINANCE:BTCUSDT", "interval": "1",
-                "theme": "dark", "style": "1", "toolbar_bg": "#000", "hide_side_toolbar": true, "autosize": true
+                "container_id": "tv_chart",
+                "symbol": "BINANCE:BTCUSDT",
+                "interval": "1",
+                "timezone": "Asia/Seoul",
+                "theme": "dark",
+                "style": "1",
+                "locale": "en",
+                "toolbar_bg": "#1e2329",
+                "enable_publishing": false,
+                "hide_side_toolbar": true,
+                "allow_symbol_change": true,
+                "autosize": true,
+                "backgroundColor": "rgba(18, 22, 28, 1)" // 배경색 일치
             });
         });
     </script>
