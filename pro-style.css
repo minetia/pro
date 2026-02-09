@@ -1,32 +1,169 @@
-/* ... 기존 스타일 유지 ... */
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
-/* [NEW] 퍼센트 버튼 그룹 스타일 */
-.percent-group {
-    display: flex;
-    gap: 8px; /* 버튼 사이 간격 */
-    margin-top: 5px;
-    margin-bottom: 15px;
+/* [1] 전역 변수 (색상 팔레트) */
+:root {
+    --bg-main: linear-gradient(to bottom, #141824, #0f1118); 
+    --bg-card: #1e2329; 
+    --border-highlight: 1px solid rgba(255, 255, 255, 0.1);
+    --border-soft: #2b3139;
+    --text-primary: #eaecef;  
+    --text-secondary: #848e9c;
+    --color-up: #2ebd85;
+    --color-down: #f6465d;
+    --accent: #fcd535;
 }
 
-.percent-btn {
-    flex: 1; /* 4개 버튼 균등 분할 */
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid var(--border-soft);
-    color: var(--text-secondary);
-    padding: 8px 0;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.2s;
+* { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+
+body { 
+    background: var(--bg-main) !important; 
+    color: var(--text-primary) !important; 
+    font-family: 'Pretendard', sans-serif;
+    padding-top: 110px; padding-bottom: 40px; 
+    overflow-x: hidden; line-height: 1.5; min-height: 100vh;
 }
 
-.percent-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+/* 숫자 전용 폰트 */
+.num-font { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+.text-green { color: var(--color-up) !important; }
+.text-red { color: var(--color-down) !important; }
+
+/* [2] 헤더 & 네비게이션 */
+.cyber-header {
+    position: fixed; top: 0; left: 0; width: 100%; height: 55px;
+    background: #1a1e26; border-bottom: 1px solid #2b3139;
+    z-index: 4000; display: flex; justify-content: space-between; align-items: center; 
+    padding: 0 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.brand-logo { font-size: 1.1rem; font-weight: 700; color: #fff; }
+.brand-logo span { color: var(--accent); }
+
+.cyber-nav {
+    position: fixed; top: 55px; left: 0; width: 100%; height: 50px;
+    background: #161a21; border-bottom: 1px solid #2b3139;
+    z-index: 3900; display: flex; align-items: center; overflow-x: auto; white-space: nowrap; 
+    padding: 0 10px;
+}
+.cyber-nav::-webkit-scrollbar { display: none; }
+.nav-item {
+    flex-shrink: 0; padding: 0 15px; height: 100%; display: flex; align-items: center;
+    color: #848e9c; font-weight: 600; font-size: 0.85rem; text-decoration: none; 
+    border-bottom: 3px solid transparent; transition: all 0.2s;
+}
+.nav-item.active { color: #fff; border-bottom-color: var(--accent); }
+
+/* [3] 공통 패널 스타일 */
+.main-content { max-width: 800px; margin: 0 auto; padding: 15px; }
+.cyber-panel {
+    background: var(--bg-card) !important; 
+    border-radius: 12px; padding: 20px; margin-bottom: 15px;
+    border: 1px solid #2b3139; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     color: #fff;
-    border-color: #fff;
 }
 
-.percent-btn:active {
-    transform: scale(0.95);
+/* [4] 버튼 스타일 (다크 모드 강제) */
+.cyber-btn {
+    width: 100%; padding: 15px; 
+    border: none; border-radius: 8px; 
+    font-weight: 700; font-size: 1rem; 
+    cursor: pointer; color: #fff !important; 
+    background-color: #2b3139; 
+    transition: 0.2s; margin-top: 5px;
 }
+.cyber-btn:active { transform: scale(0.98); opacity: 0.8; }
+.btn-start { background-color: var(--color-up) !important; } 
+.btn-stop { background-color: var(--color-down) !important; }
+
+/* [5] 입력창 스타일 (다크 모드 강제) */
+.modal-input {
+    width: 100%; padding: 14px; 
+    background: #141824 !important; 
+    border: 1px solid #2b3139 !important; 
+    color: #fff !important; 
+    border-radius: 8px; 
+    font-size: 1rem; margin-bottom: 10px;
+}
+.modal-input:focus { border-color: var(--accent) !important; outline: none; }
+.modal-input::placeholder { color: #555; }
+
+/* [6] 드롭다운(Select) 커스텀 디자인 */
+.select-box {
+    appearance: none; 
+    background-color: #141824 !important;
+    color: #fff !important;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23fcd535%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 12px;
+    cursor: pointer;
+    text-align: center; text-align-last: center;
+}
+
+/* [7] 퍼센트 버튼 그룹 (지갑용) */
+.percent-group {
+    display: flex; gap: 8px; margin-top: 8px; margin-bottom: 20px;
+}
+.percent-btn {
+    flex: 1; 
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #2b3139;
+    color: #fff; padding: 10px 0;
+    border-radius: 8px; font-size: 0.8rem; font-weight: bold;
+    cursor: pointer; transition: 0.2s;
+}
+.percent-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+.percent-btn:active { transform: scale(0.95); }
+
+/* [8] AI 페이지 전략 카드 */
+.main-content > div[style*="display:flex"] { gap: 20px !important; } /* 카드 간격 확보 */
+.strategy-card { 
+    background: #141824; border: 1px solid #2b3139; 
+    padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; flex: 1; 
+    color: #848e9c;
+}
+.strategy-card.active { 
+    border-color: var(--accent); color: #fff; 
+    background: rgba(252, 213, 53, 0.1); 
+}
+.st-icon { font-size: 1.5rem; margin-bottom: 8px; display: block; }
+
+/* [9] 메인 화면 요소들 */
+.search-panel {
+    display: flex; gap: 10px; background: var(--bg-card); padding: 12px;
+    border-radius: 12px; border: 1px solid #2b3139; margin-bottom: 15px; align-items: center;
+}
+#coin-search-input { background: transparent; border: none; color: #fff; width: 100%; font-size: 1rem; font-weight: bold; text-transform: uppercase; }
+
+.table-header-row {
+    display: flex; background: rgba(0,0,0,0.2); padding: 10px;
+    font-size: 0.75rem; color: #848e9c; font-weight: bold; border-bottom: 1px solid #2b3139;
+}
+.ledger-row {
+    display: flex; padding: 12px 10px; border-bottom: 1px solid #2b3139;
+    align-items: center; font-size: 0.85rem; color: #fff;
+}
+.ledger-date { font-size: 0.75rem; color: #666; }
+.ledger-pnl { font-weight: bold; text-align: right; }
+
+/* 데이터 마이닝 패널 */
+.data-mining-panel {
+    background: #161a21; border: 1px solid #2b3139; border-left: 4px solid var(--accent);
+    border-radius: 12px; padding: 15px; margin-bottom: 20px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.save-tag { 
+    background: #2b3139; color: #fff; border: 1px solid #444; 
+    padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+}
+
+/* 숫자 크기 자동 조절 (깨짐 방지) */
+#total-val, #bank-balance-display, .hero-number {
+    font-size: clamp(1.8rem, 6vw, 2.5rem); font-weight: 700; color: #fff;
+    text-shadow: 0 0 20px rgba(255,255,255,0.1);
+}
+
+.ai-brain-container { margin: 20px auto; font-size: 3rem; color: var(--accent); background: radial-gradient(circle, rgba(252, 213, 53, 0.1) 0%, transparent 70%); width: 80px; height: 80px; border-radius: 50%; display:flex; align-items:center; justify-content:center; }
+.ctrl-group { display: flex; gap: 10px; margin-bottom: 15px; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: none; justify-content: center; align-items: center; }
+.modal-box { background: #1e2329; border: 1px solid #444; border-radius: 16px; padding: 25px; width: 90%; max-width: 350px; }
