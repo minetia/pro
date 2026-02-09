@@ -4,75 +4,227 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI Real Trading - Neuro Bot PRO</title>
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     
-    <link rel="stylesheet" href="pro-style.css">
+    <style>
+        /* 2. 디자인 리마스터 CSS */
+        :root {
+            --bg-color: #050505;
+            --panel-bg: #0a0a0a;
+            --border-color: #1a1a1a;
+            --neon-green: #00ff88;
+            --neon-red: #ff3344;
+            --text-main: #e0e0e0;
+            --text-dim: #666;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            font-family: 'Rajdhani', sans-serif; /* 메인 폰트 변경 */
+            overflow-x: hidden; 
+            padding-top: 140px; /* 헤더 공간 확보 (50+45+45) */
+            padding-bottom: 20px; 
+        }
+
+        /* 숫자 전용 폰트 (해커 느낌) */
+        .num-font { font-family: 'JetBrains Mono', monospace; }
+
+        /* === [1] 최상단 슈퍼 헤더 (Top: 0) === */
+        .ai-super-header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 50px;
+            background: rgba(5, 5, 5, 0.95); border-bottom: 1px solid #111;
+            z-index: 3000; display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px; backdrop-filter: blur(5px);
+        }
+        .brand-logo { font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; color: #fff; }
+        .brand-logo span { color: var(--neon-green); }
+        
+        .search-box { position: relative; }
+        .search-box input {
+            background: #111; border: 1px solid #333; color: #fff;
+            padding: 5px 10px 5px 30px; border-radius: 4px; font-size: 0.8rem;
+            width: 120px; transition: 0.3s; font-family: 'Rajdhani', sans-serif;
+        }
+        .search-box input:focus { width: 160px; border-color: var(--neon-green); }
+        .search-box i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #666; font-size: 0.7rem; }
+
+        /* === [2] 메뉴 내비게이션 (Top: 50px) === */
+        .nav-bar {
+            position: fixed; top: 50px; left: 0; width: 100%; height: 45px;
+            background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid #111;
+            z-index: 2900; white-space: nowrap; overflow-x: auto;
+            display: flex; align-items: center; padding: 0 10px;
+        }
+        .nav-bar::-webkit-scrollbar { display: none; } /* 스크롤바 숨김 */
+        
+        .nav-item {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: #888; text-decoration: none; font-size: 0.9rem; font-weight: 600;
+            padding: 0 15px; height: 100%; border-bottom: 2px solid transparent; transition: 0.3s;
+        }
+        .nav-item i { font-size: 0.8rem; }
+        .nav-item.active, .nav-item:hover { color: #fff; border-bottom-color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,136,0.3); }
+
+        /* === [3] 상태 표시줄 (Top: 95px) === */
+        .status-bar {
+            position: fixed; top: 95px; left: 0; width: 100%; height: 45px;
+            background: #000; border-bottom: 1px solid #222;
+            z-index: 2800; display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px;
+        }
+        .status-badge { 
+            background: rgba(0, 255, 136, 0.1); color: var(--neon-green); 
+            padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px;
+        }
+        .ping-info { font-size: 0.75rem; color: #666; margin-left: 8px; }
+        .main-price { font-size: 1.1rem; font-weight: 700; color: #fff; }
+
+        /* === 메인 콘텐츠 === */
+        .main-content { max-width: 800px; margin: 0 auto; }
+
+        /* 차트 컨테이너 */
+        #tv_chart { width: 100%; height: 40vh; border-bottom: 1px solid #222; }
+
+        /* 자산 카드 (깔끔하게 정리) */
+        .asset-card {
+            background: var(--panel-bg); border: 1px solid var(--border-color);
+            margin: 15px; padding: 20px; border-radius: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .asset-label { font-size: 0.75rem; color: #666; font-weight: 600; margin-bottom: 4px; letter-spacing: 1px; }
+        .asset-value { font-size: 1.4rem; color: #fff; font-weight: 700; }
+        .pnl-value { font-size: 1rem; font-weight: 700; }
+        
+        /* 로그 섹션 */
+        .log-header-area {
+            display: flex; justify-content: space-between; align-items: center;
+            margin: 20px 15px 10px; padding-bottom: 10px; border-bottom: 1px solid #222;
+        }
+        .log-title { font-size: 0.85rem; font-weight: 700; color: #888; letter-spacing: 1px; }
+        .save-btn {
+            background: #111; border: 1px solid #333; color: #ccc;
+            padding: 6px 12px; font-size: 0.7rem; border-radius: 4px; font-weight: 600;
+            display: flex; align-items: center; gap: 6px; cursor: pointer; font-family: 'Rajdhani';
+        }
+
+        /* 터미널 박스 (가독성 개선) */
+        .terminal {
+            background: #000; border: 1px solid #222; margin: 0 15px; height: 300px;
+            overflow-y: auto; padding: 10px; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem; border-radius: 4px;
+        }
+        .log-row {
+            display: grid; grid-template-columns: 70px 40px 80px 1fr; gap: 10px;
+            padding: 6px 0; border-bottom: 1px solid #111; align-items: center;
+        }
+        .log-row:last-child { border-bottom: none; }
+        .t-time { color: #555; }
+        .t-pos.long { color: var(--neon-green); }
+        .t-pos.short { color: var(--neon-red); }
+        .t-price { color: #ccc; text-align: right; }
+        .t-msg { color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* 하단 버튼 */
+        .ctrl-panel { padding: 15px; display: flex; gap: 10px; }
+        .ctrl-btn {
+            flex: 1; padding: 15px; border: none; border-radius: 4px;
+            font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1rem;
+            cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-start { background: #002200; color: var(--neon-green); border: 1px solid #004400; }
+        .btn-stop { background: #220000; color: var(--neon-red); border: 1px solid #440000; }
+
+        /* 애니메이션 */
+        .blink { animation: blinker 1.5s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0.3; } }
+        
+        /* 텍스트 컬러 유틸리티 */
+        .text-green { color: var(--neon-green); }
+        .text-red { color: var(--neon-red); }
+    </style>
 </head>
 <body>
 
-    <div class="ai-super-header">
-        <div class="brand-catchphrase">
-            NEURAL ARCHITECT <span style="color:#666;">//</span> GLOBAL NODE
+    <header class="ai-super-header">
+        <div class="brand-logo">NEURAL <span>ARCHITECT</span></div>
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="SEARCH PAIR">
         </div>
-        <div class="search-wrapper">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" class="search-input" placeholder="SEARCH PAIR (e.g. ETH)...">
+    </header>
+
+    <nav class="nav-bar">
+        <a href="index.html" class="nav-item active"><i class="fas fa-chart-pie"></i> DASHBOARD</a>
+        <a href="#" class="nav-item"><i class="fas fa-robot"></i> AI AGENT</a>
+        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i> WALLET</a>
+        <a href="#" class="nav-item"><i class="fas fa-layer-group"></i> STRATEGY</a>
+        <a href="#" class="nav-item"><i class="fas fa-cog"></i> SETTING</a>
+    </nav>
+
+    <div class="status-bar">
+        <div style="display:flex; align-items:center;">
+            <span class="status-badge"><i class="fas fa-bolt"></i> BINANCE</span>
+            <span class="ping-info num-font" id="latency-val">12ms</span>
+        </div>
+        <div>
+            <span class="main-price num-font" id="coin-price">---</span>
         </div>
     </div>
 
-    <div id="internal-header-slot"></div>
-
-    <div class="status-bar-fixed">
-        <div class="status-left">
-            <span class="mode-badge">BINANCE API</span>
-            <span class="latency-box"><i class="fas fa-bolt"></i> PING: <span id="latency-val">32ms</span></span>
-        </div>
-        <div class="status-right">
-            <span id="connection-status" class="status-text blink">INITIALIZING...</span>
-            <span id="coin-price" class="live-price">---</span>
-        </div>
-    </div>
-
-    <main class="main-content">
+    <div class="main-content">
         <div id="tv_chart"></div>
 
-        <div class="asset-box">
-            <div class="asset-item">
-                <div class="label">EST. BALANCE (USDT)</div>
-                <div id="real-balance" class="value">50,000.00</div>
+        <div class="asset-card">
+            <div>
+                <div class="asset-label">EST. BALANCE (USDT)</div>
+                <div class="asset-value num-font" id="real-balance">50,000.00</div>
             </div>
-            <div class="asset-item text-right">
-                <div class="label">24H PNL (USDT)</div>
-                <div id="real-profit" class="value success">+0.00</div>
+            <div style="text-align:right;">
+                <div class="asset-label">24H PROFIT</div>
+                <div class="pnl-value num-font text-green" id="real-profit">+0.00</div>
             </div>
         </div>
 
-        <div class="log-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>REAL-TIME EXECUTION LOG:</span>
-            <button onclick="downloadExcel()" style="background:#111; border:1px solid #333; color:#ccc; padding:4px 10px; font-size:0.7rem; cursor:pointer; border-radius:4px; display:flex; align-items:center; gap:5px;">
-                <i class="fas fa-file-csv" style="color:#0f0;"></i> SAVE LOGS
-            </button>
-        </div>
-        
-        <div class="terminal-box" id="terminal">
-            <div id="log-anchor"></div>
+        <div class="log-header-area">
+            <span class="log-title"><i class="fas fa-terminal"></i> LIVE EXECUTION LOG</span>
+            <div class="save-btn" onclick="downloadExcel()">
+                <i class="fas fa-download"></i> CSV SAVE
+            </div>
         </div>
 
-        <div class="button-group">
-            <button onclick="startAi()" class="btn btn-start">AUTO TRADE</button>
-            <button onclick="stopAi()" class="btn btn-stop">HALT SYSTEM</button>
-        </div>
-    </main>
+        <div class="terminal" id="terminal">
+            </div>
 
-    <script src="pro-script.js"></script>
-    
+        <div class="ctrl-panel">
+            <button class="ctrl-btn btn-start" onclick="startAi()">AUTO TRADE</button>
+            <button class="ctrl-btn btn-stop" onclick="stopAi()">HALT SYSTEM</button>
+        </div>
+    </div>
+
     <script>
+        const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
+        let socket;
+        let myHoldings = 0.5; 
+        let startBalance = 50000.00; 
+        let startPrice = 0; 
+        let tradeLogs = [];
+
         window.addEventListener('load', () => {
+            // 차트 로드
             new TradingView.widget({
                 "container_id": "tv_chart",
-                "symbol": "BINANCE:BTCUSDT", 
+                "symbol": "BINANCE:BTCUSDT",
                 "interval": "1",
                 "timezone": "Asia/Seoul",
                 "theme": "dark",
@@ -84,7 +236,89 @@
                 "allow_symbol_change": true,
                 "autosize": true
             });
+
+            // 웹소켓 시작
+            initWebSocket();
+            startLatencyUpdate();
         });
+
+        function initWebSocket() {
+            socket = new WebSocket(BINANCE_WS_URL);
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                const currentPrice = parseFloat(data.p);
+                const quantity = parseFloat(data.q);
+                const isBuyerMaker = data.m;
+
+                if (startPrice === 0) startPrice = currentPrice;
+                updateUI(currentPrice, quantity, !isBuyerMaker);
+            };
+        }
+
+        function updateUI(currentPrice, quantity, isBuy) {
+            // 가격 업데이트
+            const priceEl = document.getElementById('coin-price');
+            priceEl.innerText = currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2});
+            priceEl.style.color = isBuy ? '#00ff88' : '#ff3344';
+
+            // 자산 업데이트
+            const priceDiff = currentPrice - startPrice; 
+            const liveProfit = priceDiff * myHoldings; 
+            const currentBalance = startBalance + liveProfit;
+
+            document.getElementById('real-balance').innerText = currentBalance.toLocaleString(undefined, {minimumFractionDigits: 2});
+            
+            const profitEl = document.getElementById('real-profit');
+            const sign = liveProfit >= 0 ? '+' : '';
+            profitEl.innerText = `${sign}${liveProfit.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            profitEl.className = `pnl-value num-font ${liveProfit >= 0 ? 'text-green' : 'text-red'}`;
+
+            // 로그 추가 (거래량이 좀 있거나 랜덤)
+            if (quantity > 0.05 || Math.random() < 0.05) {
+                const signal = isBuy ? 'Strong Buy Vol' : 'Sell Pressure';
+                const pos = isBuy ? 'LONG' : 'SHORT';
+                addLog(pos, currentPrice, signal);
+            }
+        }
+
+        function addLog(pos, price, signal) {
+            const terminal = document.getElementById('terminal');
+            const time = new Date().toLocaleTimeString('en-US', {hour12: false});
+            
+            // 데이터 저장 (엑셀용)
+            tradeLogs.push({ time, pos, price, signal });
+
+            const row = `
+                <div class="log-row">
+                    <span class="t-time">${time}</span>
+                    <span class="t-pos ${pos === 'LONG' ? 'long' : 'short'}">${pos}</span>
+                    <span class="t-price num-font">${price.toLocaleString()}</span>
+                    <span class="t-msg">${signal}</span>
+                </div>`;
+            
+            terminal.insertAdjacentHTML('afterbegin', row);
+            if(terminal.children.length > 50) terminal.removeChild(terminal.lastChild);
+        }
+
+        function downloadExcel() {
+            if(tradeLogs.length === 0) { alert("No data yet."); return; }
+            let csv = "Time,Pos,Price,Signal\n";
+            tradeLogs.forEach(r => csv += `${r.time},${r.pos},${r.price},${r.signal}\n`);
+            const link = document.createElement("a");
+            link.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
+            link.download = "trade_log.csv";
+            link.click();
+        }
+
+        function startLatencyUpdate() {
+            setInterval(() => {
+                const ms = Math.floor(Math.random() * 30) + 10;
+                document.getElementById('latency-val').innerText = ms + "ms";
+            }, 2000);
+        }
+        
+        function startAi() { alert("AI SYSTEM ENGAGED."); }
+        function stopAi() { alert("SYSTEM HALTED."); }
     </script>
 </body>
 </html>
