@@ -8,66 +8,27 @@
     <link rel="stylesheet" href="pro-style.css">
 </head>
 <body>
-
     <header class="cyber-header">
         <div class="brand-logo">NEURAL <span>CORE</span></div>
-        <div style="font-size:0.7rem; color:var(--accent); border:1px solid var(--accent); padding:2px 6px; border-radius:4px;">V.3.0</div>
     </header>
 
-    <div id="internal-header-slot"></div>
+    <nav class="cyber-nav">
+        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i> DASHBOARD</a>
+        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i> WALLET</a>
+        <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i> TRANSFERS</a>
+        <a href="ai-core.html" class="nav-item active"><i class="fas fa-brain"></i> AI-CORE</a>
+    </nav>
 
     <div class="main-content">
         <div class="cyber-panel" style="text-align:center;">
             <div class="ai-brain-container"><i class="fas fa-brain"></i></div>
             <div style="font-size:1.2rem; font-weight:bold; color:#fff;">NEURAL ENGINE: <span class="text-green">READY</span></div>
-            <div style="font-size:0.8rem; color:#888;">WAITING FOR INPUTS...</div>
         </div>
-
         <div class="cyber-panel">
-            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px;"><i class="fas fa-plug"></i> CONNECT</div>
-            <input type="text" id="real-api-key" class="modal-input" placeholder="Access Key">
-            <input type="password" id="real-secret-key" class="modal-input" placeholder="Secret Key">
+            <input type="text" class="modal-input" placeholder="ACCESS KEY">
+            <button class="cyber-btn" onclick="alert('SYSTEM ARMED!')">ACTIVATE</button>
         </div>
-
-        <div class="cyber-panel">
-            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px;"><i class="fas fa-coins"></i> TARGET</div>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="target-coin" class="modal-input" value="BTC/USDT" style="text-align:center;">
-                <input type="number" id="trade-amount" class="modal-input" value="1000" style="text-align:center;">
-            </div>
-        </div>
-
-        <div style="display:flex; gap:10px; margin-bottom:20px;">
-            <div class="strategy-card active" onclick="selectStrategy(this)">
-                <div class="st-icon"><i class="fas fa-bolt"></i></div>
-                <div style="font-weight:bold; color:#fff;">SCALPING</div>
-            </div>
-            <div class="strategy-card" onclick="selectStrategy(this)">
-                <div class="st-icon"><i class="fas fa-chart-line"></i></div>
-                <div style="font-weight:bold; color:#fff;">SWING</div>
-            </div>
-        </div>
-
-        <button class="cyber-btn" onclick="activateRealTrading()">ACTIVATE SYSTEM</button>
     </div>
-
     <script src="pro-script.js"></script>
-    <script>
-        function selectStrategy(el) {
-            document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active'));
-            el.classList.add('active');
-        }
-        function activateRealTrading() {
-            const key = document.getElementById('real-api-key').value;
-            if(!key) return alert("Please enter API Key");
-            localStorage.setItem('neuroConfig', JSON.stringify({
-                apiKey: key, mode: 'REAL',
-                target: document.getElementById('target-coin').value,
-                amount: document.getElementById('trade-amount').value
-            }));
-            alert("SYSTEM ARMED!");
-            window.location.href = 'index.html';
-        }
-    </script>
 </body>
 </html>
