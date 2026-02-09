@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CYBER TRADER</title>
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <link rel="stylesheet" href="pro-style.css">
 </head>
 <body>
@@ -16,12 +18,7 @@
         </div>
     </header>
 
-    <nav class="cyber-nav">
-        <a href="index.html" class="nav-item active"><i class="fas fa-chart-pie"></i> DASHBOARD</a>
-        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i> WALLET</a>
-        <a href="transfers.html" class="nav-item"><i class="fas fa-exchange-alt"></i> TRANSFERS</a>
-        <a href="#" class="nav-item"><i class="fas fa-robot"></i> AI-CORE</a>
-    </nav>
+    <div id="internal-header-slot"></div>
 
     <div class="main-content">
         
@@ -32,7 +29,7 @@
             <div class="num-font" id="coin-price" style="font-size:1.1rem; font-weight:bold; color:#fff;">---</div>
         </div>
 
-        <div class="cyber-panel" style="padding:0; overflow:hidden; height:45vh; margin-bottom:15px;">
+        <div class="cyber-panel" style="padding:0; overflow:hidden; height:55vh; min-height:400px; margin-bottom:15px;">
             <div id="tv_chart"></div>
         </div>
 
@@ -48,18 +45,17 @@
                 </div>
             </div>
         </div>
-<div class="log-header-area">
-    <span style="font-size:0.8rem; font-weight:bold; color:#888; display:flex; align-items:center; gap:5px;">
-        <span style="color:var(--neon-green); font-weight:900;"></span> 
-        SYSTEM LOGS 
-        <span id="log-count-display" style="color:#fff; font-family:'JetBrains Mono';">[0]</span>
-    </span>
-    
-    <div class="save-tag" onclick="exportLogs()">
-        <i class="fas fa-download"></i> CSV
-    </div>
-</div>
-  
+
+        <div class="log-header-area">
+            <span style="font-size:0.8rem; font-weight:bold; color:#888; display:flex; align-items:center; gap:5px;">
+                <span style="color:var(--neon-green); font-weight:900;">&gt;_</span> 
+                SYSTEM LOGS 
+                <span id="log-count-display" style="color:#fff; font-family:'JetBrains Mono';">[0]</span>
+            </span>
+            <div class="save-tag" onclick="exportLogs()">
+                <i class="fas fa-download"></i> CSV
+            </div>
+        </div>
         
         <div class="terminal-window" id="terminal"></div>
 
@@ -70,6 +66,27 @@
             <button class="cyber-btn btn-stop" onclick="alert('SYSTEM HALTED')">
                 <i class="fas fa-stop"></i> STOP
             </button>
+        </div>
+    </div>
+
+    <div id="config-modal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 400px; text-align: left;">
+            <h3 style="color:var(--neon-cyan); border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px; display:flex; justify-content:space-between;">
+                SYSTEM CONFIGURATION
+                <i class="fas fa-cog fa-spin" style="font-size:0.8rem; opacity:0.5;"></i>
+            </h3>
+            <div style="margin-bottom:15px;">
+                <label style="color:#888; font-size:0.7rem;">API ACCESS KEY</label>
+                <input type="text" id="api-key" class="modal-input" style="font-size:0.9rem; text-align:left; margin:5px 0;" placeholder="Enter Access Key">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="color:#888; font-size:0.7rem;">API SECRET KEY</label>
+                <input type="password" id="secret-key" class="modal-input" style="font-size:0.9rem; text-align:left; margin:5px 0;" placeholder="Enter Secret Key">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="cyber-btn" onclick="closeConfig()" style="background:#222; color:#888; border:1px solid #444;">CANCEL</button>
+                <button class="cyber-btn" onclick="saveConfig()" style="background:var(--neon-cyan); color:#000; border:1px solid var(--neon-cyan);">SAVE</button>
+            </div>
         </div>
     </div>
 
@@ -91,7 +108,7 @@
                 "hide_side_toolbar": true,
                 "allow_symbol_change": true,
                 "autosize": true,
-                "backgroundColor": "rgba(0,0,0,1)" // 차트 배경 완전 검정
+                "backgroundColor": "rgba(0,0,0,1)"
             });
         });
     </script>
