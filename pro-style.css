@@ -25,16 +25,11 @@ body {
 .text-green { color: var(--color-up) !important; }
 .text-red { color: var(--color-down) !important; }
 
-/* [중요] 왕글씨 사이즈 자동 조절 (깨짐 방지 핵심) */
+/* 폰트 자동 조절 */
 #total-val, #bank-balance-display, .hero-number {
-    /* 최소 24px ~ 최대 40px 사이에서 화면 폭에 따라 자동 조절 */
     font-size: clamp(1.5rem, 6vw, 2.2rem) !important; 
-    font-weight: 700;
-    color: #fff;
-    text-shadow: 0 0 15px rgba(255,255,255,0.1);
-    letter-spacing: -0.5px;
-    word-break: break-all; /* 숫자가 너무 길면 줄바꿈 허용 */
-    line-height: 1.2;
+    font-weight: 700; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.1);
+    letter-spacing: -0.5px; word-break: break-all; line-height: 1.2;
 }
 
 /* 헤더 & 네비 */
@@ -70,18 +65,18 @@ body {
     border: var(--border-highlight); box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
-/* 컨트롤 버튼 그룹 (Start/Stop 부활) */
+/* 컨트롤 버튼 그룹 (Start/Stop) */
 .ctrl-group { display: flex; gap: 10px; margin-top: 20px; }
 .cyber-btn { 
     flex: 1; padding: 15px; border: none; border-radius: 8px; 
     font-weight: 700; font-size: 0.95rem; cursor: pointer; color: #fff; 
     transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
-.btn-start { background: var(--color-up); } /* 녹색 */
-.btn-stop { background: var(--color-down); opacity: 0.8; } /* 적색 */
+.btn-start { background: var(--color-up); } 
+.btn-stop { background: var(--color-down); opacity: 0.8; }
 .btn-start:active, .btn-stop:active { transform: scale(0.95); opacity: 1; }
 
-/* 데이터 마이닝 패널 (깨짐 방지) */
+/* 데이터 마이닝 패널 */
 .data-mining-panel {
     background: linear-gradient(90deg, rgba(20,24,36,0.9), rgba(20,24,36,0.7));
     border: 1px solid var(--border-soft); border-left: 4px solid var(--accent);
@@ -110,13 +105,19 @@ body {
 .ledger-price { font-family: 'JetBrains Mono'; text-align: right; color: var(--text-primary); }
 .ledger-pnl { font-family: 'JetBrains Mono'; text-align: right; font-weight: bold; }
 
-/* 검색창 */
+/* [수정됨] 검색창 패널 (가로 확장) */
 .search-panel {
-    display: flex; gap: 10px; background: var(--bg-card); padding: 10px 15px;
+    display: flex; gap: 10px; background: var(--bg-card); padding: 12px 15px;
     border-radius: 12px; border: var(--border-highlight); margin-bottom: 15px; align-items: center;
+    width: 100%; /* 패널 너비 꽉 채움 */
 }
-#coin-search-input { background: transparent; border: none; color: #fff; width: 100%; font-size: 1rem; font-weight: bold; text-transform: uppercase; }
+#coin-search-input { 
+    background: transparent; border: none; color: #fff; 
+    width: 100%; /* 입력창이 남은 공간 다 차지 */
+    font-size: 1rem; font-weight: bold; text-transform: uppercase; 
+}
 
 /* 모달 */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
 .modal-box { background: var(--bg-card); border: var(--border-highlight); border-radius: 16px; padding: 20px; width: 95%; max-width: 380px; }
+.save-tag { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border-soft); padding: 0 14px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
