@@ -3,52 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Wallet - Neuro Bot</title>
+    <title>Wallet</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="pro-style.css">
 </head>
 <body>
     <header class="ai-super-header">
         <div class="brand-logo">NEURAL <span>WALLET</span></div>
-        <div style="font-size:0.8rem; color:#666;"><i class="fas fa-lock"></i> SECURE</div>
+        <div style="font-size:0.8rem; color:#666;">SECURE</div>
     </header>
 
     <div id="internal-header-slot"></div>
 
-    <div class="main-content" style="margin-top:60px;">
+    <div class="main-content">
         <div class="wallet-card">
-            <div class="card-label">TOTAL ESTIMATED VALUE</div>
+            <div style="font-size:0.8rem; color:#666;">TOTAL ASSETS</div>
             <div class="total-amount num-font" id="total-val">---</div>
-            <div style="text-align:center; font-size:0.9rem; color:#888;">
-                <span id="win-rate-display">WIN RATE: ---</span>
-            </div>
+            <div id="win-rate-display" class="num-font" style="color:#888; font-size:0.9rem;">WIN RATE: ---</div>
             
             <div class="action-bar" style="margin-top:20px;">
                 <button class="action-btn btn-deposit" onclick="openModal('deposit')">DEPOSIT</button>
                 <button class="action-btn btn-withdraw" onclick="openModal('withdraw')">WITHDRAW</button>
-                <button class="action-btn" style="background:#111; border:1px solid #333; color:#ccc;" onclick="exportLogs()">LOGS</button>
             </div>
         </div>
 
-        <div class="wallet-card" style="padding:10px;">
-            <div class="log-header-area" style="margin:0; border:none;">
-                <span style="font-size:0.8rem; font-weight:700; color:#888;">TRADING HISTORY</span>
-                <span class="text-green" style="font-size:0.7rem;"><i class="fas fa-circle"></i> SYNCED</span>
+        <div style="background:#0a0a0a; border:1px solid #222; border-radius:8px; overflow:hidden;">
+            <div style="padding:15px; border-bottom:1px solid #222; display:flex; justify-content:space-between;">
+                <span style="font-weight:bold; color:#888;">TRADING HISTORY</span>
+                <span class="text-green" style="font-size:0.7rem;">● SYNCED</span>
             </div>
-            <table class="history-table">
-                <thead>
-                    <tr>
-                        <th width="25%">DATE</th><th width="15%">POS</th><th width="35%">PRICE</th><th width="25%" align="right">PNL</th>
-                    </tr>
-                </thead>
-                <tbody id="history-body"></tbody>
-            </table>
+            <div style="overflow-x:auto;">
+                <table class="history-table">
+                    <thead>
+                        <tr><th>TIME</th><th>POS</th><th>PRICE</th><th style="text-align:right">PNL</th></tr>
+                    </thead>
+                    <tbody id="history-body"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <div id="transaction-modal" class="modal-overlay">
         <div class="modal-box">
-            <h3 style="color:#fff; margin-bottom:10px;">ENTER AMOUNT</h3>
+            <h3 id="modal-title" style="color:#fff; margin-bottom:15px;">DEPOSIT</h3>
             <input type="number" id="amount-input" class="modal-input" placeholder="0.00">
             <div style="display:flex; gap:10px;">
                 <button class="action-btn" onclick="closeModal()" style="background:#333; color:#ccc;">CANCEL</button>
