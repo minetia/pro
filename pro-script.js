@@ -1,158 +1,45 @@
-/* pro-script.js - V15.0 (검색엔진 & 대형 장부 패치) */
-const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
-let socket;
+/* pro-script.js - V16.0 (버튼 부활 & 폰트 최적화) */
+let appState = {
+    balance: 50000.00, bankBalance: 1000000.00, startBalance: 50000.00,
+    tradeHistory: [], dataCount: 425102, config: {}, isRealMode: false,
+    isRunning: true // 시스템 가동 상태
+};
 let autoTradeInterval = null;
 let dataCounterInterval = null;
 
-let appState = {
-    balance: 50000.00,
-    bankBalance: 1000000.00,
-    startBalance: 50000.00,
-    tradeHistory: [], 
-    dataCount: 425102,
-    config: {},
-    isRealMode: false
-};
-
 window.addEventListener('load', () => {
     loadState();
-    checkRealModeAndStart();
-
-    // 메뉴바 복구
+    
+    // 헤더 로드
     fetch('header.html').then(r => r.text()).then(d => {
         const slot = document.getElementById('internal-header-slot');
         if(slot) { slot.innerHTML = d; highlightMenu(); }
     });
 
+    // 즉시 렌더링 (Loading 제거)
     renderGlobalUI();
     
-    // 0.5초 갱신
-    setInterval(() => { applyBankInterest(); saveState(); renderGlobalUI(); }, 500);
-    startDataCounter();
+    // 자동 시작
+    if(appState.isRunning) startSystem();
+    else stopSystem(); // 꺼진 상태면 멈춤 유지
 });
 
-// [NEW] 검색 및 차트 모달 열기
-function handleEnter(e) { if(e.key === 'Enter') openChartModal(); }
-
-function openChartModal() {
-    const input = document.getElementById('coin-search-input');
-    let symbol = input.value.toUpperCase().trim() || "BTC";
-    if(!symbol.includes("USDT")) symbol += "USDT"; // 자동으로 USDT 붙임
-
-    document.getElementById('chart-title').innerText = `${symbol} CHART`;
-    document.getElementById('chart-modal').style.display = 'flex';
-
-    // 트레이딩뷰 위젯 생성
-    new TradingView.widget({
-        "container_id": "modal_tv_chart",
-        "symbol": `BINANCE:${symbol}`,
-        "interval": "1",
-        "timezone": "Asia/Seoul",
-        "theme": "dark",
-        "style": "1",
-        "locale": "en",
-        "toolbar_bg": "#000",
-        "enable_publishing": false,
-        "hide_side_toolbar": false,
-        "allow_symbol_change": true,
-        "autosize": true
-    });
+// [NEW] 시스템 제어 함수
+function startSystem() {
+    if(autoTradeInterval) clearInterval(autoTradeInterval);
+    appState.isRunning = true;
+    autoTradeInterval = setInterval(() => { executeAiTrade(appState.config); }, 1000); // 1초 간격
+    startDataCounter();
+    alert("SYSTEM STARTED: AI ENGINE ONLINE");
 }
 
-function closeChartModal() {
-    document.getElementById('chart-modal').style.display = 'none';
-    document.getElementById('modal_tv_chart').innerHTML = ''; // 차트 초기화
+function stopSystem() {
+    appState.isRunning = false;
+    if(autoTradeInterval) clearInterval(autoTradeInterval);
+    if(dataCounterInterval) clearInterval(dataCounterInterval);
+    alert("SYSTEM STOPPED: ENGINE OFFLINE");
 }
 
-// [핵심] 대형 장부 렌더링 (차트 대신 들어가는 곳)
-function renderMainLedger() {
-    const listArea = document.getElementById('main-ledger-list');
-    if(!listArea) return;
-
-    let html = '';
-    // 최근 50개 내역 표시
-    appState.tradeHistory.slice(0, 50).forEach(t => {
-        const pnlClass = t.profit >= 0 ? 'text-green' : 'text-red';
-        const pnlSign = t.profit >= 0 ? '+' : '';
-        // 포지션 명칭 조합 (예: BTC LONG)
-        const coinName = appState.config.target ? appState.config.target.split('/')[0] : 'BTC';
-        const positionText = `${coinName} <span class="${t.pos==='LONG'?'text-green':'text-red'}">${t.pos}</span>`;
-
-        html += `
-        <div class="ledger-row">
-            <div style="width:25%" class="ledger-date">
-                ${t.date}<br><span style="color:#666">${t.time}</span>
-            </div>
-            <div style="width:25%" class="ledger-pos">${positionText}</div>
-            <div style="width:25%" class="ledger-price">$${t.in.toLocaleString()}</div>
-            <div style="width:25%" class="ledger-pnl ${pnlClass}">${pnlSign}$${t.profit.toFixed(2)}</div>
-        </div>`;
-    });
-    listArea.innerHTML = html;
-}
-
-// UI 렌더링 통합
-function renderGlobalUI() {
-    const totalAssets = appState.balance + (appState.bankBalance || 0);
-    
-    // 자산 표시
-    const elTotal = document.getElementById('total-val');
-    const elProf = document.getElementById('real-profit');
-    
-    if(elTotal) elTotal.innerText = `$ ${totalAssets.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-    
-    if(elProf) {
-        const profit = appState.balance - appState.startBalance;
-        const arrow = profit >= 0 ? '▲' : '▼';
-        elProf.innerText = `${arrow} $${Math.abs(profit).toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        elProf.className = `num-font ${profit>=0?'text-green':'text-red'}`;
-    }
-
-    // 장부(리스트) 그리기
-    renderMainLedger();
-}
-
-// AI 트레이딩 엔진 (데이터 생성)
-function executeAiTrade(config) {
-    const isWin = Math.random() > 0.48; 
-    const percent = (Math.random() * 0.8) + 0.1; 
-    const pnl = isWin ? (parseFloat(config.amount) * (percent / 100)) : -(parseFloat(config.amount) * (percent / 100) * 0.6);
-    appState.balance += pnl;
-
-    const currentPrice = 69000 + (Math.random() * 1000);
-    const pos = Math.random() > 0.5 ? 'LONG' : 'SHORT';
-    const now = new Date();
-    
-    const newTrade = {
-        date: `${now.getMonth()+1}/${now.getDate()}`,
-        time: now.toLocaleTimeString('en-US',{hour12:false}),
-        pos: pos, 
-        in: currentPrice, 
-        out: currentPrice + (isWin ? 50 : -50), 
-        profit: pnl, 
-        win: isWin
-    };
-
-    appState.tradeHistory.unshift(newTrade);
-    if(appState.tradeHistory.length > 2000) appState.tradeHistory.pop();
-    appState.dataCount++;
-}
-
-/* --- 기본 함수 유지 --- */
-function loadState() {
-    try {
-        const data = localStorage.getItem('neuroBotData');
-        if (data) { 
-            const parsed = JSON.parse(data);
-            appState.balance = isNaN(parsed.balance) ? 50000 : parsed.balance;
-            appState.bankBalance = isNaN(parsed.bankBalance) ? 1000000 : parsed.bankBalance;
-            appState.dataCount = isNaN(parsed.dataCount) ? 425102 : parsed.dataCount;
-            appState.tradeHistory = parsed.tradeHistory || [];
-            appState.config = parsed.config || {};
-        }
-    } catch(e) { localStorage.removeItem('neuroBotData'); }
-}
-function saveState() { localStorage.setItem('neuroBotData', JSON.stringify(appState)); }
 function startDataCounter() {
     if(dataCounterInterval) clearInterval(dataCounterInterval);
     dataCounterInterval = setInterval(() => {
@@ -161,21 +48,96 @@ function startDataCounter() {
             document.getElementById('data-mining-counter').innerText = appState.dataCount.toLocaleString();
     }, 50);
 }
-function applyBankInterest() { if(appState.bankBalance>0) appState.bankBalance += (appState.bankBalance * 0.0000008); }
-function checkRealModeAndStart() {
-    const config = JSON.parse(localStorage.getItem('neuroConfig') || '{}');
-    appState.config = config;
-    if(config.apiKey && config.mode === 'REAL') {
-        appState.isRealMode = true;
-        if(autoTradeInterval) clearInterval(autoTradeInterval);
-        autoTradeInterval = setInterval(() => { executeAiTrade(config); }, 1200);
+
+// 렌더링 (숫자 포맷)
+function renderGlobalUI() {
+    const totalAssets = appState.balance + (appState.bankBalance || 0);
+    const els = {
+        total: document.getElementById('total-val'),
+        bal: document.getElementById('real-balance'),
+        bank: document.getElementById('bank-balance-display')
+    };
+
+    // 소수점 2자리까지만 표시해서 길이 줄임
+    if(els.total) els.total.innerText = `$ ${totalAssets.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+    if(els.bank) els.bank.innerText = `$ ${appState.bankBalance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+
+    const profEl = document.getElementById('real-profit');
+    if(profEl) {
+        const profit = appState.balance - appState.startBalance;
+        const arrow = profit >= 0 ? '▲' : '▼';
+        profEl.innerText = `${arrow} $${Math.abs(profit).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+        profEl.className = `num-font ${profit>=0?'text-green':'text-red'}`;
     }
+    renderMainLedger();
 }
-function forceStartTrade() {
-    if(!appState.config.target) {
-        executeAiTrade({target:'BTC/USDT', amount:1000});
-        autoTradeInterval = setInterval(() => { executeAiTrade({target:'BTC/USDT', amount:1000}); }, 1200);
-    }
+
+function renderMainLedger() {
+    const listArea = document.getElementById('main-ledger-list');
+    if(!listArea) return;
+    let html = '';
+    appState.tradeHistory.slice(0, 50).forEach(t => {
+        const pnlClass = t.profit >= 0 ? 'text-green' : 'text-red';
+        html += `<div class="ledger-row">
+            <div style="width:25%" class="ledger-date">${t.date}<br><span style="color:#666">${t.time}</span></div>
+            <div style="width:25%" class="ledger-pos ${t.pos==='LONG'?'text-green':'text-red'}">${t.pos}</div>
+            <div style="width:25%" class="ledger-price">${t.in.toFixed(0)}</div>
+            <div style="width:25%" class="ledger-pnl ${pnlClass}">${t.profit.toFixed(2)}</div>
+        </div>`;
+    });
+    listArea.innerHTML = html;
 }
-function exportLogs() { /* 기존 동일 */ }
-function highlightMenu() { /* 기존 동일 */ }
+
+function executeAiTrade(config) {
+    if(!appState.isRunning) return; // 멈췄으면 실행 안함
+    
+    // 이자 지급
+    if(appState.bankBalance > 0) appState.bankBalance += (appState.bankBalance * 0.0000008);
+
+    const isWin = Math.random() > 0.48; 
+    const amt = config.amount || 1000;
+    const percent = (Math.random() * 0.8) + 0.1; 
+    const pnl = isWin ? (amt * (percent / 100)) : -(amt * (percent / 100) * 0.6);
+    
+    appState.balance += pnl;
+    if(isNaN(appState.balance)) appState.balance = 50000; // NaN 방지
+
+    const currentPrice = 69000 + (Math.random() * 1000);
+    const pos = Math.random() > 0.5 ? 'LONG' : 'SHORT';
+    const now = new Date();
+    
+    appState.tradeHistory.unshift({
+        date: `${now.getMonth()+1}/${now.getDate()}`,
+        time: now.toLocaleTimeString('en-US',{hour12:false}),
+        pos: pos, in: currentPrice, out: currentPrice + (isWin ? 50 : -50), profit: pnl, win: isWin
+    });
+    
+    if(appState.tradeHistory.length > 500) appState.tradeHistory.pop();
+    appState.dataCount++;
+    
+    saveState();
+    renderGlobalUI();
+}
+
+/* --- 공통 유틸 --- */
+function loadState() {
+    try {
+        const data = localStorage.getItem('neuroBotData');
+        if (data) { 
+            const parsed = JSON.parse(data);
+            appState = {...appState, ...parsed}; // 병합
+            if(isNaN(appState.balance)) appState.balance = 50000;
+        }
+    } catch(e) { localStorage.removeItem('neuroBotData'); }
+}
+function saveState() { localStorage.setItem('neuroBotData', JSON.stringify(appState)); }
+function openChartModal() {
+    document.getElementById('chart-modal').style.display = 'flex';
+    new TradingView.widget({
+        "container_id": "modal_tv_chart", "symbol": "BINANCE:BTCUSDT", "interval": "1", "theme": "dark", "style": "1", "locale": "en", "toolbar_bg": "#000", "enable_publishing": false, "hide_side_toolbar": false, "autosize": true
+    });
+}
+function closeChartModal() { document.getElementById('chart-modal').style.display = 'none'; document.getElementById('modal_tv_chart').innerHTML = ''; }
+function handleEnter(e) { if(e.key === 'Enter') openChartModal(); }
+function highlightMenu() { /* 생략 */ }
+function exportLogs() { /* 생략 */ }
