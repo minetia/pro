@@ -14,11 +14,11 @@
 
     <div class="ai-super-header">
         <div class="brand-catchphrase">
-            NEURAL ARCHITECT <span style="color:#666;">//</span> BEYOND HUMAN LIMITS
+            NEURAL ARCHITECT <span style="color:#666;">//</span> GLOBAL NODE
         </div>
         <div class="search-wrapper">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" class="search-input" placeholder="SEARCH ASSET...">
+            <input type="text" class="search-input" placeholder="SEARCH PAIR (e.g. ETH)...">
         </div>
     </div>
 
@@ -26,11 +26,11 @@
 
     <div class="status-bar-fixed">
         <div class="status-left">
-            <span class="mode-badge">AI PRO MODE</span>
-            <span class="latency-box"><i class="fas fa-bolt"></i> LATENCY: <span id="latency-val">12ms</span></span>
+            <span class="mode-badge">BINANCE API</span>
+            <span class="latency-box"><i class="fas fa-bolt"></i> PING: <span id="latency-val">32ms</span></span>
         </div>
         <div class="status-right">
-            <span id="connection-status" class="status-text blink">ESTABLISHING UPLINK...</span>
+            <span id="connection-status" class="status-text blink">INITIALIZING...</span>
             <span id="coin-price" class="live-price">---</span>
         </div>
     </div>
@@ -40,29 +40,51 @@
 
         <div class="asset-box">
             <div class="asset-item">
-                <div class="label">TOTAL BALANCE (KRW)</div>
-                <div id="real-balance" class="value">50,000,000</div>
+                <div class="label">EST. BALANCE (USDT)</div>
+                <div id="real-balance" class="value">50,000.00</div>
             </div>
             <div class="asset-item text-right">
-                <div class="label">PERFORMANCE (24H)</div>
-                <div id="real-profit" class="value success">+8,639,485</div>
+                <div class="label">24H PNL (USDT)</div>
+                <div id="real-profit" class="value success">+0.00</div>
             </div>
         </div>
 
-        <div class="log-header">
-            <span>SYSTEM LOG:</span>
-            <span style="float:right; color:#444; font-size:0.7rem;">DATA COLLECTION ACTIVE</span>
+        <div class="log-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>REAL-TIME EXECUTION LOG:</span>
+            <button onclick="downloadExcel()" style="background:#111; border:1px solid #333; color:#ccc; padding:4px 10px; font-size:0.7rem; cursor:pointer; border-radius:4px; display:flex; align-items:center; gap:5px;">
+                <i class="fas fa-file-csv" style="color:#0f0;"></i> SAVE LOGS
+            </button>
         </div>
+        
         <div class="terminal-box" id="terminal">
             <div id="log-anchor"></div>
         </div>
 
         <div class="button-group">
-            <button onclick="startAi()" class="btn btn-start">SYSTEM START</button>
-            <button onclick="stopAi()" class="btn btn-stop">EMERGENCY STOP</button>
+            <button onclick="startAi()" class="btn btn-start">AUTO TRADE</button>
+            <button onclick="stopAi()" class="btn btn-stop">HALT SYSTEM</button>
         </div>
     </main>
 
     <script src="pro-script.js"></script>
+    
+    <script>
+        window.addEventListener('load', () => {
+            new TradingView.widget({
+                "container_id": "tv_chart",
+                "symbol": "BINANCE:BTCUSDT", 
+                "interval": "1",
+                "timezone": "Asia/Seoul",
+                "theme": "dark",
+                "style": "1",
+                "locale": "en",
+                "toolbar_bg": "#000",
+                "enable_publishing": false,
+                "hide_side_toolbar": true,
+                "allow_symbol_change": true,
+                "autosize": true
+            });
+        });
+    </script>
 </body>
 </html>
