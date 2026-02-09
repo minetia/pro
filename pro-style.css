@@ -1,17 +1,15 @@
-/* 파일명: pro-style.css */
-
-/* 1. 전역 설정 & 폰트 */
+/* 전역 설정 */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', 'Consolas', monospace; }
 body { 
     background-color: #000; 
     color: #0f0; 
     overflow-x: hidden; 
-    /* 상단 메뉴들이 겹치는 만큼 본문을 아래로 내림 */
+    /* 상단 헤더들이 겹치지 않게 본문 여백 확보 */
     padding-top: 150px; 
     padding-bottom: 20px; 
 }
 
-/* 2. 최상단 슈퍼 헤더 (검색창 & 로고) */
+/* 1. 최상단 슈퍼 헤더 */
 .ai-super-header {
     position: fixed; top: 0; left: 0; width: 100%; height: 60px;
     background: #050505; border-bottom: 1px solid #003300;
@@ -24,7 +22,7 @@ body {
 .search-input { width: 100%; background: #111; border: 1px solid #333; color: #fff; padding: 8px 10px 8px 30px; font-size: 0.8rem; border-radius: 4px; outline: none; transition: 0.3s; }
 .search-input:focus { border-color: #0f0; box-shadow: 0 0 5px rgba(0, 255, 0, 0.3); }
 
-/* 3. 자체 헤더 메뉴 (중간 메뉴바) */
+/* 2. 자체 헤더 메뉴 */
 .tactical-nav {
     position: fixed; top: 60px; left: 0; width: 100%; height: 50px;
     background: #080808; border-bottom: 1px solid #111;
@@ -34,7 +32,7 @@ body {
 .nav-item a { text-decoration: none; color: #666; font-size: 0.8rem; font-weight: bold; transition: 0.3s; letter-spacing: 1px; display: flex; align-items: center; gap: 5px; }
 .nav-item a:hover, .nav-item.active a { color: #0f0; text-shadow: 0 0 8px rgba(0, 255, 0, 0.6); }
 
-/* 4. 상태 표시줄 (차트 바로 위) */
+/* 3. 상태 표시줄 */
 .status-bar-fixed {
     position: fixed; top: 110px; left: 0; width: 100%; height: 40px;
     background: #0a0a0a; border-bottom: 1px solid #222;
@@ -45,7 +43,54 @@ body {
 .status-text { font-size: 0.7rem; color: #f00; font-weight: bold; margin-right: 10px; }
 .live-price { font-size: 1.0rem; font-weight: bold; color: #fff; }
 
-/* 5. 메인 콘텐츠 및 차트 */
+/* 4. 메인 콘텐츠 스타일 */
 #tv_chart { height: 35vh; width: 100%; border-bottom: 1px solid #222; background: #000; }
 .asset-box { margin: 15px; padding: 15px; border: 1px solid #333; background: #080808; display: flex; justify-content: space-between; }
 .label { font-size: 0.7rem; color: #666; margin-bottom: 5px; }
+.value { font-size: 1.2rem; font-weight: bold; color: #fff; }
+.success { color: #0f0; }
+.log-header { margin: 0 15px 5px; font-size: 0.75rem; color: #888; border-bottom: 1px solid #222; padding-bottom: 5px; }
+.terminal-box { background: #050505; border: 1px solid #222; margin: 0 15px; height: 250px; overflow-y: auto; padding: 10px; }
+.log-line { display: grid; grid-template-columns: 80px 50px 90px 1fr; gap: 8px; border-bottom: 1px solid #111; padding: 6px 0; font-size: 0.7rem; }
+.pos-long { color: #00ff88; }
+.pos-short { color: #ff3344; }
+
+/* 5. 버튼 그룹 */
+.button-group { padding: 15px; display: flex; gap: 10px; }
+.btn { flex: 1; padding: 15px; font-weight: bold; cursor: pointer; border-radius: 4px; border: 1px solid transparent; text-transform: uppercase; }
+.btn-start { background: #002200; color: #0f0; border-color: #004400; }
+.btn-stop { background: #220000; color: #f00; border-color: #440000; }
+.blink { animation: blinker 1.5s linear infinite; }
+@keyframes blinker { 50% { opacity: 0.3; } }
+
+/* ==========================================================================
+   [중요] 모바일 반응형 (화면이 작아지면 자동 변신)
+   ========================================================================== */
+@media (max-width: 768px) {
+    body { padding-top: 130px; } 
+
+    /* 슈퍼 헤더 컴팩트화 */
+    .ai-super-header { padding: 0 10px; height: 50px; }
+    .brand-catchphrase { font-size: 0.75rem; white-space: nowrap; }
+    .search-wrapper { width: 30px; transition: 0.3s; } 
+    .search-wrapper:focus-within { width: 150px; } 
+    .search-input { padding: 5px; text-indent: -9999px; } 
+    .search-wrapper:focus-within .search-input { text-indent: 0; padding-left: 30px; }
+
+    /* 내비게이션: 가로 스크롤형 */
+    .tactical-nav { top: 50px; height: 45px; justify-content: flex-start; overflow-x: auto; padding: 0 10px; }
+    .nav-list { gap: 15px; width: max-content; }
+    .nav-item a { font-size: 0.7rem; }
+    .tactical-nav::-webkit-scrollbar { display: none; }
+
+    /* 상태 표시줄 압축 */
+    .status-bar-fixed { top: 95px; height: 35px; }
+    .mode-badge { display: none; } 
+    .latency-box { font-size: 0.6rem; }
+    .live-price { font-size: 0.9rem; }
+
+    /* 콘텐츠 세로 정렬 */
+    .asset-box { flex-direction: column; gap: 10px; } 
+    .asset-item.text-right { text-align: left; } 
+    .log-line { grid-template-columns: 60px 40px 80px 1fr; font-size: 0.65rem; } 
+}
