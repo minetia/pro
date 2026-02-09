@@ -32,12 +32,9 @@
         </div>
 
         <div class="cyber-panel" style="text-align: center; padding: 25px 15px;">
-            
             <div style="margin-bottom: 20px;">
                 <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:8px; letter-spacing:1px;">TOTAL NET WORTH (USDT)</div>
-                <div class="num-font" id="total-val" style="font-size:2.2rem; font-weight:bold; color:var(--text-primary); line-height:1.1;">
-                    Loading...
-                </div>
+                <div class="num-font" id="total-val" style="font-size:2.2rem; font-weight:bold; color:var(--text-primary); line-height:1.1;">Loading...</div>
             </div>
 
             <div style="height:1px; background:var(--border-soft); margin: 0 10px 15px 10px;"></div>
@@ -52,13 +49,20 @@
                     <i class="fas fa-robot"></i> WAITING FOR SIGNAL...
                 </div>
             </div>
-
             <div id="real-balance" style="display:none;"></div>
         </div>
 
-        <div style="text-align:right; margin-bottom:10px;">
-            <button class="save-tag" onclick="exportLogs()" style="border:1px solid var(--border-soft); padding:8px 15px; font-size:0.8rem;">
-                <i class="fas fa-file-csv" style="color:var(--text-green);"></i> DOWNLOAD REPORT
+        <div class="data-hub-container">
+            <div class="data-hub-left">
+                <i class="fas fa-circle-notch fa-spin" style="color:var(--accent); font-size:1.2rem; margin-right:10px;"></i>
+                <div>
+                    <div style="font-size:0.7rem; color:var(--text-secondary);">DATA PROCESSED</div>
+                    <div class="num-font" id="data-mining-counter" style="font-size:1.1rem; color:var(--text-primary); font-weight:bold;">0</div>
+                </div>
+            </div>
+            
+            <button class="save-tag" onclick="exportLogs()" style="border:1px solid var(--border-soft); padding:10px 15px; font-size:0.85rem; background:rgba(255,255,255,0.05);">
+                <i class="fas fa-download" style="color:var(--color-up); margin-right:5px;"></i> CSV
             </button>
         </div>
 
@@ -87,8 +91,7 @@
     <script>
         function closeConfig() { document.getElementById('config-modal').style.display = 'none'; }
         
-        // 로그 표시 헬퍼
-        const originalAddLog = window.addSystemLog || function(){};
+        // 로그 헬퍼
         window.addSystemLog = function(type, msg) {
             const lastMsgEl = document.getElementById('last-log-msg');
             if(lastMsgEl) {
