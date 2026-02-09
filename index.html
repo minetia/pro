@@ -48,15 +48,18 @@
                 </div>
             </div>
         </div>
-
-        <div class="log-header-area">
-            <span style="font-size:0.85rem; font-weight:bold; color:#888;">
-                <i class="fas fa-terminal"></i> SYSTEM LOGS <span id="log-count-display" style="color:#fff; font-size:0.8rem;">[0]</span>
-            </span>
-            <div class="save-tag" onclick="exportLogs()">
-                <i class="fas fa-file-csv"></i> SAVE
-            </div>
-        </div>
+<div class="log-header-area">
+    <span style="font-size:0.8rem; font-weight:bold; color:#888; display:flex; align-items:center; gap:5px;">
+        <span style="color:var(--neon-green); font-weight:900;"></span> 
+        SYSTEM LOGS 
+        <span id="log-count-display" style="color:#fff; font-family:'JetBrains Mono';">[0]</span>
+    </span>
+    
+    <div class="save-tag" onclick="exportLogs()">
+        <i class="fas fa-download"></i> CSV
+    </div>
+</div>
+  
         
         <div class="terminal-window" id="terminal"></div>
 
