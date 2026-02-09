@@ -12,14 +12,42 @@
         <div class="brand-logo">SECURE <span>VAULT</span></div>
         <div style="font-size:0.7rem; color:var(--text-secondary); border:1px solid var(--border-soft); padding:2px 6px;">REAL</div>
     </header>
-    <div id="internal-header-slot"></div>
+
+    <nav class="cyber-nav">
+        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i> DASHBOARD</a>
+        <a href="wallet.html" class="nav-item active"><i class="fas fa-wallet"></i> WALLET</a>
+        <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i> TRANSFERS</a>
+        <a href="ai-core.html" class="nav-item"><i class="fas fa-brain"></i> AI-CORE</a>
+    </nav>
+
     <div class="main-content">
         <div class="cyber-panel" style="text-align:center; padding: 30px 15px;">
             <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:10px;">TOTAL ASSETS</div>
             <div id="total-val" class="hero-number">Loading...</div>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="cyber-btn btn-start">DEPOSIT</button>
-                <button class="cyber-btn btn-stop">WITHDRAW</button>
+                <button class="cyber-btn btn-start" onclick="openModal('deposit')">DEPOSIT</button>
+                <button class="cyber-btn btn-stop" onclick="openModal('withdraw')">WITHDRAW</button>
+            </div>
+        </div>
+
+        <div class="cyber-panel" style="padding:0; overflow:hidden;">
+            <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:var(--accent);">
+                <i class="fas fa-list"></i> RECENT TRADES
+            </div>
+            <div class="table-header-row">
+                <div style="width:25%">TIME</div><div style="width:25%">POS</div><div style="width:25%; text-align:right;">PRICE</div><div style="width:25%; text-align:right;">PNL</div>
+            </div>
+            <div id="wallet-history-list" style="max-height:400px; overflow-y:auto;"></div>
+        </div>
+    </div>
+    
+    <div id="transaction-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color:#fff; margin-bottom:15px;">TRANSACTION</h3>
+            <input type="number" class="modal-input" placeholder="Amount">
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="cyber-btn" onclick="closeModal()" style="background:#333;">CANCEL</button>
+                <button class="cyber-btn">CONFIRM</button>
             </div>
         </div>
     </div>
