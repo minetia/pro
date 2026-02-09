@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CYBER TRADER V.1</title>
+    <title>CYBER TRADER</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="pro-style.css">
 </head>
@@ -11,8 +11,8 @@
 
     <header class="cyber-header">
         <div class="brand-logo">NEURAL <span>NODE</span></div>
-        <div style="font-size:0.8rem; color:var(--neon-cyan); border:1px solid var(--neon-cyan); padding:2px 6px;">
-            SYSTEM READY
+        <div style="font-size:0.7rem; color:var(--neon-cyan); border:1px solid var(--neon-cyan); padding:2px 5px;">
+            ONLINE
         </div>
     </header>
 
@@ -25,47 +25,42 @@
 
     <div class="main-content">
         
-        <div class="hud-status-bar">
-            <span class="hud-text"><i class="fas fa-network-wired"></i> BINANCE UPLINK: <span id="latency-val" class="num-font text-green">12ms</span></span>
-            <span class="hud-text num-font" id="coin-price" style="font-size:1.1rem; font-weight:bold;">---</span>
+        <div style="display:flex; justify-content:space-between; padding:5px; font-size:0.8rem; margin-bottom:5px;">
+            <span class="text-green"><i class="fas fa-signal"></i> 12ms</span>
+            <span class="num-font" id="coin-price" style="font-weight:bold; color:#fff;">---</span>
         </div>
 
-        <div class="cyber-panel" style="padding:0; overflow:hidden;">
+        <div class="cyber-panel" style="padding:0; overflow:hidden; height:40vh;">
             <div id="tv_chart"></div>
         </div>
 
         <div class="cyber-panel">
             <div style="display:flex; justify-content:space-between; align-items:flex-end;">
                 <div>
-                    <div class="label-text">ESTIMATED ASSETS (USDT)</div>
-                    <div class="value-text num-font" id="real-balance">LOADING...</div>
+                    <div style="font-size:0.7rem; color:#888;">EST. BALANCE</div>
+                    <div class="num-font" id="real-balance" style="font-size:1.5rem; font-weight:bold; color:#fff;">---</div>
                 </div>
                 <div style="text-align:right;">
-                    <div class="label-text">24H PROFIT</div>
-                    <div class="value-text num-font" id="real-profit" style="font-size:1.3rem;">---</div>
+                    <div style="font-size:0.7rem; color:#888;">24H PNL</div>
+                    <div class="num-font" id="real-profit" style="font-size:1.2rem; font-weight:bold;">---</div>
                 </div>
             </div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 5px;">
-            <span style="font-size:0.8rem; font-weight:bold; color:var(--neon-cyan);">
-                <i class="fas fa-terminal"></i> SYSTEM LOGS [<span id="log-count-display">0</span>]
+        <div class="log-header-area">
+            <span style="font-size:0.8rem; font-weight:bold; color:#888;">
+                <i class="fas fa-terminal"></i> LOGS: <span id="log-count-display" style="color:#fff">0</span>
             </span>
             <div class="save-tag" onclick="exportLogs()">
-                <i class="fas fa-save"></i> EXPORT DATA
+                <i class="fas fa-save"></i> CSV
             </div>
         </div>
         
-        <div class="terminal-window" id="terminal">
-            </div>
+        <div class="terminal-window" id="terminal"></div>
 
         <div class="ctrl-group">
-            <button class="cyber-btn btn-auto" onclick="alert('PROTOCOL INITIATED')">
-                <i class="fas fa-power-off"></i> AUTO START
-            </button>
-            <button class="cyber-btn btn-stop" onclick="alert('EMERGENCY STOP')">
-                <i class="fas fa-ban"></i> HALT SYSTEM
-            </button>
+            <button class="cyber-btn btn-auto" onclick="alert('START')">AUTO</button>
+            <button class="cyber-btn btn-stop" onclick="alert('STOP')">STOP</button>
         </div>
     </div>
 
@@ -73,22 +68,10 @@
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script src="pro-script.js"></script>
     <script>
-        // 차트 초기화
         window.addEventListener('load', () => {
             new TradingView.widget({
-                "container_id": "tv_chart",
-                "symbol": "BINANCE:BTCUSDT",
-                "interval": "1",
-                "timezone": "Asia/Seoul",
-                "theme": "dark",
-                "style": "1",
-                "locale": "en",
-                "toolbar_bg": "#000",
-                "enable_publishing": false,
-                "hide_side_toolbar": true,
-                "allow_symbol_change": true,
-                "autosize": true,
-                "backgroundColor": "rgba(0,0,0,1)"
+                "container_id": "tv_chart", "symbol": "BINANCE:BTCUSDT", "interval": "1",
+                "theme": "dark", "style": "1", "toolbar_bg": "#000", "hide_side_toolbar": true, "autosize": true
             });
         });
     </script>
