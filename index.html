@@ -27,7 +27,7 @@
             <div class="num-font" id="coin-price" style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);">---</div>
         </div>
 
-        <div class="cyber-panel" style="padding:0; overflow:hidden; height:40vh; min-height:300px; margin-bottom:15px;">
+        <div class="cyber-panel" style="padding:0; overflow:hidden; height:50vh; min-height:400px; margin-bottom:15px;">
             <div id="tv_chart"></div>
         </div>
 
@@ -49,19 +49,14 @@
                 </div>
             </div>
             
+            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed var(--border-soft);">
+                <div id="last-log-msg" style="font-size:0.8rem; color:var(--text-secondary); font-family:'JetBrains Mono';">
+                    <i class="fas fa-robot"></i> WAITING FOR SIGNAL...
+                </div>
+            </div>
+
             <div id="real-balance" style="display:none;"></div>
         </div>
-
-        <div class="log-header-area">
-            <span style="font-size:0.85rem; font-weight:bold; color:var(--text-secondary); display:flex; align-items:center; gap:5px;">
-                <i class="fas fa-terminal"></i> SYSTEM LOGS <span id="log-count-display" style="color:var(--text-primary); font-family:'JetBrains Mono';">[0]</span>
-            </span>
-            <div class="save-tag" onclick="exportLogs()">
-                <i class="fas fa-download"></i> CSV
-            </div>
-        </div>
-        
-        <div class="terminal-window" id="terminal"></div>
 
         <div class="ctrl-group">
             <button class="cyber-btn btn-auto" id="btn-status" onclick="forceStartTrade()">
@@ -88,6 +83,25 @@
     <script>
         function closeConfig() { document.getElementById('config-modal').style.display = 'none'; }
         
+        // [추가] 로그 한 줄 요약 업데이트를 위한 헬퍼
+        // 기존 pro-script.js가 터미널을 찾지 못해도 에러가 안 나게 설계되어 있지만,
+        // 여기서는 한 줄 요약(last-log-msg)을 업데이트하도록 살짝 연결해줍니다.
+        const originalAddLog = window.addSystemLog || function(){};
+        window.addSystemLog = function(type, msg) {
+            // 1. 화면에 한 줄 요약 표시
+            const lastMsgEl = document.getElementById('last-log-msg');
+            if(lastMsgEl) {
+                const color = type === 'LONG' ? 'var(--color-up)' : 'var(--color-down)';
+                const time = new Date().toLocaleTimeString('en-US',{hour12:false});
+                lastMsgEl.innerHTML = `<span style="color:${color}; font-weight:bold;">${type}</span> ${msg.split('|')[0]} <span style="color:#666; font-size:0.7rem;">(${time})</span>`;
+            }
+            // 2. 기존 로직(데이터 저장 등) 실행
+            if(typeof appState !== 'undefined') {
+                appState.logs.unshift({time: new Date().toLocaleTimeString(), type, msg});
+                if(appState.logs.length > 50) appState.logs.pop();
+            }
+        };
+
         window.addEventListener('load', () => {
             new TradingView.widget({
                 "container_id": "tv_chart",
