@@ -4,189 +4,271 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Wallet - Neuro Bot</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="pro-style.css">
     
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        /* [WALLET 전용 스타일] */
-        .wallet-card { 
-            background: #080808; border: 1px solid #222; border-radius: 8px; 
-            padding: 20px; margin: 15px; 
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.05);
+        /* 2. 디자인 시스템 (index.html과 통일) */
+        :root {
+            --bg-color: #050505;
+            --panel-bg: #0a0a0a;
+            --border-color: #1a1a1a;
+            --neon-green: #00ff88;
+            --neon-red: #ff3344;
+            --text-main: #e0e0e0;
         }
 
-        /* 매매일지 테이블 스타일 */
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.75rem;
-            margin-top: 10px;
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden; 
+            padding-top: 100px; /* 헤더 공간 */
+            padding-bottom: 20px; 
         }
+
+        .num-font { font-family: 'JetBrains Mono', monospace; }
+
+        /* [1] 슈퍼 헤더 */
+        .ai-super-header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 50px;
+            background: rgba(5, 5, 5, 0.95); border-bottom: 1px solid #111;
+            z-index: 3000; display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px; backdrop-filter: blur(5px);
+        }
+        .brand-logo { font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; color: #fff; }
+        .brand-logo span { color: var(--neon-green); }
+
+        /* [2] 메뉴 내비게이션 */
+        .nav-bar {
+            position: fixed; top: 50px; left: 0; width: 100%; height: 45px;
+            background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid #111;
+            z-index: 2900; white-space: nowrap; overflow-x: auto;
+            display: flex; align-items: center; padding: 0 10px;
+        }
+        .nav-bar::-webkit-scrollbar { display: none; }
+        .nav-item {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: #888; text-decoration: none; font-size: 0.9rem; font-weight: 600;
+            padding: 0 15px; height: 100%; border-bottom: 2px solid transparent; transition: 0.3s;
+        }
+        .nav-item.active, .nav-item:hover { color: #fff; border-bottom-color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,136,0.3); }
+
+        /* [3] 지갑 메인 콘텐츠 */
+        .main-content { max-width: 800px; margin: 0 auto; padding: 15px; }
+
+        /* 자산 요약 카드 */
+        .wallet-card {
+            background: var(--panel-bg); border: 1px solid #222; border-radius: 8px;
+            padding: 25px 20px; text-align: center; position: relative;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.05); margin-bottom: 20px;
+        }
+        .card-label { font-size: 0.8rem; color: #666; font-weight: 600; letter-spacing: 1px; margin-bottom: 5px; }
+        .total-amount { font-size: 2.2rem; color: #fff; font-weight: 700; margin: 10px 0; }
+        
+        .stats-row { 
+            display: flex; justify-content: center; gap: 15px; font-size: 0.9rem; 
+            background: #000; padding: 8px; border-radius: 4px; border: 1px solid #111; display: inline-flex;
+        }
+        .pnl-plus { color: var(--neon-green); }
+        .win-rate { color: #ccc; }
+
+        /* 버튼 액션 바 (한 줄 정렬) */
+        .action-bar {
+            display: flex; gap: 10px; margin-top: 20px; justify-content: center;
+        }
+        .action-btn {
+            flex: 1; max-width: 120px; padding: 10px 0; border-radius: 4px;
+            font-family: 'Rajdhani'; font-weight: 700; font-size: 0.9rem;
+            cursor: pointer; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .btn-deposit { background: #002200; color: var(--neon-green); border-color: #004400; }
+        .btn-withdraw { background: #220000; color: var(--neon-red); border-color: #440000; }
+        .btn-save { background: #111; color: #ccc; border-color: #333; max-width: 100px; }
+
+        /* 테이블 스타일 */
+        .history-section { background: var(--panel-bg); border: 1px solid #222; border-radius: 8px; overflow: hidden; }
+        .section-header {
+            padding: 15px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.9rem; font-weight: 700; color: #888;
+        }
+        .sync-badge { font-size: 0.7rem; color: var(--neon-green); animation: pulse 2s infinite; }
+        
+        .table-wrapper { overflow-x: auto; }
+        .history-table { width: 100%; border-collapse: collapse; min-width: 350px; }
         .history-table th {
-            text-align: left;
-            color: #666;
-            padding: 10px 5px;
-            border-bottom: 1px solid #333;
-            font-weight: normal;
+            text-align: left; font-size: 0.7rem; color: #555; padding: 10px 15px;
+            border-bottom: 1px solid #222; font-weight: 600;
         }
         .history-table td {
-            padding: 12px 5px;
-            border-bottom: 1px solid #111;
-            color: #ddd;
+            padding: 12px 15px; border-bottom: 1px solid #111; color: #ccc;
+            font-size: 0.85rem; vertical-align: middle;
         }
-        
-        /* 테이블 컬럼별 스타일 */
-        .col-date { color: #888; font-size: 0.7rem; }
-        .col-pos { font-weight: bold; }
-        .pos-long { color: #00ff88; }
-        .pos-short { color: #ff3344; }
-        .col-price { font-family: 'Consolas', monospace; color: #ccc; }
-        .col-result { text-align: right; font-weight: bold; }
-        .col-winrate { text-align: right; color: #aaa; }
+        .history-table tr:last-child td { border-bottom: none; }
 
-        /* 수익/손실 색상 */
-        .profit-plus { color: #0f0; }
-        .profit-minus { color: #f00; }
+        /* 테이블 내부 요소 */
+        .date-box { font-size: 0.75rem; color: #666; line-height: 1.2; }
+        .pos-badge { font-weight: 700; font-size: 0.8rem; }
+        .pos-long { color: var(--neon-green); }
+        .pos-short { color: var(--neon-red); }
+        .price-info { font-size: 0.75rem; color: #888; }
+        .res-val { font-weight: 700; font-size: 0.9rem; }
+        .win-tag { font-size: 0.7rem; color: #555; margin-left: 5px; }
 
-        /* 버튼 스타일 */
-        .action-btn { 
-            background: #003300; border: 1px solid #005500; color: #0f0; 
-            padding: 8px 15px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; 
-            transition: 0.3s;
-        }
-        .action-btn:hover { background: #004400; box-shadow: 0 0 10px #0f0; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
     </style>
 </head>
 <body>
 
-    <div class="ai-super-header">
-        <div class="brand-catchphrase">NEURAL WALLET <span style="color:#666;">//</span> HISTORY ANALYSIS</div>
+    <header class="ai-super-header">
+        <div class="brand-logo">NEURAL <span>WALLET</span></div>
+        <div style="font-size:0.8rem; color:#666;"><i class="fas fa-lock"></i> SECURE</div>
+    </header>
+
+    <nav class="nav-bar">
+        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i> DASHBOARD</a>
+        <a href="#" class="nav-item"><i class="fas fa-robot"></i> AI AGENT</a>
+        <a href="wallet.html" class="nav-item active"><i class="fas fa-wallet"></i> WALLET</a>
+        <a href="#" class="nav-item"><i class="fas fa-layer-group"></i> STRATEGY</a>
+    </nav>
+
+    <div class="main-content">
+        
+        <div class="wallet-card">
+            <div class="card-label">TOTAL ESTIMATED VALUE</div>
+            <div class="total-amount num-font" id="total-val">$ 51,240.50</div>
+            
+            <div class="stats-row">
+                <span class="pnl-plus num-font">▲ $1,240.50 (2.4%)</span>
+                <span style="color:#333;">|</span>
+                <span class="win-rate num-font" id="win-rate-display">WIN RATE: 78%</span>
+            </div>
+
+            <div class="action-bar">
+                <button class="action-btn btn-deposit"><i class="fas fa-arrow-down"></i> DEPOSIT</button>
+                <button class="action-btn btn-withdraw"><i class="fas fa-arrow-up"></i> WITHDRAW</button>
+                <button class="action-btn btn-save" onclick="downloadExcel()"><i class="fas fa-file-csv"></i> LOGS</button>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <div class="section-header">
+                <span><i class="fas fa-list"></i> TRADING HISTORY (24H)</span>
+                <span class="sync-badge"><i class="fas fa-circle"></i> LIVE SYNC</span>
+            </div>
+            
+            <div class="table-wrapper">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th width="20%">DATE</th>
+                            <th width="15%">POS</th>
+                            <th width="35%">ENTRY / EXIT</th>
+                            <th width="30%" style="text-align:right;">PNL (ROE)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <div id="internal-header-slot"></div>
-
-    <main class="main-content" style="padding-top: 20px;">
-        
-        <div class="wallet-card" style="text-align:center; border:1px solid #004400;">
-            <div style="color:#888; font-size:0.8rem; margin-bottom:5px;">TOTAL ESTIMATED VALUE</div>
-            <div style="font-size:1.8rem; font-weight:bold; color:#fff;">$ 51,240.50</div>
-            <div style="color:#0f0; font-size:0.9rem; margin-top:5px; display:flex; justify-content:center; gap:10px;">
-                <span>▲ +1,240.50 (2.4%)</span>
-                <span style="color:#666;">|</span>
-                <span style="color:#aaa;">WIN RATE: 78%</span>
-            </div>
-            <div style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
-                <button class="action-btn">DEPOSIT</button>
-                <button class="action-btn" style="background:#330000; border-color:#550000; color:#f00;">WITHDRAW</button>
-            </div>
-        </div>
-
-        <div style="margin: 0 15px 5px; color:#666; font-size:0.8rem; display:flex; justify-content:space-between;">
-            <span>TRADING HISTORY (24H)</span>
-            <span style="color:#00ff88;"><i class="fas fa-sync-alt"></i> SYNCED</span>
-        </div>
-
-        <div class="wallet-card" style="padding: 10px; overflow-x: auto;">
-            <table class="history-table">
-                <thead>
-                    <tr>
-                        <th>DATE</th>
-                        <th>POS</th>
-                        <th>BUY/SELL</th>
-                        <th style="text-align:right;">RESULT</th>
-                        <th style="text-align:right;">WIN%</th>
-                    </tr>
-                </thead>
-                <tbody id="history-list">
-                    </tbody>
-            </table>
-        </div>
-
-    </main>
-
     <script>
-        // 헤더 로드
+        // 가상 데이터 생성 및 렌더링
         window.addEventListener('load', () => {
-            fetch('header.html')
-            .then(res => res.text())
-            .then(data => {
-                document.getElementById('internal-header-slot').innerHTML = data;
-            });
-            
-            // 매매일지 데이터 생성 실행
-            generateHistory();
+            renderHistory();
+            startLiveEffect();
         });
 
-        // 가상 매매 기록 생성 함수
-        function generateHistory() {
-            const tableBody = document.getElementById('history-list');
+        function renderHistory() {
+            const tbody = document.getElementById('history-body');
             let html = '';
             
-            // 24시간 동안의 가상 데이터 10개 생성
+            // 승/패 카운트를 위한 변수
+            let wins = 0;
+            let losses = 0;
+
             const trades = [
-                { pos: 'LONG', buy: 70120, sell: 70850, winRate: 78 },
-                { pos: 'SHORT', buy: 70900, sell: 70800, winRate: 77 },
-                { pos: 'LONG', buy: 70500, sell: 70400, winRate: 75 }, // 손절
-                { pos: 'LONG', buy: 69800, sell: 70300, winRate: 76 },
-                { pos: 'SHORT', buy: 70200, sell: 69500, winRate: 74 },
-                { pos: 'LONG', buy: 69200, sell: 69900, winRate: 72 },
-                { pos: 'SHORT', buy: 69800, sell: 69950, winRate: 70 }, // 손절
-                { pos: 'LONG', buy: 68500, sell: 69100, winRate: 71 },
-                { pos: 'SHORT', buy: 68900, sell: 68200, winRate: 69 },
-                { pos: 'LONG', buy: 67800, sell: 68400, winRate: 67 }
+                { pos: 'LONG', in: 70120, out: 70850 },
+                { pos: 'SHORT', in: 70900, out: 70800 },
+                { pos: 'LONG', in: 70500, out: 70400 }, // 패
+                { pos: 'LONG', in: 69800, out: 70300 },
+                { pos: 'SHORT', in: 70200, out: 69500 },
+                { pos: 'SHORT', in: 69800, out: 69950 }, // 패
+                { pos: 'LONG', in: 68500, out: 69100 },
             ];
 
             const now = new Date();
 
-            trades.forEach((trade, index) => {
-                // 시간 계산 (조금씩 과거로)
-                const date = new Date(now - (index * 3600000) - (Math.random() * 1800000));
-                const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            trades.forEach((t, i) => {
+                const date = new Date(now - (i * 3600000));
                 const dateStr = `${date.getMonth()+1}/${date.getDate()}`;
-
+                const timeStr = date.toLocaleTimeString('en-US', {hour12:false, hour:'2-digit', minute:'2-digit'});
+                
                 // 수익 계산
                 let profit = 0;
-                let profitPercent = 0;
-                let isWin = false;
+                if(t.pos === 'LONG') profit = t.out - t.in;
+                else profit = t.in - t.out;
 
-                if (trade.pos === 'LONG') {
-                    profit = (trade.sell - trade.buy);
-                    profitPercent = (profit / trade.buy) * 100 * 10; // 레버리지 10배 가정
-                } else {
-                    profit = (trade.buy - trade.sell);
-                    profitPercent = (profit / trade.buy) * 100 * 10;
-                }
+                // 승패 카운트
+                if(profit >= 0) wins++;
+                else losses++;
 
-                isWin = profit > 0;
+                const roe = ((profit / t.in) * 100 * 10).toFixed(2); // 10배 레버리지 가정
+                const pnl = (profit * 0.5).toFixed(2); // 0.5 BTC 기준
+                const isWin = profit >= 0;
+                const colorClass = isWin ? 'text-green' : 'text-red';
                 const sign = isWin ? '+' : '';
-                const colorClass = isWin ? 'profit-plus' : 'profit-minus';
-                
-                // HTML 조립
+
                 html += `
                     <tr>
-                        <td class="col-date">
-                            <div>${dateStr}</div>
-                            <div>${timeStr}</div>
+                        <td>
+                            <div class="date-box num-font">${dateStr}<br><span style="color:#444">${timeStr}</span></div>
                         </td>
-                        <td class="col-pos">
-                            <span class="${trade.pos === 'LONG' ? 'pos-long' : 'pos-short'}">${trade.pos}</span>
+                        <td>
+                            <span class="pos-badge ${t.pos === 'LONG' ? 'pos-long' : 'pos-short'}">${t.pos}</span>
                         </td>
-                        <td class="col-price">
-                            <div style="font-size:0.75rem;">IN: ${trade.buy.toLocaleString()}</div>
-                            <div style="font-size:0.75rem;">OUT: ${trade.sell.toLocaleString()}</div>
+                        <td>
+                            <div class="price-info num-font">IN: ${t.in.toLocaleString()}</div>
+                            <div class="price-info num-font" style="color:#ccc">OUT: ${t.out.toLocaleString()}</div>
                         </td>
-                        <td class="col-result ${colorClass}">
-                            <div>${sign}$${Math.abs(profit * 0.5).toFixed(2)}</div>
-                            <div style="font-size:0.7rem;">(${sign}${Math.abs(profitPercent).toFixed(2)}%)</div>
-                        </td>
-                        <td class="col-winrate">
-                            ${trade.winRate}%
+                        <td style="text-align:right;">
+                            <div class="res-val num-font ${isWin ? 'pnl-plus' : 'text-red'}">${sign}$${pnl}</div>
+                            <div class="num-font" style="font-size:0.7rem; color:${isWin?'#005500':'#550000'}">(${sign}${roe}%)</div>
                         </td>
                     </tr>
                 `;
             });
 
-            tableBody.innerHTML = html;
+            tbody.innerHTML = html;
+
+            // [승률 업데이트] 7W 3L 형식
+            const winRate = Math.round((wins / (wins + losses)) * 100);
+            document.getElementById('win-rate-display').innerHTML = `WIN RATE: <span style="color:#fff">${winRate}%</span> (${wins}W ${losses}L)`;
+        }
+
+        // 실시간 금액 변동 연출
+        function startLiveEffect() {
+            let baseVal = 51240.50;
+            const el = document.getElementById('total-val');
+            
+            setInterval(() => {
+                // -5 ~ +5 랜덤 변동
+                const change = (Math.random() - 0.5) * 10;
+                const newVal = baseVal + change;
+                el.innerText = '$ ' + newVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }, 1000);
+        }
+
+        // 로그 저장 가짜 기능
+        function downloadExcel() {
+            alert("DOWNLOADING ENCRYPTED LOGS...");
         }
     </script>
 </body>
