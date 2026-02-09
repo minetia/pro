@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="pro-style.css">
 </head>
 <body>
+
     <header class="cyber-header">
         <div class="brand-logo">BANK <span>LINK</span></div>
     </header>
@@ -21,21 +22,53 @@
 
     <div class="main-content">
         <div class="cyber-panel bank-card-bg">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <div>
+                    <div style="font-size:0.8rem; color:#fff; font-weight:bold;"><i class="fas fa-university"></i> PRIMARY ACCOUNT</div>
+                    <div style="font-size:0.7rem; color:#848e9c;">KBANK 110-382-******</div>
+                </div>
+                <div style="background:#5d78ff; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px; height:fit-content;">VERIFIED</div>
+            </div>
             <div style="text-align:right;">
                 <div style="font-size:0.7rem; color:#848e9c; margin-bottom:5px;">AVAILABLE CASH</div>
                 <div id="bank-balance-display" class="hero-number">Loading...</div>
             </div>
         </div>
+
         <div class="cyber-panel" style="padding:0; overflow:hidden;">
             <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:#5d78ff;">
                 <i class="fas fa-exchange-alt"></i> HISTORY
             </div>
             <div class="table-header-row">
-                <div style="width:30%">DATE</div><div style="width:30%">TYPE</div><div style="width:40%; text-align:right;">AMOUNT</div>
+                <div style="width:30%">DATE</div>
+                <div style="width:30%">TYPE</div>
+                <div style="width:40%; text-align:right;">AMOUNT</div>
             </div>
             <div id="bank-history-list" style="max-height:400px; overflow-y:auto;"></div>
         </div>
     </div>
+
     <script src="pro-script.js"></script>
+    <script>
+        // 은행 페이지 전용 리스트 로직
+        window.addEventListener('load', () => {
+            setInterval(() => {
+                const listArea = document.getElementById('bank-history-list');
+                // 전역 변수 appState가 로드되었는지 확인
+                if(listArea && typeof appState !== 'undefined' && appState.transfers) {
+                    let html = '';
+                    appState.transfers.forEach(t => {
+                        const isDep = t.type === 'DEPOSIT';
+                        html += `<div class="ledger-row">
+                            <div style="width:30%" class="ledger-date">${t.date.split(' ')[0]}</div>
+                            <div style="width:30%; font-weight:bold; color:${isDep?'#0f0':'#f00'}">${t.type}</div>
+                            <div style="width:40%; text-align:right;" class="ledger-price">$${t.amount.toLocaleString()}</div>
+                        </div>`;
+                    });
+                    listArea.innerHTML = html;
+                }
+            }, 1000);
+        });
+    </script>
 </body>
 </html>
