@@ -11,19 +11,26 @@
 
     <header class="cyber-header">
         <div class="brand-logo">SECURE <span>VAULT</span></div>
-        <div style="font-size:0.7rem; color:#ffd700; border:1px solid #ffd700; padding:2px 5px;">
-            SYNCED
+        <div id="header-status-badge" style="font-size:0.7rem; color:#ffd700; border:1px solid #ffd700; padding:2px 5px;">
+            SIMULATION
         </div>
     </header>
 
-    <nav class="cyber-nav">
-        <a href="index.html" class="nav-item">DASHBOARD</a>
-        <a href="wallet.html" class="nav-item active">WALLET</a>
-        <a href="transfers.html" class="nav-item">TRANSFERS</a>
-        <a href="#" class="nav-item">AI-CORE</a>
-    </nav>
+    <div id="internal-header-slot"></div>
 
     <div class="main-content">
+        
+        <div class="cyber-panel" id="api-status-panel" style="border-left: 3px solid #666; display:flex; justify-content:space-between; align-items:center; padding:15px;">
+            <div>
+                <div style="font-size:0.7rem; color:#888; font-weight:bold;">SYSTEM MODE</div>
+                <div id="system-mode-text" style="font-size:1rem; color:#ccc; font-weight:bold;">SIMULATION (VIRTUAL)</div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:0.7rem; color:#888;">API CONNECTION</div>
+                <div id="api-key-display" style="font-size:0.8rem; color:#666;">NOT CONNECTED</div>
+            </div>
+        </div>
+
         <div class="cyber-panel" style="text-align:center; padding:25px 15px;">
             <div style="font-size:0.8rem; color:#888; letter-spacing:2px;">TOTAL ASSETS</div>
             <div class="num-font" id="total-val" style="font-size:2rem; font-weight:bold; color:#fff; margin:10px 0;">---</div>
