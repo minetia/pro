@@ -27,21 +27,29 @@
             <div class="num-font" id="coin-price" style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);">---</div>
         </div>
 
-        <div class="cyber-panel" style="padding:0; overflow:hidden; height:45vh; min-height:350px; margin-bottom:15px;">
+        <div class="cyber-panel" style="padding:0; overflow:hidden; height:40vh; min-height:300px; margin-bottom:15px;">
             <div id="tv_chart"></div>
         </div>
 
-        <div class="cyber-panel">
-            <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-                <div>
-                    <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:5px;">TOTAL NET WORTH (USDT)</div>
-                    <div class="num-font" id="total-val" style="font-size:1.8rem; font-weight:bold; color:var(--text-primary); line-height:1;">---</div>
-                </div>
-                <div style="text-align:right;">
-                    <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:5px;">24H PNL</div>
-                    <div class="num-font" id="real-profit" style="font-size:1.2rem; font-weight:bold; line-height:1;">---</div>
+        <div class="cyber-panel" style="text-align: center; padding: 25px 15px;">
+            
+            <div style="margin-bottom: 20px;">
+                <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:8px; letter-spacing:1px;">TOTAL NET WORTH (USDT)</div>
+                <div class="num-font" id="total-val" style="font-size:2.2rem; font-weight:bold; color:var(--text-primary); line-height:1.1;">
+                    Loading...
                 </div>
             </div>
+
+            <div style="height:1px; background:var(--border-soft); margin: 0 10px 15px 10px;"></div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 10px;">
+                <div style="font-size:0.85rem; color:var(--text-secondary);">24H PNL</div>
+                <div class="num-font" id="real-profit" style="font-size:1.4rem; font-weight:bold;">
+                    ---
+                </div>
+            </div>
+            
+            <div id="real-balance" style="display:none;"></div>
         </div>
 
         <div class="log-header-area">
@@ -56,11 +64,8 @@
         <div class="terminal-window" id="terminal"></div>
 
         <div class="ctrl-group">
-            <button class="cyber-btn btn-auto" onclick="alert('AUTO TRADING IS RUNNING...')">
-                AUTO RUNNING
-            </button>
-            <button class="cyber-btn btn-stop" onclick="alert('CANNOT STOP IN REAL MODE')">
-                STOP
+            <button class="cyber-btn btn-auto" id="btn-status" onclick="forceStartTrade()">
+                SYSTEM RUNNING...
             </button>
         </div>
     </div>
@@ -81,7 +86,6 @@
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script src="pro-script.js"></script>
     <script>
-        // 모달 제어 함수 (혹시 몰라 여기에 추가)
         function closeConfig() { document.getElementById('config-modal').style.display = 'none'; }
         
         window.addEventListener('load', () => {
@@ -98,7 +102,7 @@
                 "hide_side_toolbar": true,
                 "allow_symbol_change": true,
                 "autosize": true,
-                "backgroundColor": "rgba(18, 22, 28, 1)" // 배경색 일치
+                "backgroundColor": "rgba(18, 22, 28, 1)"
             });
         });
     </script>
