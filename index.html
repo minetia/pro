@@ -60,32 +60,19 @@
         <div class="terminal-window" id="terminal"></div>
 
         <div class="ctrl-group">
-            <button class="cyber-btn btn-auto" onclick="alert('AUTO TRADING STARTED')">
-                <i class="fas fa-play"></i> AUTO
-            </button>
-            <button class="cyber-btn btn-stop" onclick="alert('SYSTEM HALTED')">
-                <i class="fas fa-stop"></i> STOP
-            </button>
+            <button class="cyber-btn btn-auto" onclick="alert('AUTO TRADING STARTED')">AUTO</button>
+            <button class="cyber-btn btn-stop" onclick="alert('SYSTEM HALTED')">STOP</button>
         </div>
     </div>
 
     <div id="config-modal" class="modal-overlay">
-        <div class="modal-box" style="max-width: 400px; text-align: left;">
-            <h3 style="color:var(--neon-cyan); border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px; display:flex; justify-content:space-between;">
-                SYSTEM CONFIGURATION
-                <i class="fas fa-cog fa-spin" style="font-size:0.8rem; opacity:0.5;"></i>
-            </h3>
-            <div style="margin-bottom:15px;">
-                <label style="color:#888; font-size:0.7rem;">API ACCESS KEY</label>
-                <input type="text" id="api-key" class="modal-input" style="font-size:0.9rem; text-align:left; margin:5px 0;" placeholder="Enter Access Key">
-            </div>
-            <div style="margin-bottom:15px;">
-                <label style="color:#888; font-size:0.7rem;">API SECRET KEY</label>
-                <input type="password" id="secret-key" class="modal-input" style="font-size:0.9rem; text-align:left; margin:5px 0;" placeholder="Enter Secret Key">
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button class="cyber-btn" onclick="closeConfig()" style="background:#222; color:#888; border:1px solid #444;">CANCEL</button>
-                <button class="cyber-btn" onclick="saveConfig()" style="background:var(--neon-cyan); color:#000; border:1px solid var(--neon-cyan);">SAVE</button>
+        <div class="modal-box">
+            <h3 style="color:var(--neon-cyan); margin-bottom:15px;">CONFIGURATION</h3>
+            <input type="text" id="api-key" class="modal-input" placeholder="API ACCESS KEY">
+            <input type="password" id="secret-key" class="modal-input" placeholder="API SECRET KEY">
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="cyber-btn" onclick="closeConfig()" style="background:#333;">CANCEL</button>
+                <button class="cyber-btn" onclick="saveConfig()" style="background:var(--neon-cyan); color:#000;">SAVE</button>
             </div>
         </div>
     </div>
@@ -96,19 +83,8 @@
     <script>
         window.addEventListener('load', () => {
             new TradingView.widget({
-                "container_id": "tv_chart",
-                "symbol": "BINANCE:BTCUSDT",
-                "interval": "1",
-                "timezone": "Asia/Seoul",
-                "theme": "dark",
-                "style": "1",
-                "locale": "en",
-                "toolbar_bg": "#000",
-                "enable_publishing": false,
-                "hide_side_toolbar": true,
-                "allow_symbol_change": true,
-                "autosize": true,
-                "backgroundColor": "rgba(0,0,0,1)"
+                "container_id": "tv_chart", "symbol": "BINANCE:BTCUSDT", "interval": "1",
+                "theme": "dark", "style": "1", "toolbar_bg": "#000", "hide_side_toolbar": true, "autosize": true
             });
         });
     </script>
