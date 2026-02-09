@@ -7,67 +7,76 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="pro-style.css">
 </head>
-<body class="sub-page theme-gold">
+<body>
 
     <header class="cyber-header">
         <div class="brand-logo">SECURE <span>VAULT</span></div>
-        <div id="header-status-badge" style="font-size:0.7rem; color:#ffd700; border:1px solid #ffd700; padding:2px 5px;">
-            SIMULATION
+        <div id="header-status-badge" style="font-size:0.7rem; color:var(--text-secondary); border:1px solid var(--border-soft); padding:2px 6px; border-radius:4px;">
+            REAL
         </div>
     </header>
 
     <div id="internal-header-slot"></div>
 
     <div class="main-content">
-        
-        <div class="cyber-panel" id="api-status-panel" style="border-left: 3px solid #666; display:flex; justify-content:space-between; align-items:center; padding:15px;">
-            <div>
-                <div style="font-size:0.7rem; color:#888; font-weight:bold;">SYSTEM MODE</div>
-                <div id="system-mode-text" style="font-size:1rem; color:#ccc; font-weight:bold;">SIMULATION (VIRTUAL)</div>
-            </div>
-            <div style="text-align:right;">
-                <div style="font-size:0.7rem; color:#888;">API CONNECTION</div>
-                <div id="api-key-display" style="font-size:0.8rem; color:#666;">NOT CONNECTED</div>
-            </div>
-        </div>
-
-        <div class="cyber-panel" style="text-align:center; padding:25px 15px;">
-            <div style="font-size:0.8rem; color:#888; letter-spacing:2px;">TOTAL ASSETS</div>
-            <div class="num-font" id="total-val" style="font-size:2rem; font-weight:bold; color:#fff; margin:10px 0;">---</div>
-            <div class="num-font" id="win-rate-display" style="color:#aaa; font-size:0.9rem;">WIN RATE: ---</div>
+        <div class="cyber-panel" style="text-align:center; padding: 30px 15px;">
+            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:10px;">TOTAL ASSETS (Wallet + Bank)</div>
+            <div id="total-val" class="hero-number">Loading...</div>
+            <div id="win-rate-display" style="font-size:0.9rem; color:var(--text-secondary); margin-top:10px;">WIN RATE: ---</div>
             
-            <div class="ctrl-group" style="margin-top:20px;">
-                <button class="cyber-btn" onclick="openModal('deposit')" style="background:#003300; color:#0f0; border:1px solid #005500;">DEPOSIT</button>
-                <button class="cyber-btn" onclick="openModal('withdraw')" style="background:#330000; color:#f00; border:1px solid #550000;">WITHDRAW</button>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="cyber-btn" onclick="openModal('deposit')" style="background:#2ebd85;">DEPOSIT</button>
+                <button class="cyber-btn" onclick="openModal('withdraw')" style="background:#f6465d;">WITHDRAW</button>
             </div>
         </div>
 
         <div class="cyber-panel" style="padding:0; overflow:hidden;">
-            <div style="padding:10px; background:rgba(255,215,0,0.05); border-bottom:1px solid rgba(255,215,0,0.2); font-weight:bold; color:#ffd700; font-size:0.85rem;">
-                <i class="fas fa-list"></i> TRADING HISTORY
+            <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:var(--accent);">
+                <i class="fas fa-list"></i> RECENT TRADES
             </div>
-            <div style="overflow-x:auto;">
-                <table class="history-table">
-                    <thead>
-                        <tr><th width="20%" style="padding-left:10px;">TIME</th><th width="15%">POS</th><th width="35%">PRICE</th><th width="30%" align="right" style="padding-right:10px;">PNL</th></tr>
-                    </thead>
-                    <tbody id="history-body"></tbody>
-                </table>
+            <div class="table-header-row">
+                <div style="width:30%">TIME</div>
+                <div style="width:20%">POS</div>
+                <div style="width:25%; text-align:right;">PRICE</div>
+                <div style="width:25%; text-align:right;">PNL</div>
             </div>
+            <tbody id="history-body"></tbody>
+            <div id="wallet-history-list" style="max-height:400px; overflow-y:auto;"></div>
         </div>
     </div>
 
     <div id="transaction-modal" class="modal-overlay">
         <div class="modal-box">
-            <h3 id="modal-title" style="color:#fff;">DEPOSIT</h3>
+            <h3 id="modal-title" style="color:#fff; margin-bottom:15px;">DEPOSIT</h3>
             <input type="number" id="amount-input" class="modal-input" placeholder="0.00">
-            <div style="display:flex; gap:10px;">
-                <button class="cyber-btn" onclick="closeModal()" style="background:#333; color:#ccc;">CANCEL</button>
-                <button id="modal-confirm-btn" class="cyber-btn" style="background:#003300; color:#0f0;">CONFIRM</button>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="cyber-btn" onclick="closeModal()" style="background:#333;">CANCEL</button>
+                <button id="modal-confirm-btn" class="cyber-btn">CONFIRM</button>
             </div>
         </div>
     </div>
 
     <script src="pro-script.js"></script>
+    <script>
+        // 지갑 페이지 전용 리스트 렌더링 (메인 스크립트 로드 후 실행)
+        window.addEventListener('load', () => {
+            setInterval(() => {
+                const listArea = document.getElementById('wallet-history-list');
+                if(listArea && appState.tradeHistory) {
+                    let html = '';
+                    appState.tradeHistory.slice(0, 20).forEach(t => {
+                        const pnlClass = t.profit >= 0 ? 'text-green' : 'text-red';
+                        html += `<div class="ledger-row">
+                            <div style="width:30%" class="ledger-date">${t.time}</div>
+                            <div style="width:20%" class="ledger-pos ${t.pos==='LONG'?'text-green':'text-red'}">${t.pos}</div>
+                            <div style="width:25%" class="ledger-price">${t.in.toFixed(0)}</div>
+                            <div style="width:25%" class="ledger-pnl ${pnlClass}">${t.profit.toFixed(2)}</div>
+                        </div>`;
+                    });
+                    listArea.innerHTML = html;
+                }
+            }, 1000);
+        });
+    </script>
 </body>
 </html>
