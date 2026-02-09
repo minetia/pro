@@ -7,11 +7,11 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="pro-style.css">
 </head>
-<body class="sub-page theme-blue">
+<body class="sub-page">
 
     <header class="cyber-header">
         <div class="brand-logo">NEURAL <span>CORE</span></div>
-        <div style="font-size:0.7rem; color:#00f3ff; border:1px solid #00f3ff; padding:2px 5px;">
+        <div style="font-size:0.75rem; color:var(--text-secondary); background:var(--bg-main); padding:4px 8px; border-radius:4px;">
             V.3.0.1
         </div>
     </header>
@@ -20,51 +20,50 @@
 
     <div class="main-content">
         
-        <div class="cyber-panel" style="text-align:center; padding:20px;">
+        <div class="cyber-panel" style="text-align:center; padding:30px 20px;">
             <div class="ai-brain-container">
-                <i class="fas fa-brain ai-brain-icon"></i>
-                <div class="ai-pulse-ring"></div>
+                <i class="fas fa-brain"></i>
             </div>
-            <div style="margin-top:15px;">
-                <div style="font-size:1.1rem; font-weight:bold; color:#fff;">NEURAL ENGINE: <span class="text-green">READY</span></div>
-                <div style="font-size:0.7rem; color:#888;">WAITING FOR INPUTS...</div>
-            </div>
-        </div>
-
-        <div class="cyber-panel">
-            <div style="font-size:0.9rem; color:#00f3ff; margin-bottom:15px; font-weight:bold; display:flex; align-items:center; gap:5px;">
-                <i class="fas fa-link"></i> EXCHANGE CONNECTION (REAL)
-            </div>
-            
-            <div style="margin-bottom:10px;">
-                <label style="font-size:0.7rem; color:#888;">BINANCE ACCESS KEY</label>
-                <input type="text" id="real-api-key" class="modal-input" placeholder="Paste your Access Key here" style="text-align:left; color:#fff; border-color:#00f3ff;">
-            </div>
-            
-            <div style="margin-bottom:10px;">
-                <label style="font-size:0.7rem; color:#888;">BINANCE SECRET KEY</label>
-                <input type="password" id="real-secret-key" class="modal-input" placeholder="Paste your Secret Key here" style="text-align:left; color:#fff; border-color:#00f3ff;">
+            <div>
+                <div style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);">NEURAL ENGINE: <span class="text-green">READY</span></div>
+                <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:5px;">WAITING FOR INPUTS...</div>
             </div>
         </div>
 
         <div class="cyber-panel">
-            <div style="font-size:0.9rem; color:#ffd700; margin-bottom:15px; font-weight:bold; display:flex; align-items:center; gap:5px;">
-                <i class="fas fa-coins"></i> TRADE SETTINGS
+            <div style="font-size:0.95rem; color:var(--text-primary); margin-bottom:20px; font-weight:bold; border-bottom:1px solid var(--border-soft); padding-bottom:10px;">
+                <i class="fas fa-link" style="color:var(--accent);"></i> EXCHANGE CONNECTION
             </div>
             
-            <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">BINANCE ACCESS KEY</label>
+                <input type="text" id="real-api-key" class="modal-input" placeholder="Paste Access Key">
+            </div>
+            
+            <div style="margin-bottom:5px;">
+                <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">BINANCE SECRET KEY</label>
+                <input type="password" id="real-secret-key" class="modal-input" placeholder="Paste Secret Key">
+            </div>
+        </div>
+
+        <div class="cyber-panel">
+            <div style="font-size:0.95rem; color:var(--text-primary); margin-bottom:20px; font-weight:bold; border-bottom:1px solid var(--border-soft); padding-bottom:10px;">
+                <i class="fas fa-coins" style="color:var(--accent);"></i> TRADE SETTINGS
+            </div>
+            
+            <div style="display:flex; gap:15px;">
                 <div style="flex:1;">
-                    <label style="font-size:0.7rem; color:#888;">TARGET COIN</label>
+                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">TARGET COIN</label>
                     <input type="text" id="target-coin" class="modal-input" value="BTC/USDT" style="text-align:center;">
                 </div>
                 <div style="flex:1;">
-                    <label style="font-size:0.7rem; color:#888;">AMOUNT (USDT)</label>
-                    <input type="number" id="trade-amount" class="modal-input" value="100" style="text-align:center;">
+                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">AMOUNT (USDT)</label>
+                    <input type="number" id="trade-amount" class="modal-input" value="1000" style="text-align:center;">
                 </div>
             </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+        <div style="display:flex; gap:15px; margin-bottom:20px;">
             <div class="strategy-card active" onclick="selectStrategy(this, 'scalping')">
                 <div class="st-icon"><i class="fas fa-bolt"></i></div>
                 <div class="st-name">SCALPING</div>
@@ -75,8 +74,8 @@
             </div>
         </div>
 
-        <button class="cyber-btn btn-auto" style="width:100%; font-size:1.2rem; padding:15px;" onclick="activateRealTrading()">
-            <i class="fas fa-power-off"></i> ACTIVATE REAL TRADING
+        <button class="cyber-btn btn-auto" style="width:100%; font-size:1.1rem; padding:18px;" onclick="activateRealTrading()">
+            ACTIVATE REAL TRADING
         </button>
 
     </div>
@@ -91,27 +90,25 @@
 
         function activateRealTrading() {
             const apiKey = document.getElementById('real-api-key').value;
-            const secretKey = document.getElementById('real-secret-key').value;
             const amount = document.getElementById('trade-amount').value;
             const coin = document.getElementById('target-coin').value;
 
-            if(apiKey.length < 10 || secretKey.length < 10) {
-                alert("ERROR: INVALID API KEYS.\nPlease enter valid Binance keys.");
+            // 시뮬레이션을 위해 키 길이가 짧아도 허용하되 경고 없음
+            if(!apiKey) {
+                alert("Please enter API Key.");
                 return;
             }
 
-            // 실제로는 여기서 서버로 키를 전송해야 합니다.
-            // 지금은 로컬에 저장하고 시뮬레이션을 시작합니다.
             localStorage.setItem('neuroConfig', JSON.stringify({
                 apiKey: apiKey,
-                secretKey: secretKey,
+                secretKey: "HIDDEN",
                 amount: amount,
                 target: coin,
                 mode: 'REAL'
             }));
 
-            alert(`[SYSTEM ARMED]\nTarget: ${coin}\nAmount: $${amount}\nMode: REAL TRADING ACTIVATED`);
-            window.location.href = 'index.html'; // 메인으로 이동
+            alert(`SYSTEM ARMED\nTarget: ${coin}\nAmount: $${amount}`);
+            window.location.href = 'index.html'; 
         }
     </script>
 </body>
