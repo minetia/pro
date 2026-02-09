@@ -1,37 +1,91 @@
-/* ... 기존 스타일 유지 ... */
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
-/* [NEW] 선택 박스(Dropdown) 디자인 */
-.select-box {
-    appearance: none; /* 기본 화살표 제거 */
-    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23fcd535%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 12px;
-    padding-right: 30px; /* 화살표 공간 */
-    cursor: pointer;
-    font-weight: bold;
-    text-align: center;
+/* 기존 변수 재선언 (깨짐 방지) */
+:root {
+    --bg-main: linear-gradient(to bottom, #141824, #0f1118); 
+    --bg-card: linear-gradient(145deg, #222836, #1a1e29);
+    --border-highlight: 1px solid rgba(255, 255, 255, 0.08);
+    --border-soft: #2b3139;
+    --text-primary: #f5f6f7;  
+    --text-secondary: #9ba3b2;
+    --color-up: #2ebd85;
+    --color-down: #f6465d;
+    --accent: #fcd535;
 }
 
-/* 입력창 포커스 시 빨간 테두리 제거 (정상 입력 시) */
-.modal-input:focus {
-    border-color: var(--accent) !important;
+* { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+
+body { 
+    background: var(--bg-main); color: var(--text-primary); 
+    font-family: 'Pretendard', sans-serif;
+    padding-top: 110px; padding-bottom: 40px; 
+    overflow-x: hidden; line-height: 1.5; min-height: 100vh;
 }
 
-/* 전략 카드 컨테이너 간격 (안전장치) */
-.main-content > div[style*="display:flex"] {
-    gap: 20px !important; /* 모바일에서 적당히 넓은 간격 */
-}
+/* 숫자 폰트 */
+.num-font { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+.text-green { color: var(--color-up) !important; }
+.text-red { color: var(--color-down) !important; }
 
-/* 금액 입력창 등 */
+/* 헤더 & 네비 */
+.cyber-header { position: fixed; top: 0; left: 0; width: 100%; height: 55px; background: rgba(26, 30, 41, 0.95); backdrop-filter: blur(10px); border-bottom: var(--border-highlight); z-index: 4000; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+.brand-logo { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+.brand-logo span { color: var(--accent); }
+
+.cyber-nav { position: fixed; top: 55px; left: 0; width: 100%; height: 50px; background: rgba(20, 24, 36, 0.98); border-bottom: 1px solid var(--border-soft); z-index: 3900; display: flex; align-items: center; overflow-x: auto; white-space: nowrap; padding: 0 10px; }
+.cyber-nav::-webkit-scrollbar { display: none; }
+.nav-item { flex-shrink: 0; padding: 0 15px; height: 100%; display: flex; align-items: center; color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-decoration: none; border-bottom: 3px solid transparent; transition: all 0.3s ease; }
+.nav-item.active { color: var(--text-primary); border-bottom-color: var(--accent); background: linear-gradient(to top, rgba(252, 213, 53, 0.05), transparent); }
+
+/* 패널 */
+.main-content { max-width: 800px; margin: 0 auto; padding: 15px 15px; }
+.cyber-panel { background: var(--bg-card); border-radius: 12px; padding: 20px; margin-bottom: 15px; border: var(--border-highlight); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+
+/* [중요] 버튼 스타일 복구 */
+.cyber-btn {
+    width: 100%; padding: 14px; 
+    border: none; border-radius: 10px; 
+    font-weight: 700; font-size: 0.95rem; 
+    cursor: pointer; color: #fff;
+    transition: 0.2s;
+}
+.cyber-btn:active { transform: scale(0.98); }
+
+/* [중요] 입력창 스타일 복구 */
 .modal-input {
-    width: 100%; 
-    padding: 14px; 
+    width: 100%; padding: 14px; 
     background: rgba(20, 24, 36, 0.8); 
     border: 1px solid var(--border-soft); 
     color: var(--text-primary); 
     border-radius: 12px; 
     font-size: 0.95rem; 
-    margin-bottom: 5px; /* 하단 여백 줄임 */
+    margin-bottom: 5px;
     transition: 0.3s;
 }
+.modal-input:focus { border-color: var(--accent) !important; outline: none; }
+
+/* [NEW] 선택 박스(Dropdown) 커스텀 디자인 */
+.select-box {
+    appearance: none; /* 기본 화살표 제거 */
+    /* 커스텀 화살표 아이콘 (노란색) */
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23fcd535%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 10px;
+    padding-right: 30px;
+    font-weight: bold;
+    text-align: center;
+    text-align-last: center; /* 텍스트 가운데 정렬 */
+}
+
+/* AI CORE 전용 */
+.ai-brain-container { margin: 20px auto; font-size: 3rem; color: var(--accent); background: radial-gradient(circle, rgba(252, 213, 53, 0.1) 0%, transparent 70%); width: 80px; height: 80px; border-radius: 50%; display:flex; align-items:center; justify-content:center; }
+.strategy-card { background: var(--bg-card); border: var(--border-highlight); padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; flex: 1; }
+.strategy-card.active { border-color: var(--accent); background: linear-gradient(145deg, rgba(252, 213, 53, 0.1), rgba(252, 213, 53, 0.02)); }
+.st-icon { font-size: 1.5rem; color: var(--text-secondary); margin-bottom: 8px; }
+.strategy-card.active .st-icon { color: var(--accent); }
+
+/* 기타 */
+.save-tag { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border-soft); padding: 0 14px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+.modal-box { background: var(--bg-card); border: var(--border-highlight); border-radius: 16px; padding: 25px; width: 90%; max-width: 350px; }
