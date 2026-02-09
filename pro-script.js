@@ -1,7 +1,7 @@
-/* pro-script.js - V19.0 (코인별 맞춤 가격 & 금액 반영) */
+/* pro-script.js - V20.0 (입출금 기능 완벽 구현) */
 let appState = {
     balance: 50000.00, bankBalance: 1000000.00, startBalance: 50000.00,
-    tradeHistory: [], dataCount: 425102, config: {}, isRealMode: false,
+    tradeHistory: [], transfers: [], dataCount: 425102, config: {}, isRealMode: false,
     isRunning: true
 };
 let autoTradeInterval = null;
@@ -11,16 +11,88 @@ window.addEventListener('load', () => {
     loadState();
     highlightMenu();
     renderGlobalUI();
-    
-    // 차트가 있는 메인 화면이면 소켓 연결
     if (document.getElementById('tv_chart')) initWebSocket();
-
     if(appState.isRunning) startSystem(true);
     startDataCounter();
     setInterval(() => { applyBankInterest(); saveState(); renderGlobalUI(); }, 500);
 });
 
-/* --- 시스템 제어 --- */
+/* --- [핵심] 입출금 시스템 --- */
+
+// 모달 열기 (기능 연결)
+function openModal(mode) {
+    const modal = document.getElementById('transaction-modal');
+    const title = document.getElementById('modal-title');
+    const input = document.getElementById('amount-input');
+    const confirmBtn = document.getElementById('modal-confirm-btn');
+
+    modal.style.display = 'flex';
+    input.value = ''; // 입력창 초기화
+    input.focus();
+
+    if (mode === 'deposit') {
+        title.innerText = "DEPOSIT (Bank → Wallet)";
+        title.style.color = "var(--color-up)";
+        // 입금 버튼 누르면 processTransaction 실행 (양수)
+        confirmBtn.onclick = () => processTransaction(parseFloat(input.value));
+    } else {
+        title.innerText = "WITHDRAW (Wallet → Bank)";
+        title.style.color = "var(--color-down)";
+        // 출금 버튼 누르면 processTransaction 실행 (음수)
+        confirmBtn.onclick = () => processTransaction(-parseFloat(input.value));
+    }
+}
+
+// 모달 닫기
+function closeModal() {
+    document.getElementById('transaction-modal').style.display = 'none';
+}
+
+// 거래 처리 로직
+function processTransaction(amount) {
+    if (!amount || isNaN(amount) || amount === 0) {
+        alert("⚠️ Please enter a valid amount.");
+        return;
+    }
+
+    // 1. 입금 (Deposit): 은행 -> 지갑
+    if (amount > 0) {
+        if (appState.bankBalance < amount) {
+            alert("⛔ INSUFFICIENT BANK FUNDS!\n(은행 잔고가 부족합니다)");
+            return;
+        }
+        appState.bankBalance -= amount;
+        appState.balance += amount;
+        alert(`✅ DEPOSIT SUCCESSFUL\nMoved $${amount.toLocaleString()} to Wallet.`);
+    } 
+    // 2. 출금 (Withdraw): 지갑 -> 은행
+    else {
+        const absAmount = Math.abs(amount);
+        if (appState.balance < absAmount) {
+            alert("⛔ INSUFFICIENT WALLET FUNDS!\n(지갑 잔고가 부족합니다. 매매 중인 금액을 확인하세요)");
+            return;
+        }
+        appState.balance -= absAmount;
+        appState.bankBalance += absAmount;
+        alert(`✅ WITHDRAW SUCCESSFUL\nMoved $${absAmount.toLocaleString()} to Bank.`);
+    }
+
+    // 3. 기록 남기기 (Transfers 페이지용)
+    const type = amount > 0 ? "DEPOSIT" : "WITHDRAW";
+    const now = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    appState.transfers.unshift({
+        date: now,
+        type: type,
+        amount: Math.abs(amount)
+    });
+
+    // 4. 저장 및 갱신
+    saveState();
+    renderGlobalUI();
+    closeModal();
+}
+
+/* --- 기존 시스템 유지 --- */
 function startSystem(isSilent = false) {
     if(autoTradeInterval) clearInterval(autoTradeInterval);
     appState.isRunning = true;
@@ -29,7 +101,6 @@ function startSystem(isSilent = false) {
     updateButtonState(true);
     if(!isSilent) console.log("System Started");
 }
-
 function stopSystem(isSilent = false) {
     appState.isRunning = false;
     if(autoTradeInterval) clearInterval(autoTradeInterval);
@@ -38,7 +109,6 @@ function stopSystem(isSilent = false) {
     if(!isSilent) console.log("System Stopped");
     saveState();
 }
-
 function updateButtonState(isOn) {
     const btn = document.querySelector('.btn-start');
     if(btn) {
@@ -46,61 +116,40 @@ function updateButtonState(isOn) {
         btn.innerHTML = isOn ? '<i class="fas fa-play"></i> RUNNING' : '<i class="fas fa-play"></i> START';
     }
 }
-
-/* --- [핵심] AI 트레이딩 로직 --- */
 function executeAiTrade(config) {
     if(!appState.isRunning) return;
-    
-    // 1. 설정값 가져오기
     const targetPair = config.target || "BTC/USDT";
-    const symbol = targetPair.split('/')[0]; // "BTC" 추출
-    const tradeAmt = parseFloat(config.amount) || 10000; // 설정된 금액 사용 (없으면 만원)
-
-    // 2. 이자 지급
+    const symbol = targetPair.split('/')[0];
+    const tradeAmt = parseFloat(config.amount) || 10000;
     if(appState.bankBalance > 0) appState.bankBalance += (appState.bankBalance * 0.0000008);
-
-    // 3. 승패 및 수익 계산
     const isWin = Math.random() > 0.48; 
-    const percent = (Math.random() * 0.8) + 0.1; // 0.1% ~ 0.9% 변동
+    const percent = (Math.random() * 0.8) + 0.1;
     const pnl = isWin ? (tradeAmt * (percent / 100)) : -(tradeAmt * (percent / 100) * 0.6);
-    
     appState.balance += pnl;
     if(isNaN(appState.balance)) appState.balance = 50000;
-
-    // 4. [NEW] 코인별 리얼한 가격 생성
     const currentPrice = getRealisticPrice(symbol);
     const direction = Math.random() > 0.5 ? 'LONG' : 'SHORT';
-    
-    // 5. [NEW] 포지션 명칭 조합 (예: BTC LONG)
     const positionLabel = `${symbol} ${direction}`;
-
     const now = new Date();
     appState.tradeHistory.unshift({
         date: `${now.getMonth()+1}/${now.getDate()}`,
         time: now.toLocaleTimeString('en-US',{hour12:false}),
-        pos: positionLabel, // "BTC LONG" 저장
-        in: currentPrice, 
-        profit: pnl
+        pos: positionLabel, in: currentPrice, profit: pnl
     });
-    
     if(appState.tradeHistory.length > 500) appState.tradeHistory.pop();
     appState.dataCount++;
 }
-
-// [NEW] 코인별 가격 생성기 (단위 맞춤)
 function getRealisticPrice(symbol) {
     const jitter = Math.random();
     switch(symbol) {
-        case 'BTC': return 96000 + (jitter * 500);  // 9만불 대
-        case 'ETH': return 2700 + (jitter * 20);    // 2700불 대
-        case 'SOL': return 180 + (jitter * 5);      // 180불 대
-        case 'XRP': return 2.4 + (jitter * 0.1);    // 2.4불 대
-        case 'DOGE': return 0.28 + (jitter * 0.01); // 0.28불 대
+        case 'BTC': return 96000 + (jitter * 500);
+        case 'ETH': return 2700 + (jitter * 20);
+        case 'SOL': return 180 + (jitter * 5);
+        case 'XRP': return 2.4 + (jitter * 0.1);
+        case 'DOGE': return 0.28 + (jitter * 0.01);
         default: return 100 + (jitter * 10);
     }
 }
-
-/* --- 렌더링 --- */
 function renderGlobalUI() {
     const totalAssets = appState.balance + (appState.bankBalance || 0);
     const els = {
@@ -109,7 +158,6 @@ function renderGlobalUI() {
         bank: document.getElementById('bank-balance-display'),
         prof: document.getElementById('real-profit')
     };
-
     if(els.total) els.total.innerText = `$ ${totalAssets.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
     if(els.bank) els.bank.innerText = `$ ${appState.bankBalance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
     if(els.prof) {
@@ -117,36 +165,29 @@ function renderGlobalUI() {
         els.prof.innerText = (profit>=0?'+':'') + profit.toLocaleString(undefined, {minimumFractionDigits:2});
         els.prof.className = `num-font ${profit>=0?'text-green':'text-red'}`;
     }
-    
-    // 리스트 그리기
     const mainList = document.getElementById('main-ledger-list');
     const walletList = document.getElementById('wallet-history-list');
     if(mainList) renderList(mainList, appState.tradeHistory);
     if(walletList) renderList(walletList, appState.tradeHistory);
-    
-    // 은행 리스트
     const bankList = document.getElementById('bank-history-list');
     if(bankList && appState.transfers) {
         let html = '';
         appState.transfers.forEach(t => {
+            const isDep = t.type === 'DEPOSIT';
             html += `<div class="ledger-row">
-                <div style="width:30%" class="ledger-date">${t.date.split(' ')[0]}</div>
-                <div style="width:30%; font-weight:bold;">${t.type}</div>
+                <div style="width:30%" class="ledger-date">${t.date}</div>
+                <div style="width:30%; font-weight:bold; color:${isDep?'#0f0':'#f00'}">${t.type}</div>
                 <div style="width:40%; text-align:right;" class="ledger-price">$${t.amount.toLocaleString()}</div>
             </div>`;
         });
         bankList.innerHTML = html;
     }
 }
-
-// [수정] 공통 리스트 렌더러 (포지션 색상 로직 개선)
 function renderList(el, data) {
     let html = '';
     data.slice(0, 50).forEach(t => {
         const pnlColor = t.profit >= 0 ? 'text-green' : 'text-red';
-        // 포지션 글자에 LONG이 있으면 초록, SHORT면 빨강
         const posColor = t.pos.includes('LONG') ? 'text-green' : 'text-red';
-        
         html += `<div class="ledger-row">
             <div style="width:25%" class="ledger-date">${t.date}<br><span style="color:#666">${t.time}</span></div>
             <div style="width:25%" class="ledger-pos ${posColor}">${t.pos}</div>
@@ -156,8 +197,6 @@ function renderList(el, data) {
     });
     el.innerHTML = html;
 }
-
-/* --- 유틸 --- */
 function startDataCounter() {
     if(dataCounterInterval) clearInterval(dataCounterInterval);
     dataCounterInterval = setInterval(() => {
@@ -175,6 +214,7 @@ function loadState() {
             const parsed = JSON.parse(data);
             appState = {...appState, ...parsed};
             if(isNaN(appState.balance)) appState.balance = 50000;
+            if(!appState.transfers) appState.transfers = []; // 전송 내역 초기화
         }
     } catch(e) {}
 }
@@ -189,6 +229,4 @@ function openChartModal() { document.getElementById('chart-modal').style.display
 function closeChartModal() { document.getElementById('chart-modal').style.display='none'; document.getElementById('modal_tv_chart').innerHTML=''; }
 function handleEnter(e) { if(e.key==='Enter') openChartModal(); }
 function initWebSocket() { socket = new WebSocket(BINANCE_WS_URL); socket.onmessage = (e) => { const d=JSON.parse(e.data); const el=document.getElementById('coin-price'); if(el) { el.innerText=parseFloat(d.p).toLocaleString(); el.style.color=!d.m?'#0ecb81':'#f6465d'; } }; }
-function openModal(mode) { document.getElementById('transaction-modal').style.display='flex'; }
-function closeModal() { document.getElementById('transaction-modal').style.display='none'; }
 function exportLogs() { /* 생략 */ }
