@@ -10,16 +10,16 @@
 <body>
     <header class="ai-super-header">
         <div class="brand-logo">NEURAL <span>WALLET</span></div>
-        <div style="font-size:0.8rem; color:#666;">SECURE</div>
+        <div style="font-size:0.8rem; color:#666;"><i class="fas fa-lock"></i> SECURE</div>
     </header>
 
     <div id="internal-header-slot"></div>
 
     <div class="main-content">
         <div class="wallet-card">
-            <div style="font-size:0.8rem; color:#666;">TOTAL ASSETS</div>
+            <div class="card-label">TOTAL ASSETS</div>
             <div class="total-amount num-font" id="total-val">---</div>
-            <div id="win-rate-display" class="num-font" style="color:#888; font-size:0.9rem;">WIN RATE: ---</div>
+            <div id="win-rate-display" class="num-font" style="text-align:center; color:#888; font-size:0.9rem;">WIN RATE: ---</div>
             
             <div class="action-bar" style="margin-top:20px;">
                 <button class="action-btn btn-deposit" onclick="openModal('deposit')">DEPOSIT</button>
@@ -35,7 +35,12 @@
             <div style="overflow-x:auto;">
                 <table class="history-table">
                     <thead>
-                        <tr><th>TIME</th><th>POS</th><th>PRICE</th><th style="text-align:right">PNL</th></tr>
+                        <tr>
+                            <th width="20%">TIME</th>
+                            <th width="15%">POS</th>
+                            <th width="35%">PRICE</th>
+                            <th width="30%" style="text-align:right">PNL</th>
+                        </tr>
                     </thead>
                     <tbody id="history-body"></tbody>
                 </table>
@@ -49,7 +54,7 @@
             <input type="number" id="amount-input" class="modal-input" placeholder="0.00">
             <div style="display:flex; gap:10px;">
                 <button class="action-btn" onclick="closeModal()" style="background:#333; color:#ccc;">CANCEL</button>
-                <button id="modal-action-btn" class="action-btn btn-deposit">CONFIRM</button>
+                <button id="modal-confirm-btn" class="action-btn btn-deposit">CONFIRM</button>
             </div>
         </div>
     </div>
