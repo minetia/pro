@@ -27,7 +27,7 @@
             <div class="num-font" id="coin-price" style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);">---</div>
         </div>
 
-        <div class="cyber-panel" style="padding:0; overflow:hidden; height:50vh; min-height:400px; margin-bottom:15px;">
+        <div class="cyber-panel" style="padding:0; overflow:hidden; height:45vh; min-height:400px; margin-bottom:15px;">
             <div id="tv_chart"></div>
         </div>
 
@@ -44,9 +44,7 @@
 
             <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 10px;">
                 <div style="font-size:0.85rem; color:var(--text-secondary);">24H PNL</div>
-                <div class="num-font" id="real-profit" style="font-size:1.4rem; font-weight:bold;">
-                    ---
-                </div>
+                <div class="num-font" id="real-profit" style="font-size:1.4rem; font-weight:bold;">---</div>
             </div>
             
             <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed var(--border-soft);">
@@ -56,6 +54,12 @@
             </div>
 
             <div id="real-balance" style="display:none;"></div>
+        </div>
+
+        <div style="text-align:right; margin-bottom:10px;">
+            <button class="save-tag" onclick="exportLogs()" style="border:1px solid var(--border-soft); padding:8px 15px; font-size:0.8rem;">
+                <i class="fas fa-file-csv" style="color:var(--text-green);"></i> DOWNLOAD REPORT
+            </button>
         </div>
 
         <div class="ctrl-group">
@@ -83,22 +87,14 @@
     <script>
         function closeConfig() { document.getElementById('config-modal').style.display = 'none'; }
         
-        // [추가] 로그 한 줄 요약 업데이트를 위한 헬퍼
-        // 기존 pro-script.js가 터미널을 찾지 못해도 에러가 안 나게 설계되어 있지만,
-        // 여기서는 한 줄 요약(last-log-msg)을 업데이트하도록 살짝 연결해줍니다.
+        // 로그 표시 헬퍼
         const originalAddLog = window.addSystemLog || function(){};
         window.addSystemLog = function(type, msg) {
-            // 1. 화면에 한 줄 요약 표시
             const lastMsgEl = document.getElementById('last-log-msg');
             if(lastMsgEl) {
                 const color = type === 'LONG' ? 'var(--color-up)' : 'var(--color-down)';
                 const time = new Date().toLocaleTimeString('en-US',{hour12:false});
                 lastMsgEl.innerHTML = `<span style="color:${color}; font-weight:bold;">${type}</span> ${msg.split('|')[0]} <span style="color:#666; font-size:0.7rem;">(${time})</span>`;
-            }
-            // 2. 기존 로직(데이터 저장 등) 실행
-            if(typeof appState !== 'undefined') {
-                appState.logs.unshift({time: new Date().toLocaleTimeString(), type, msg});
-                if(appState.logs.length > 50) appState.logs.pop();
             }
         };
 
