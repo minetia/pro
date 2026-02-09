@@ -1,4 +1,4 @@
-/* pro-script.js - 데이터 동기화 엔진 (V3.0) */
+/* pro-script.js - 데이터 동기화 엔진 (로그 리미트 버전) */
 const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
 let socket;
 
@@ -8,35 +8,32 @@ let appState = {
     startBalance: 50000.00,
     tradeHistory: [], // 매매 기록
     transfers: [],    // 입출금 기록
-    logs: [],         // 시스템 로그
+    logs: [],         // 시스템 로그 배열
+    totalLogCount: 0, // [NEW] 로그 누적 카운터 (최대 1,000,000)
     lastLogin: Date.now()
 };
 
-// 페이지 로드 시 즉시 실행
+// 페이지 로드 시 실행
 window.addEventListener('load', () => {
-    // 1. 데이터 로드 (없으면 생성)
     loadState(); 
-    if(appState.tradeHistory.length === 0) generateInitialData(); // 데이터 없으면 강제 주입
+    if(appState.tradeHistory.length === 0) generateInitialData(); 
 
-    // 2. 헤더 메뉴 로드
+    // 헤더 로드
     fetch('header.html').then(r => r.text()).then(d => {
         const slot = document.getElementById('internal-header-slot');
         if(slot) slot.innerHTML = d;
         highlightMenu();
     });
 
-    // 3. 페이지별 렌더링 (즉시 실행)
     renderGlobalUI(); 
 
-    // 4. 기능 실행
     if (document.getElementById('tv_chart')) {
         initWebSocket(); // 메인 화면
     } 
     
-    // 5. 1초마다 자동 저장 및 UI 갱신
     setInterval(() => {
         saveState();
-        renderGlobalUI(); // 모든 페이지 실시간 갱신
+        renderGlobalUI();
     }, 1000);
 });
 
@@ -46,12 +43,15 @@ function saveState() {
 }
 function loadState() {
     const data = localStorage.getItem('neuroBotData');
-    if (data) appState = JSON.parse(data);
+    if (data) {
+        appState = JSON.parse(data);
+        // 기존 데이터에 카운터가 없으면 초기화
+        if(appState.totalLogCount === undefined) appState.totalLogCount = appState.logs.length;
+    }
 }
 
-// [핵심] 초기 데이터 강제 생성 (빈 화면 방지)
+// 초기 데이터
 function generateInitialData() {
-    // 가상 매매 기록 15개 생성
     appState.tradeHistory = [];
     for(let i=0; i<15; i++) {
         const isWin = Math.random() > 0.4;
@@ -66,22 +66,21 @@ function generateInitialData() {
             win: isWin
         });
     }
-    // 가상 입출금 기록 2개 생성
     appState.transfers = [
-        { date: '2026-02-09 10:00', type: 'DEPOSIT', amount: 50000, status: 'Completed' },
-        { date: '2026-02-08 18:30', type: 'WITHDRAW', amount: 2000, status: 'Completed' }
+        { date: '2026-02-09 10:00', type: 'DEPOSIT', amount: 50000, status: 'Completed' }
     ];
     saveState();
 }
 
-// [통합] 화면 렌더링 함수 (페이지 상관없이 ID 찾아서 그리기)
+// [통합] 화면 렌더링
 function renderGlobalUI() {
-    // 1. 자산 공통 업데이트
+    // 자산 공통
     const els = {
         total: document.getElementById('total-val'),
         bal: document.getElementById('real-balance'),
         prof: document.getElementById('real-profit'),
-        win: document.getElementById('win-rate-display')
+        win: document.getElementById('win-rate-display'),
+        logCnt: document.getElementById('log-count-display') // 로그 카운터 ID
     };
 
     if(els.total) els.total.innerText = `$ ${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
@@ -93,28 +92,32 @@ function renderGlobalUI() {
         els.prof.className = `num-font ${profit>=0?'text-green':'text-red'}`;
     }
 
-    // 2. 지갑 페이지 리스트 렌더링
+    // [NEW] 로그 카운터 업데이트 (100만 도달 시 빨간색 경고)
+    if(els.logCnt) {
+        els.logCnt.innerText = `[${appState.totalLogCount.toLocaleString()}]`;
+        if(appState.totalLogCount >= 1000000) {
+            els.logCnt.style.color = '#ff003c'; // RED (FULL)
+            els.logCnt.innerText += " FULL";
+        } else {
+            els.logCnt.style.color = '#fff';
+        }
+    }
+
+    // 지갑 리스트
     const histBody = document.getElementById('history-body');
     if(histBody) {
         let html = '';
-        appState.tradeHistory.slice(0, 20).forEach(t => { // 최신 20개
+        appState.tradeHistory.slice(0, 20).forEach(t => { 
             const color = t.profit >= 0 ? 'text-green' : 'text-red';
-            html += `
-            <tr>
+            html += `<tr>
                 <td class="num-font" style="color:#888; font-size:0.75rem;">${t.date}<br>${t.time}</td>
                 <td style="font-weight:bold;" class="${t.pos==='LONG'?'text-green':'text-red'}">${t.pos}</td>
-                <td class="num-font" style="font-size:0.8rem;">
-                    <span style="color:#aaa">IN:</span> ${t.in.toFixed(0)}<br>
-                    <span style="color:#aaa">OUT:</span> ${t.out.toFixed(0)}
-                </td>
-                <td style="text-align:right;" class="num-font ${color}">
-                    <b>${t.profit >= 0 ? '+' : ''}$${t.profit}</b>
-                </td>
+                <td class="num-font" style="font-size:0.8rem;">IN:${t.in.toFixed(0)}<br>OUT:${t.out.toFixed(0)}</td>
+                <td style="text-align:right;" class="num-font ${color}"><b>${t.profit>=0?'+':''}$${t.profit}</b></td>
             </tr>`;
         });
         histBody.innerHTML = html;
 
-        // 승률 업데이트
         if(els.win) {
             const wins = appState.tradeHistory.filter(t => t.win).length;
             const total = appState.tradeHistory.length;
@@ -123,41 +126,31 @@ function renderGlobalUI() {
         }
     }
 
-    // 3. 입출금 페이지 렌더링
+    // 입출금 리스트
     const transBody = document.getElementById('transfer-body');
     if(transBody) {
         let html = '';
         appState.transfers.forEach(t => {
             const isDep = t.type === 'DEPOSIT';
-            html += `
-            <tr>
+            html += `<tr>
                 <td class="num-font" style="color:#888; font-size:0.75rem;">${t.date.split(' ')[0]}<br>${t.date.split(' ')[1]}</td>
                 <td style="font-weight:bold; color:${isDep?'#0f0':'#f00'}">${t.type}</td>
-                <td style="text-align:right;" class="num-font ${isDep?'text-green':'text-red'}">
-                    ${isDep?'+':'-'}$${t.amount.toLocaleString()}
-                </td>
+                <td style="text-align:right;" class="num-font ${isDep?'text-green':'text-red'}">${isDep?'+':'-'}$${t.amount.toLocaleString()}</td>
                 <td style="text-align:right; font-size:0.7rem; color:#666;">${t.status}</td>
             </tr>`;
         });
         transBody.innerHTML = html;
     }
-    
-    // 4. 로그 카운터
-    const logCnt = document.getElementById('log-count-display');
-    if(logCnt) logCnt.innerText = appState.logs.length;
 }
 
-// 입출금 처리 로직
+// 입출금 로직
 function processTransaction(amount) {
     if(!amount || amount <= 0) return alert("Invalid Amount");
-    
-    // 출금 시 잔액 체크
     if(amount < 0 && (appState.balance + amount) < 0) return alert("Insufficient Funds");
 
     appState.balance += amount;
-    if(amount > 0) appState.startBalance += amount; // 입금은 원금 증가 처리
+    if(amount > 0) appState.startBalance += amount; 
 
-    // 내역 저장
     appState.transfers.unshift({
         date: new Date().toISOString().slice(0,16).replace('T', ' '),
         type: amount > 0 ? 'DEPOSIT' : 'WITHDRAW',
@@ -167,11 +160,10 @@ function processTransaction(amount) {
 
     saveState();
     closeModal();
-    renderGlobalUI(); // 즉시 갱신
+    renderGlobalUI(); 
     alert("TRANSACTION COMPLETED");
 }
 
-// 모달 제어
 function openModal(mode) {
     const modal = document.getElementById('transaction-modal');
     const title = document.getElementById('modal-title');
@@ -195,7 +187,7 @@ function openModal(mode) {
 }
 function closeModal() { document.getElementById('transaction-modal').style.display = 'none'; }
 
-// 메인 차트 및 웹소켓
+// 메인 웹소켓
 function initWebSocket() {
     socket = new WebSocket(BINANCE_WS_URL);
     socket.onmessage = (e) => {
@@ -209,23 +201,32 @@ function initWebSocket() {
             priceEl.style.color = isBuy ? '#00ff88' : '#ff3344';
         }
         
-        // 자산 변동 연출
         const noise = (Math.random()-0.5)*5;
         const dispBal = appState.balance + noise;
         const balEl = document.getElementById('real-balance');
         if(balEl) balEl.innerText = dispBal.toLocaleString(undefined, {minimumFractionDigits:2});
 
-        // 로그 생성
+        // 랜덤 로그 생성 (확률)
         if(Math.random() < 0.05) addLog(isBuy?'LONG':'SHORT', `Price ${price.toFixed(1)} Executed`);
     };
     socket.onclose = () => setTimeout(initWebSocket, 2000);
 }
 
+// [핵심] 로그 추가 및 한계 설정 (100만 제한)
 function addLog(type, msg) {
+    // 100만 건 도달 시 로그 생성 중단
+    if (appState.totalLogCount >= 1000000) return;
+
     const time = new Date().toLocaleTimeString('en-US',{hour12:false});
+    
+    // 로그 데이터 추가
     appState.logs.unshift({time, type, msg});
+    appState.totalLogCount++; // 카운터 증가
+
+    // 메모리 관리를 위해 배열 자체는 500개만 유지 (카운터는 계속 올라감)
     if(appState.logs.length > 500) appState.logs.pop();
     
+    // UI 업데이트 (터미널)
     const terminal = document.getElementById('terminal');
     if(terminal) {
         const color = type==='LONG'?'pos-long':'pos-short';
@@ -235,16 +236,30 @@ function addLog(type, msg) {
     }
 }
 
-// 로그 저장
+// [핵심] 로그 저장 및 카운터 초기화 (Reset)
 function exportLogs() {
-    if(appState.logs.length === 0) return alert("No logs.");
+    if(appState.logs.length === 0) return alert("No logs to save.");
+    
+    // CSV 생성
     let csv = "Time,Type,Message\n";
     appState.logs.forEach(l => csv += `${l.time},${l.type},${l.msg}\n`);
     const blob = new Blob([csv], {type:'text/csv'});
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `TradeLog_${Date.now()}.csv`;
+    link.download = `NeuroLog_${Date.now()}.csv`;
     link.click();
+
+    // [초기화] 저장 후 카운터와 로그 삭제
+    appState.logs = [];
+    appState.totalLogCount = 0;
+    saveState();
+    
+    // 터미널 화면도 비우기
+    const terminal = document.getElementById('terminal');
+    if(terminal) terminal.innerHTML = '';
+    
+    renderGlobalUI(); // 카운터 0으로 갱신
+    alert("DATA SAVED. LOG COUNTER RESET TO 0.");
 }
 
 function highlightMenu() {
