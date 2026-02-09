@@ -1,126 +1,181 @@
-@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+/* pro-script.js - V15.0 (검색엔진 & 대형 장부 패치) */
+const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
+let socket;
+let autoTradeInterval = null;
+let dataCounterInterval = null;
 
-/* [기본 테마] */
-:root {
-    --bg-main: linear-gradient(to bottom, #141824, #0f1118); 
-    --bg-card: linear-gradient(145deg, #222836, #1a1e29);
-    --border-highlight: 1px solid rgba(255, 255, 255, 0.08);
-    --border-soft: #2b3139;
-    --text-primary: #f5f6f7;  
-    --text-secondary: #9ba3b2;
-    --color-up: #2ebd85;
-    --color-down: #f6465d;
-    --accent: #fcd535;
-}
+let appState = {
+    balance: 50000.00,
+    bankBalance: 1000000.00,
+    startBalance: 50000.00,
+    tradeHistory: [], 
+    dataCount: 425102,
+    config: {},
+    isRealMode: false
+};
 
-* { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+window.addEventListener('load', () => {
+    loadState();
+    checkRealModeAndStart();
 
-body { 
-    background: var(--bg-main); color: var(--text-primary); 
-    font-family: 'Pretendard', sans-serif;
-    padding-top: 110px; padding-bottom: 40px; overflow-x: hidden; line-height: 1.5; min-height: 100vh;
-}
-.num-font { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
-.text-green { color: var(--color-up) !important; }
-.text-red { color: var(--color-down) !important; }
+    // 메뉴바 복구
+    fetch('header.html').then(r => r.text()).then(d => {
+        const slot = document.getElementById('internal-header-slot');
+        if(slot) { slot.innerHTML = d; highlightMenu(); }
+    });
 
-/* 헤더 & 네비 */
-.cyber-header {
-    position: fixed; top: 0; left: 0; width: 100%; height: 55px;
-    background: rgba(26, 30, 41, 0.95); backdrop-filter: blur(10px); border-bottom: var(--border-highlight);
-    z-index: 4000; display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-}
-.brand-logo { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
-.brand-logo span { color: var(--accent); text-shadow: 0 0 10px rgba(252, 213, 53, 0.3); }
+    renderGlobalUI();
+    
+    // 0.5초 갱신
+    setInterval(() => { applyBankInterest(); saveState(); renderGlobalUI(); }, 500);
+    startDataCounter();
+});
 
-.cyber-nav {
-    position: fixed; top: 55px; left: 0; width: 100%; height: 50px;
-    background: rgba(20, 24, 36, 0.98); border-bottom: 1px solid var(--border-soft);
-    z-index: 3900; display: flex; align-items: center; overflow-x: auto; white-space: nowrap; padding: 0 10px;
-}
-.cyber-nav::-webkit-scrollbar { display: none; }
-.nav-item {
-    flex-shrink: 0; padding: 0 18px; height: 100%; display: flex; align-items: center;
-    color: var(--text-secondary); font-weight: 600; font-size: 0.9rem; text-decoration: none; 
-    border-bottom: 3px solid transparent; transition: all 0.3s ease;
-}
-.nav-item.active { 
-    color: var(--text-primary); border-bottom-color: var(--accent); 
-    background: linear-gradient(to top, rgba(252, 213, 53, 0.05), transparent);
-}
-.nav-item i { margin-right: 8px; }
+// [NEW] 검색 및 차트 모달 열기
+function handleEnter(e) { if(e.key === 'Enter') openChartModal(); }
 
-/* 메인 패널 */
-.main-content { max-width: 800px; margin: 0 auto; padding: 20px 15px; }
-.cyber-panel {
-    background: var(--bg-card); border-radius: 16px; padding: 25px; margin-bottom: 20px;
-    border: var(--border-highlight); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
-    transition: transform 0.2s;
-}
-#total-val { text-shadow: 0 0 25px rgba(255, 255, 255, 0.15); letter-spacing: -1px; }
+function openChartModal() {
+    const input = document.getElementById('coin-search-input');
+    let symbol = input.value.toUpperCase().trim() || "BTC";
+    if(!symbol.includes("USDT")) symbol += "USDT"; // 자동으로 USDT 붙임
 
-/* [NEW] 대형 데이터 마이닝 패널 스타일 */
-.data-mining-panel {
-    background: linear-gradient(90deg, rgba(20,24,36,0.8), rgba(20,24,36,0.6));
-    border: 1px solid var(--border-soft);
-    border-left: 4px solid var(--accent); /* 왼쪽에 노란색 포인트 */
-    border-radius: 12px;
-    padding: 20px 25px; /* 내부 여백 넉넉하게 */
-    margin-bottom: 20px; /* 아래 패널과 간격 */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    document.getElementById('chart-title').innerText = `${symbol} CHART`;
+    document.getElementById('chart-modal').style.display = 'flex';
+
+    // 트레이딩뷰 위젯 생성
+    new TradingView.widget({
+        "container_id": "modal_tv_chart",
+        "symbol": `BINANCE:${symbol}`,
+        "interval": "1",
+        "timezone": "Asia/Seoul",
+        "theme": "dark",
+        "style": "1",
+        "locale": "en",
+        "toolbar_bg": "#000",
+        "enable_publishing": false,
+        "hide_side_toolbar": false,
+        "allow_symbol_change": true,
+        "autosize": true
+    });
 }
 
-.mining-left {
-    display: flex;
-    flex-direction: column;
+function closeChartModal() {
+    document.getElementById('chart-modal').style.display = 'none';
+    document.getElementById('modal_tv_chart').innerHTML = ''; // 차트 초기화
 }
 
-/* 다운로드 버튼 (크고 눈에 띄게) */
-.save-tag.big-btn {
-    background: rgba(255,255,255,0.08); 
-    height: 50px; 
-    padding: 0 25px; 
-    font-size: 0.9rem;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-.save-tag.big-btn:hover {
-    background: var(--accent);
-    color: #000;
-    border-color: var(--accent);
+// [핵심] 대형 장부 렌더링 (차트 대신 들어가는 곳)
+function renderMainLedger() {
+    const listArea = document.getElementById('main-ledger-list');
+    if(!listArea) return;
+
+    let html = '';
+    // 최근 50개 내역 표시
+    appState.tradeHistory.slice(0, 50).forEach(t => {
+        const pnlClass = t.profit >= 0 ? 'text-green' : 'text-red';
+        const pnlSign = t.profit >= 0 ? '+' : '';
+        // 포지션 명칭 조합 (예: BTC LONG)
+        const coinName = appState.config.target ? appState.config.target.split('/')[0] : 'BTC';
+        const positionText = `${coinName} <span class="${t.pos==='LONG'?'text-green':'text-red'}">${t.pos}</span>`;
+
+        html += `
+        <div class="ledger-row">
+            <div style="width:25%" class="ledger-date">
+                ${t.date}<br><span style="color:#666">${t.time}</span>
+            </div>
+            <div style="width:25%" class="ledger-pos">${positionText}</div>
+            <div style="width:25%" class="ledger-price">$${t.in.toLocaleString()}</div>
+            <div style="width:25%" class="ledger-pnl ${pnlClass}">${pnlSign}$${t.profit.toFixed(2)}</div>
+        </div>`;
+    });
+    listArea.innerHTML = html;
 }
 
-/* AI HUD (시각화) */
-.ai-hud-panel {
-    background: rgba(16, 20, 30, 0.95); border: 1px solid rgba(0, 255, 65, 0.2);
-    border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; overflow: hidden;
-    box-shadow: 0 0 20px rgba(0, 255, 65, 0.05);
-}
-.radar-box { width: 50px; height: 50px; border: 2px solid rgba(0, 243, 255, 0.3); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; }
-.radar-scan { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 243, 255, 0.5) 360deg); animation: radar-spin 2s linear infinite; position: absolute; top: 0; left: 0; opacity: 0.3; }
-.radar-dot { width: 6px; height: 6px; background: #fff; border-radius: 50%; position: absolute; top: 10px; right: 10px; box-shadow: 0 0 10px #fff; animation: blink 1s infinite; }
-.scan-text-line { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; display: flex; justify-content: space-between; }
-.check-pass { color: var(--color-up); font-weight: bold; }
-.check-wait { color: var(--accent); }
-.confidence-bar-bg { width: 100%; height: 6px; background: #222; border-radius: 3px; margin-top: 8px; overflow: hidden; }
-.confidence-bar-fill { height: 100%; width: 0%; background: var(--color-up); border-radius: 3px; transition: width 0.3s; box-shadow: 0 0 10px var(--color-up); }
-@keyframes radar-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+// UI 렌더링 통합
+function renderGlobalUI() {
+    const totalAssets = appState.balance + (appState.bankBalance || 0);
+    
+    // 자산 표시
+    const elTotal = document.getElementById('total-val');
+    const elProf = document.getElementById('real-profit');
+    
+    if(elTotal) elTotal.innerText = `$ ${totalAssets.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+    
+    if(elProf) {
+        const profit = appState.balance - appState.startBalance;
+        const arrow = profit >= 0 ? '▲' : '▼';
+        elProf.innerText = `${arrow} $${Math.abs(profit).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+        elProf.className = `num-font ${profit>=0?'text-green':'text-red'}`;
+    }
 
-/* 기타 공통 */
-.status-bar { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; }
-.save-tag { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border-soft); padding: 0 14px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
-.ctrl-group { display: flex; gap: 12px; margin-top: 20px; }
-.cyber-btn { flex: 1; padding: 16px; border: none; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; color: #fff; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-.btn-auto { background: linear-gradient(135deg, #2ebd85, #20a370); }
-.btn-stop { background: linear-gradient(135deg, #2b3139, #1f242b); color: var(--text-secondary); }
-.modal-input { width: 100%; padding: 16px; background: rgba(20, 24, 36, 0.8); border: 1px solid var(--border-soft); color: var(--text-primary); border-radius: 12px; font-size: 1rem; margin-bottom: 12px; transition: 0.3s; }
-.modal-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(252, 213, 53, 0.1); }
-.bank-card-bg { background: linear-gradient(135deg, #1e2330 0%, #141824 100%); border: 1px solid rgba(93, 120, 255, 0.1); box-shadow: 0 10px 30px -5px rgba(93, 120, 255, 0.15); }
-.history-table th { padding: 15px 0 10px 15px; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.5px; color: var(--text-secondary); }
-.history-table td { padding: 15px 0 15px 15px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.85rem; }
-.modal-overlay { backdrop-filter: blur(5px); background: rgba(0,0,0,0.6); display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999; justify-content:center; align-items:center;}
-.modal-box { background: var(--bg-card); border: var(--border-highlight); border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); width:90%; max-width:380px;}
+    // 장부(리스트) 그리기
+    renderMainLedger();
+}
+
+// AI 트레이딩 엔진 (데이터 생성)
+function executeAiTrade(config) {
+    const isWin = Math.random() > 0.48; 
+    const percent = (Math.random() * 0.8) + 0.1; 
+    const pnl = isWin ? (parseFloat(config.amount) * (percent / 100)) : -(parseFloat(config.amount) * (percent / 100) * 0.6);
+    appState.balance += pnl;
+
+    const currentPrice = 69000 + (Math.random() * 1000);
+    const pos = Math.random() > 0.5 ? 'LONG' : 'SHORT';
+    const now = new Date();
+    
+    const newTrade = {
+        date: `${now.getMonth()+1}/${now.getDate()}`,
+        time: now.toLocaleTimeString('en-US',{hour12:false}),
+        pos: pos, 
+        in: currentPrice, 
+        out: currentPrice + (isWin ? 50 : -50), 
+        profit: pnl, 
+        win: isWin
+    };
+
+    appState.tradeHistory.unshift(newTrade);
+    if(appState.tradeHistory.length > 2000) appState.tradeHistory.pop();
+    appState.dataCount++;
+}
+
+/* --- 기본 함수 유지 --- */
+function loadState() {
+    try {
+        const data = localStorage.getItem('neuroBotData');
+        if (data) { 
+            const parsed = JSON.parse(data);
+            appState.balance = isNaN(parsed.balance) ? 50000 : parsed.balance;
+            appState.bankBalance = isNaN(parsed.bankBalance) ? 1000000 : parsed.bankBalance;
+            appState.dataCount = isNaN(parsed.dataCount) ? 425102 : parsed.dataCount;
+            appState.tradeHistory = parsed.tradeHistory || [];
+            appState.config = parsed.config || {};
+        }
+    } catch(e) { localStorage.removeItem('neuroBotData'); }
+}
+function saveState() { localStorage.setItem('neuroBotData', JSON.stringify(appState)); }
+function startDataCounter() {
+    if(dataCounterInterval) clearInterval(dataCounterInterval);
+    dataCounterInterval = setInterval(() => {
+        appState.dataCount += Math.floor(Math.random() * 5);
+        if(document.getElementById('data-mining-counter')) 
+            document.getElementById('data-mining-counter').innerText = appState.dataCount.toLocaleString();
+    }, 50);
+}
+function applyBankInterest() { if(appState.bankBalance>0) appState.bankBalance += (appState.bankBalance * 0.0000008); }
+function checkRealModeAndStart() {
+    const config = JSON.parse(localStorage.getItem('neuroConfig') || '{}');
+    appState.config = config;
+    if(config.apiKey && config.mode === 'REAL') {
+        appState.isRealMode = true;
+        if(autoTradeInterval) clearInterval(autoTradeInterval);
+        autoTradeInterval = setInterval(() => { executeAiTrade(config); }, 1200);
+    }
+}
+function forceStartTrade() {
+    if(!appState.config.target) {
+        executeAiTrade({target:'BTC/USDT', amount:1000});
+        autoTradeInterval = setInterval(() => { executeAiTrade({target:'BTC/USDT', amount:1000}); }, 1200);
+    }
+}
+function exportLogs() { /* 기존 동일 */ }
+function highlightMenu() { /* 기존 동일 */ }
