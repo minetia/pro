@@ -7,36 +7,48 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-    
     <link rel="stylesheet" href="pro-style.css">
 </head>
 <body>
-    <div id="header-placeholder"></div>
-    <div id="nav-placeholder"></div>
+    <div class="ai-super-header">
+        <div class="brand-catchphrase">
+            NEURAL ARCHITECT <span style="color:#666;">//</span> BEYOND HUMAN LIMITS
+        </div>
+        <div class="search-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" placeholder="SEARCH ASSET (e.g., BTC/KRW)...">
+        </div>
+    </div>
+
+    <div class="status-bar-fixed">
+        <div class="status-left">
+            <span class="mode-badge">AI PRO MODE</span>
+            <span class="latency-box"><i class="fas fa-bolt"></i> LATENCY: <span id="latency-val">12ms</span></span>
+        </div>
+        <div class="status-right">
+            <span id="connection-status" class="status-text blink">ESTABLISHING UPLINK...</span>
+            <span id="coin-price" class="live-price">---</span>
+        </div>
+    </div>
 
     <main class="main-content">
         <div id="tv_chart"></div>
 
-        <div class="top-bar">
-            <div>
-                <span class="mode-title">AI PRO MODE</span>
-                <span class="latency">LATENCY: 12ms</span>
-            </div>
-            <div id="coin-price" class="price-display">Connecting...</div>
-        </div>
-
         <div class="asset-box">
             <div class="asset-item">
-                <div class="label">BALANCE (KRW)</div>
+                <div class="label">TOTAL BALANCE (KRW)</div>
                 <div id="real-balance" class="value">50,000,000</div>
             </div>
             <div class="asset-item text-right">
-                <div class="label">TODAY PROFIT</div>
+                <div class="label">PERFORMANCE (24H)</div>
                 <div id="real-profit" class="value success">+8,639,485</div>
             </div>
         </div>
 
-        <div class="log-header">SYSTEM LOG:</div>
+        <div class="log-header">
+            <span>SYSTEM LOG:</span>
+            <span style="float:right; color:#444; font-size:0.7rem;">DATA COLLECTION ACTIVE</span>
+        </div>
         <div class="terminal-box" id="terminal">
             <div id="log-anchor"></div>
         </div>
