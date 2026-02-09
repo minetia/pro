@@ -1,73 +1,93 @@
-// [NEW] API 설정 (업비트 비트코인)
+// [1] 업비트 API 주소 정의 (비트코인)
 const API_URL = 'https://api.upbit.com/v1/ticker?markets=KRW-BTC';
 
 window.addEventListener('load', () => {
-    // 1. 헤더 로드 (기존 유지)
+    
+    // [2] 자체 헤더 파일(header.html) 연동
     fetch('header.html')
-        .then(res => res.text())
-        .then(data => document.getElementById('internal-header-slot').innerHTML = data);
+        .then(response => {
+            if (!response.ok) throw new Error("Header load failed");
+            return response.text();
+        })
+        .then(data => {
+            document.getElementById('internal-header-slot').innerHTML = data;
+        })
+        .catch(error => console.error('Error loading header:', error));
 
-    // 2. 초기 상태 메시지
+    // [3] 초기 상태 메시지 설정
     const statusText = document.getElementById('connection-status');
     statusText.innerText = "CONNECTING TO UPBIT...";
-    
-    // 3. 실시간 데이터 펌핑 시작
-    setInterval(fetchRealPrice, 1000); // 1초마다 가격 갱신
+    statusText.style.color = 'orange';
+
+    // [4] 1초마다 실시간 시세 가져오기 (심장 박동 시작)
+    setInterval(fetchRealPrice, 1000);
+
+    // [5] 가짜 Latency(지연시간) 연출 시작
+    startLatencyUpdate();
 });
 
-// [NEW] 실제 시세 가져오기 함수
+// [6] 실제 업비트 시세 가져오는 핵심 함수
 async function fetchRealPrice() {
     try {
         const response = await fetch(API_URL);
         const data = await response.json();
-        const ticker = data[0]; // 첫 번째 결과 (KRW-BTC)
+        const ticker = data[0]; // KRW-BTC 정보
 
         // 가격 포맷팅 (예: 104,000,000)
         const currentPrice = ticker.trade_price;
         const formattedPrice = currentPrice.toLocaleString();
         
-        // 전일 대비 색상 결정
+        // 전일 대비 등락에 따른 색상 결정
         const changeRate = (ticker.signed_change_rate * 100).toFixed(2);
-        const color = ticker.signed_change_price > 0 ? '#0f0' : (ticker.signed_change_price < 0 ? '#f00' : '#fff');
+        let color = '#fff'; // 기본 흰색
+        if (ticker.signed_change_price > 0) color = '#0f0'; // 상승: 초록
+        if (ticker.signed_change_price < 0) color = '#f00'; // 하락: 빨강
 
-        // UI 업데이트
+        // 화면 업데이트
         const priceEl = document.getElementById('coin-price');
         const statusEl = document.getElementById('connection-status');
 
         priceEl.innerText = formattedPrice;
         priceEl.style.color = color;
         
-        // 상태 메시지에 변동률 표시
+        // 상태바 텍스트 업데이트
         statusEl.innerHTML = `BTC/KRW <span style="color:${color}">${changeRate}%</span>`;
         statusEl.classList.remove('blink');
         statusEl.style.color = '#fff';
 
-        // 가끔씩 AI 로그에 실제 가격 반영 (연출)
-        if (Math.random() < 0.1) { // 10% 확률로 로그 기록
-            const signal = changeRate > 0 ? 'Bullish Trend Detected' : 'Panic Selling Detected';
-            const position = changeRate > 0 ? 'LONG' : 'SHORT';
+        // [연출] 10% 확률로 터미널에 로그 기록 (AI가 감지한 것처럼)
+        if (Math.random() < 0.1) { 
+            const signal = ticker.signed_change_price > 0 ? 'Bullish Signal' : 'Sell Pressure';
+            const position = ticker.signed_change_price > 0 ? 'LONG' : 'SHORT';
             addPrecisionLog(position, currentPrice, changeRate, signal);
         }
 
     } catch (error) {
         console.error("API Error:", error);
+        document.getElementById('connection-status').innerText = "CONNECTION LOST";
+        document.getElementById('connection-status').style.color = "red";
     }
 }
 
-// Latency 시뮬레이션 (기존 유지)
-function startLatencyUpdate() { /* ... 기존 코드 ... */ }
+// [7] Latency 랜덤 업데이트 (연출용)
+function startLatencyUpdate() {
+    setInterval(() => {
+        const ms = Math.floor(Math.random() * (15 - 8 + 1)) + 8; // 8~15ms
+        document.getElementById('latency-val').innerText = ms + "ms";
+    }, 2000);
+}
 
-// 로그 시스템 (기존 유지)
+// [8] 정밀 로그 찍는 함수
 function addPrecisionLog(pos, price, profit, signal) {
     const terminal = document.getElementById('terminal');
     const time = new Date().toLocaleTimeString('ko-KR', {hour12: false});
-    const color = pos === 'LONG' ? 'pos-long' : 'pos-short';
+    const colorClass = pos === 'LONG' ? 'pos-long' : 'pos-short';
     const profitColor = profit >= 0 ? '#0f0' : '#f00';
     
     const logRow = `
         <div class="log-line">
             <span style="color:#555;">[${time}]</span>
-            <span class="${color}">${pos}</span>
+            <span class="${colorClass}">${pos}</span>
             <span style="color:#eee; text-align:right;">${Number(price).toLocaleString()}</span>
             <span style="color:#aaa;">${signal} <b style="color:${profitColor}">(${profit}%)</b></span>
         </div>`;
@@ -75,6 +95,12 @@ function addPrecisionLog(pos, price, profit, signal) {
     terminal.insertAdjacentHTML('afterbegin', logRow);
 }
 
-// 버튼 기능들 (기존 유지)
-function startAi() { alert("AI AUTO-TRADING STARTED based on Real-Time Data."); }
-function stopAi() { alert("TRADING HALTED."); }
+// [9] 버튼 기능
+function startAi() {
+    addPrecisionLog('SYSTEM', 0, 0, 'Real-Time Data Stream Connected.');
+    alert("AI TRADING STARTED with Real Market Data.");
+}
+
+function stopAi() {
+    alert("EMERGENCY STOP EXECUTED.");
+}
