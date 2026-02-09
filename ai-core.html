@@ -7,108 +7,66 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="pro-style.css">
 </head>
-<body class="sub-page">
+<body>
 
     <header class="cyber-header">
         <div class="brand-logo">NEURAL <span>CORE</span></div>
-        <div style="font-size:0.75rem; color:var(--text-secondary); background:var(--bg-main); padding:4px 8px; border-radius:4px;">
-            V.3.0.1
-        </div>
+        <div style="font-size:0.7rem; color:var(--accent); border:1px solid var(--accent); padding:2px 6px; border-radius:4px;">V.3.0</div>
     </header>
 
     <div id="internal-header-slot"></div>
 
     <div class="main-content">
-        
-        <div class="cyber-panel" style="text-align:center; padding:30px 20px;">
-            <div class="ai-brain-container">
-                <i class="fas fa-brain"></i>
-            </div>
-            <div>
-                <div style="font-size:1.1rem; font-weight:bold; color:var(--text-primary);">NEURAL ENGINE: <span class="text-green">READY</span></div>
-                <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:5px;">WAITING FOR INPUTS...</div>
-            </div>
+        <div class="cyber-panel" style="text-align:center;">
+            <div class="ai-brain-container"><i class="fas fa-brain"></i></div>
+            <div style="font-size:1.2rem; font-weight:bold; color:#fff;">NEURAL ENGINE: <span class="text-green">READY</span></div>
+            <div style="font-size:0.8rem; color:#888;">WAITING FOR INPUTS...</div>
         </div>
 
         <div class="cyber-panel">
-            <div style="font-size:0.95rem; color:var(--text-primary); margin-bottom:20px; font-weight:bold; border-bottom:1px solid var(--border-soft); padding-bottom:10px;">
-                <i class="fas fa-link" style="color:var(--accent);"></i> EXCHANGE CONNECTION
-            </div>
-            
-            <div style="margin-bottom:15px;">
-                <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">BINANCE ACCESS KEY</label>
-                <input type="text" id="real-api-key" class="modal-input" placeholder="Paste Access Key">
-            </div>
-            
-            <div style="margin-bottom:5px;">
-                <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">BINANCE SECRET KEY</label>
-                <input type="password" id="real-secret-key" class="modal-input" placeholder="Paste Secret Key">
-            </div>
+            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px;"><i class="fas fa-plug"></i> CONNECT</div>
+            <input type="text" id="real-api-key" class="modal-input" placeholder="Access Key">
+            <input type="password" id="real-secret-key" class="modal-input" placeholder="Secret Key">
         </div>
 
         <div class="cyber-panel">
-            <div style="font-size:0.95rem; color:var(--text-primary); margin-bottom:20px; font-weight:bold; border-bottom:1px solid var(--border-soft); padding-bottom:10px;">
-                <i class="fas fa-coins" style="color:var(--accent);"></i> TRADE SETTINGS
-            </div>
-            
-            <div style="display:flex; gap:15px;">
-                <div style="flex:1;">
-                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">TARGET COIN</label>
-                    <input type="text" id="target-coin" class="modal-input" value="BTC/USDT" style="text-align:center;">
-                </div>
-                <div style="flex:1;">
-                    <label style="font-size:0.8rem; color:var(--text-secondary); display:block; margin-bottom:5px;">AMOUNT (USDT)</label>
-                    <input type="number" id="trade-amount" class="modal-input" value="1000" style="text-align:center;">
-                </div>
+            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px;"><i class="fas fa-coins"></i> TARGET</div>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="target-coin" class="modal-input" value="BTC/USDT" style="text-align:center;">
+                <input type="number" id="trade-amount" class="modal-input" value="1000" style="text-align:center;">
             </div>
         </div>
 
-        <div style="display:flex; gap:15px; margin-bottom:20px;">
-            <div class="strategy-card active" onclick="selectStrategy(this, 'scalping')">
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <div class="strategy-card active" onclick="selectStrategy(this)">
                 <div class="st-icon"><i class="fas fa-bolt"></i></div>
-                <div class="st-name">SCALPING</div>
+                <div style="font-weight:bold; color:#fff;">SCALPING</div>
             </div>
-            <div class="strategy-card" onclick="selectStrategy(this, 'swing')">
+            <div class="strategy-card" onclick="selectStrategy(this)">
                 <div class="st-icon"><i class="fas fa-chart-line"></i></div>
-                <div class="st-name">SWING</div>
+                <div style="font-weight:bold; color:#fff;">SWING</div>
             </div>
         </div>
 
-        <button class="cyber-btn btn-auto" style="width:100%; font-size:1.1rem; padding:18px;" onclick="activateRealTrading()">
-            ACTIVATE REAL TRADING
-        </button>
-
+        <button class="cyber-btn" onclick="activateRealTrading()">ACTIVATE SYSTEM</button>
     </div>
 
     <script src="pro-script.js"></script>
     <script>
-        function selectStrategy(el, type) {
+        function selectStrategy(el) {
             document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active'));
             el.classList.add('active');
-            localStorage.setItem('selectedStrategy', type);
         }
-
         function activateRealTrading() {
-            const apiKey = document.getElementById('real-api-key').value;
-            const amount = document.getElementById('trade-amount').value;
-            const coin = document.getElementById('target-coin').value;
-
-            // 시뮬레이션을 위해 키 길이가 짧아도 허용하되 경고 없음
-            if(!apiKey) {
-                alert("Please enter API Key.");
-                return;
-            }
-
+            const key = document.getElementById('real-api-key').value;
+            if(!key) return alert("Please enter API Key");
             localStorage.setItem('neuroConfig', JSON.stringify({
-                apiKey: apiKey,
-                secretKey: "HIDDEN",
-                amount: amount,
-                target: coin,
-                mode: 'REAL'
+                apiKey: key, mode: 'REAL',
+                target: document.getElementById('target-coin').value,
+                amount: document.getElementById('trade-amount').value
             }));
-
-            alert(`SYSTEM ARMED\nTarget: ${coin}\nAmount: $${amount}`);
-            window.location.href = 'index.html'; 
+            alert("SYSTEM ARMED!");
+            window.location.href = 'index.html';
         }
     </script>
 </body>
