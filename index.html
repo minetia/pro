@@ -3,130 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Real Trading - Neuro Bot PRO</title>
-    
+    <title>AI Real Trading - Dashboard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-    
-    <style>
-        :root {
-            --bg-color: #050505; --panel-bg: #0a0a0a; --border-color: #1a1a1a;
-            --neon-green: #00ff88; --neon-red: #ff3344; --text-main: #e0e0e0;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
-        body { 
-            background-color: var(--bg-color); color: var(--text-main); font-family: 'Rajdhani', sans-serif;
-            overflow-x: hidden; padding-top: 140px; padding-bottom: 20px; 
-        }
-        .num-font { font-family: 'JetBrains Mono', monospace; }
-
-        /* 헤더 */
-        .ai-super-header {
-            position: fixed; top: 0; left: 0; width: 100%; height: 50px;
-            background: rgba(5, 5, 5, 0.95); border-bottom: 1px solid #111;
-            z-index: 3000; display: flex; justify-content: space-between; align-items: center;
-            padding: 0 15px; backdrop-filter: blur(5px);
-        }
-        .brand-logo { font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; color: #fff; }
-        .brand-logo span { color: var(--neon-green); }
-        .search-box input {
-            background: #111; border: 1px solid #333; color: #fff; padding: 5px 10px;
-            border-radius: 4px; font-size: 0.8rem; width: 120px; text-align: center;
-        }
-
-        /* 메뉴바 */
-        .nav-bar {
-            position: fixed; top: 50px; left: 0; width: 100%; height: 45px;
-            background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid #111;
-            z-index: 2900; display: flex; align-items: center; padding: 0 10px; overflow-x: auto;
-        }
-        .nav-item {
-            display: inline-flex; align-items: center; gap: 6px; color: #888; 
-            text-decoration: none; font-size: 0.9rem; font-weight: 600; padding: 0 15px; height: 100%;
-        }
-        .nav-item.active { color: #fff; border-bottom: 2px solid var(--neon-green); }
-
-        /* 상태바 */
-        .status-bar {
-            position: fixed; top: 95px; left: 0; width: 100%; height: 45px;
-            background: #000; border-bottom: 1px solid #222; z-index: 2800;
-            display: flex; justify-content: space-between; align-items: center; padding: 0 15px;
-        }
-        .ping-info { font-size: 0.75rem; color: var(--neon-green); display: flex; align-items: center; gap: 5px; }
-        .main-price { font-size: 1.1rem; font-weight: 700; color: #fff; }
-
-        /* 메인 콘텐츠 */
-        .main-content { max-width: 800px; margin: 0 auto; }
-        #tv_chart { width: 100%; height: 40vh; border-bottom: 1px solid #222; }
-
-        /* 자산 카드 */
-        .asset-card {
-            background: var(--panel-bg); border: 1px solid var(--border-color);
-            margin: 15px; padding: 20px; border-radius: 8px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .asset-label { font-size: 0.75rem; color: #666; font-weight: 600; margin-bottom: 4px; }
-        .asset-value { font-size: 1.4rem; color: #fff; font-weight: 700; }
-        .pnl-value { font-size: 1rem; font-weight: 700; }
-
-        /* 로그 */
-        .log-header-area {
-            display: flex; justify-content: space-between; align-items: center;
-            margin: 20px 15px 10px; padding-bottom: 10px; border-bottom: 1px solid #222;
-        }
-        .save-btn {
-            background: #111; border: 1px solid #333; color: #ccc; padding: 6px 12px;
-            font-size: 0.7rem; border-radius: 4px; cursor: pointer; display: flex; gap: 5px; align-items: center;
-        }
-        .terminal {
-            background: #000; border: 1px solid #222; margin: 0 15px; height: 300px;
-            overflow-y: auto; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
-        }
-        .log-row { display: grid; grid-template-columns: 70px 40px 1fr; gap: 10px; padding: 4px 0; border-bottom: 1px solid #111; }
-        .t-time { color: #555; }
-        .t-pos.long { color: var(--neon-green); } .t-pos.short { color: var(--neon-red); }
-        .t-msg { color: #aaa; }
-
-        /* 버튼 */
-        .ctrl-panel { padding: 15px; display: flex; gap: 10px; }
-        .ctrl-btn {
-            flex: 1; padding: 15px; border: none; border-radius: 4px;
-            font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1rem;
-            cursor: pointer; text-transform: uppercase;
-        }
-        .btn-start { background: #002200; color: var(--neon-green); border: 1px solid #004400; }
-        .btn-stop { background: #220000; color: var(--neon-red); border: 1px solid #440000; }
-        .text-green { color: var(--neon-green); } .text-red { color: var(--neon-red); }
-    </style>
+    <link rel="stylesheet" href="pro-style.css">
 </head>
 <body>
-
     <header class="ai-super-header">
         <div class="brand-logo">NEURAL <span>ARCHITECT</span></div>
-        <div class="search-box"><input type="text" placeholder="SEARCH PAIR"></div>
+        <div class="search-box"><i class="fas fa-search" style="color:#666"></i></div>
     </header>
 
-    <nav class="nav-bar">
-        <a href="index.html" class="nav-item active"><i class="fas fa-chart-pie"></i> DASHBOARD</a>
-        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i> WALLET</a>
-        <a href="#" class="nav-item"><i class="fas fa-robot"></i> AI AGENT</a>
-        <a href="#" class="nav-item"><i class="fas fa-cog"></i> SETTING</a>
-    </nav>
-
-    <div class="status-bar">
-        <div class="ping-info"><i class="fas fa-bolt"></i> BINANCE API: <span id="latency-val">12ms</span></div>
-        <div class="main-price num-font" id="coin-price">---</div>
-    </div>
+    <div id="internal-header-slot"></div>
 
     <div class="main-content">
+        <div class="status-bar" style="position:relative; top:0; left:0; width:100%; z-index:1; border:none; padding:0 0 10px;">
+            <div class="ping-info"><i class="fas fa-bolt"></i> BINANCE: <span id="latency-val">12ms</span></div>
+            <div class="main-price num-font" id="coin-price">---</div>
+        </div>
+
         <div id="tv_chart"></div>
 
-        <div class="asset-card">
+        <div class="asset-card" style="margin-top:15px;">
             <div>
                 <div class="asset-label">EST. BALANCE (USDT)</div>
                 <div class="asset-value num-font" id="real-balance">---</div>
@@ -138,161 +35,33 @@
         </div>
 
         <div class="log-header-area">
-            <span style="font-size:0.85rem; font-weight:700; color:#888;">
-                <i class="fas fa-terminal"></i> SYSTEM LOGS: <span id="log-count" style="color:#fff">0</span>
+            <span style="font-size:0.8rem; font-weight:700; color:#888;">
+                <i class="fas fa-terminal"></i> LOGS: <span id="log-count-display" style="color:#fff">0</span>
             </span>
-            <div class="save-btn" onclick="exportLogs()"><i class="fas fa-download"></i> SAVE CSV</div>
+            <div class="save-btn" onclick="exportLogs()">
+                <i class="fas fa-download"></i> SAVE CSV
+            </div>
         </div>
         
         <div class="terminal" id="terminal"></div>
 
         <div class="ctrl-panel">
-            <button class="ctrl-btn btn-start" onclick="toggleTrading(true)">AUTO TRADE</button>
-            <button class="ctrl-btn btn-stop" onclick="toggleTrading(false)">HALT SYSTEM</button>
+            <button class="ctrl-btn btn-start" onclick="alert('AUTO TRADING ENGAGED')">AUTO TRADE</button>
+            <button class="ctrl-btn btn-stop" onclick="alert('SYSTEM PAUSED')">HALT SYSTEM</button>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script src="pro-script.js"></script>
     <script>
-        // 전역 설정
-        const BINANCE_WS = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
-        let socket;
-        let isTrading = true;
-        
-        // 상태 관리 (LocalStorage 연동)
-        let appState = {
-            balance: 50000.00,
-            startBalance: 50000.00,
-            logs: [],
-            lastLogin: Date.now()
-        };
-
+        // 차트 로드
         window.addEventListener('load', () => {
-            loadState();           // 데이터 불러오기
-            simulateOffline();     // 부재중 수익 계산
-            initChart();           // 차트 실행
-            initWebSocket();       // 바이낸스 연결
-            setInterval(saveState, 1000); // 1초마다 자동 저장
-        });
-
-        // 데이터 저장/로드
-        function saveState() {
-            appState.lastLogin = Date.now();
-            localStorage.setItem('neuroBotData', JSON.stringify(appState));
-        }
-        function loadState() {
-            const data = localStorage.getItem('neuroBotData');
-            if(data) appState = JSON.parse(data);
-            updateUI(0, 0, true); // 초기 UI 렌더링
-        }
-
-        // 부재중 시뮬레이션 (폰 꺼진 동안의 수익)
-        function simulateOffline() {
-            const now = Date.now();
-            const diffMin = Math.floor((now - appState.lastLogin) / 60000);
-            
-            if(diffMin > 1) { // 1분 이상 비웠을 때
-                const trades = Math.min(diffMin, 100); // 최대 100번 매매 가정
-                let simulatedProfit = 0;
-                for(let i=0; i<trades; i++) {
-                    const profit = (Math.random() - 0.4) * 20; // 약간의 우상향
-                    simulatedProfit += profit;
-                    appState.logs.unshift({
-                        time: new Date(now - (i*60000)).toLocaleTimeString(),
-                        type: profit>0?'LONG':'SHORT',
-                        msg: `Offline Auto-Trade: $${profit.toFixed(2)}`
-                    });
-                }
-                appState.balance += simulatedProfit;
-                alert(`[SYSTEM] While you were away: ${trades} trades executed.\nProfit: $${simulatedProfit.toFixed(2)}`);
-            }
-        }
-
-        // 바이낸스 웹소켓
-        function initWebSocket() {
-            socket = new WebSocket(BINANCE_WS);
-            socket.onmessage = (e) => {
-                const data = JSON.parse(e.data);
-                const price = parseFloat(data.p);
-                const isBuy = !data.m;
-                updateUI(price, 0, isBuy);
-            };
-            socket.onclose = () => setTimeout(initWebSocket, 2000);
-        }
-
-        // UI 업데이트 엔진
-        function updateUI(price, qty, isBuy) {
-            // 가격 갱신
-            const priceEl = document.getElementById('coin-price');
-            if(price > 0) {
-                priceEl.innerText = price.toLocaleString(undefined, {minimumFractionDigits:2});
-                priceEl.style.color = isBuy ? '#00ff88' : '#ff3344';
-            }
-
-            // 자산 변동 연출 (실시간 느낌)
-            if(isTrading && price > 0) {
-                const noise = (Math.random() - 0.5) * 5;
-                const currentBal = appState.balance + noise;
-                const totalProfit = currentBal - appState.startBalance;
-
-                document.getElementById('real-balance').innerText = currentBal.toLocaleString(undefined, {minimumFractionDigits:2});
-                
-                const profEl = document.getElementById('real-profit');
-                const sign = totalProfit >= 0 ? '+' : '';
-                profEl.innerText = `${sign}${totalProfit.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-                profEl.className = `pnl-value num-font ${totalProfit>=0?'text-green':'text-red'}`;
-
-                // 로그 생성 (랜덤 확률)
-                if(Math.random() < 0.05) {
-                    addLog(isBuy?'LONG':'SHORT', `Price: ${price.toFixed(1)} - Signal Executed`);
-                }
-            }
-            document.getElementById('log-count').innerText = appState.logs.length;
-        }
-
-        // 로그 추가
-        function addLog(type, msg) {
-            const time = new Date().toLocaleTimeString('en-US', {hour12:false});
-            appState.logs.unshift({time, type, msg});
-            if(appState.logs.length > 500) appState.logs.pop();
-
-            const terminal = document.getElementById('terminal');
-            const row = `
-                <div class="log-row">
-                    <span class="t-time">${time}</span>
-                    <span class="t-pos ${type==='LONG'?'long':'short'}">${type}</span>
-                    <span class="t-msg">${msg}</span>
-                </div>`;
-            terminal.insertAdjacentHTML('afterbegin', row);
-            if(terminal.children.length > 50) terminal.removeChild(terminal.lastChild);
-        }
-
-        // CSV 저장
-        function exportLogs() {
-            if(appState.logs.length === 0) return alert("No logs.");
-            let csv = "Time,Type,Message\n";
-            appState.logs.forEach(l => csv += `${l.time},${l.type},${l.msg}\n`);
-            const blob = new Blob([csv], {type:'text/csv'});
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `Trade_Log_${Date.now()}.csv`;
-            link.click();
-        }
-
-        function toggleTrading(status) {
-            isTrading = status;
-            alert(status ? "AUTO TRADING STARTED" : "SYSTEM PAUSED");
-        }
-
-        function initChart() {
             new TradingView.widget({
                 "container_id": "tv_chart", "symbol": "BINANCE:BTCUSDT", "interval": "1",
                 "theme": "dark", "style": "1", "toolbar_bg": "#000", "hide_side_toolbar": true, "autosize": true
             });
-            // 핑 시뮬레이션
-            setInterval(() => {
-                document.getElementById('latency-val').innerText = (Math.floor(Math.random()*20)+10) + "ms";
-            }, 2000);
-        }
+        });
     </script>
 </body>
 </html>
