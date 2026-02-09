@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Transfers</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="pro-style.css">
+</head>
+<body>
+    <header class="ai-super-header">
+        <div class="brand-logo">TRANSFER <span>HISTORY</span></div>
+    </header>
+
+    <div id="internal-header-slot"></div>
+
+    <div class="main-content">
+        <div style="background:#0a0a0a; border:1px solid #222; border-radius:8px; padding:15px; margin-bottom:15px;">
+            <h3 style="color:#fff; margin-bottom:5px;">BANK LINKED</h3>
+            <p style="color:#666; font-size:0.8rem;">KBANK ***-**-******</p>
+        </div>
+
+        <div style="background:#0a0a0a; border:1px solid #222; border-radius:8px; overflow:hidden;">
+            <table class="history-table">
+                <thead>
+                    <tr><th>DATE</th><th>TYPE</th><th style="text-align:right">AMOUNT</th><th>STATUS</th></tr>
+                </thead>
+                <tbody id="transfer-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="pro-script.js"></script>
+</body>
+</html>
