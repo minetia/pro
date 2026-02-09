@@ -1,23 +1,26 @@
-/* pro-script.js - 데이터 동기화 및 실전 모드 감지 */
+/* pro-script.js - AI 실전 매매 엔진 (V4.0) */
 const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
 let socket;
+let autoTradeInterval = null; // 자동매매 타이머
 
-// 전역 데이터
+// [전역 데이터]
 let appState = {
-    balance: 50000.00,
-    startBalance: 50000.00,
-    tradeHistory: [],
-    transfers: [],
-    logs: [],
-    totalLogCount: 0,
-    lastLogin: Date.now(),
-    isRealMode: false // [NEW] 실전 모드 여부
+    balance: 50000.00,       // 현재 잔고
+    startBalance: 50000.00,  // 시작 잔고 (수익률 계산용)
+    tradeHistory: [],        // 매매 기록
+    transfers: [],           // 입출금 기록
+    logs: [],                // 시스템 로그
+    totalLogCount: 0,        // 로그 카운터
+    isRealMode: false,       // 실전 모드 여부
+    config: {}               // 설정값 (금액, 타겟 등)
 };
 
 window.addEventListener('load', () => {
     loadState();
-    checkRealMode(); // [NEW] 실전 모드인지 체크
     
+    // [중요] 실전 모드인지 체크하고, 맞다면 자동매매 시작
+    checkRealModeAndStart(); 
+
     if(appState.tradeHistory.length === 0) generateInitialData();
 
     // 헤더 메뉴 로드
@@ -37,47 +40,103 @@ window.addEventListener('load', () => {
         initWebSocket();
     }
     
+    // 화면 갱신 루프 (1초)
     setInterval(() => {
         saveState();
         renderGlobalUI();
     }, 1000);
 });
 
-// [NEW] 실전 모드 감지 함수
-function checkRealMode() {
+// [핵심] 실전 모드 감지 및 엔진 시동
+function checkRealModeAndStart() {
     const config = JSON.parse(localStorage.getItem('neuroConfig') || '{}');
-    if(config.apiKey && config.apiKey.length > 5) {
+    appState.config = config;
+
+    if(config.apiKey && config.mode === 'REAL') {
         appState.isRealMode = true;
         
-        // 월렛 페이지라면 UI 즉시 변경
-        const modeText = document.getElementById('system-mode-text');
-        const keyDisplay = document.getElementById('api-key-display');
-        const panel = document.getElementById('api-status-panel');
-        const badge = document.getElementById('header-status-badge');
+        // UI 변경 (녹색 신호)
+        updateRealModeUI(config);
 
-        if(modeText && keyDisplay && panel) {
-            modeText.innerText = "REAL TRADING (ACTIVE)";
-            modeText.style.color = "#00ff41"; // 녹색
-            
-            // 키의 앞 4자리만 보여주고 나머지는 별표 처리 (보안)
-            const maskedKey = config.apiKey.substring(0, 4) + "****" + config.apiKey.substring(config.apiKey.length-4);
-            keyDisplay.innerText = `API: ${maskedKey}`;
-            keyDisplay.style.color = "#fff";
-            
-            panel.style.borderLeftColor = "#00ff41"; // 패널 왼쪽 선 녹색으로
-        }
-        
-        if(badge) {
-            badge.innerText = "REAL NET";
-            badge.style.borderColor = "#00ff41";
-            badge.style.color = "#00ff41";
+        // [엔진 가동] 이미 돌고 있지 않다면 3초마다 매매 시작
+        if(!autoTradeInterval) {
+            console.log("AI TRADING ENGINE STARTED...");
+            // 최초 실행 시 자산이 너무 적으면 설정한 금액만큼 입금 처리 (시각적 효과)
+            if(appState.balance < parseFloat(config.amount)) {
+                appState.balance = parseFloat(config.amount);
+                appState.startBalance = parseFloat(config.amount);
+            }
+
+            autoTradeInterval = setInterval(() => {
+                executeAiTrade(config);
+            }, 3000); // 3초마다 매매 실행
         }
     }
 }
 
-function saveState() {
-    localStorage.setItem('neuroBotData', JSON.stringify(appState));
+// [핵심] AI 자동 매매 로직 (3초마다 실행됨)
+function executeAiTrade(config) {
+    // 1. 랜덤 수익률 계산 (-0.5% ~ +1.2%)
+    const isWin = Math.random() > 0.45; // 승률 55% 설정
+    const percent = (Math.random() * 1.5); 
+    const pnl = isWin ? (parseFloat(config.amount) * (percent / 100)) : -(parseFloat(config.amount) * (percent / 100) * 0.5);
+    
+    // 2. 자산 업데이트
+    appState.balance += pnl;
+    
+    // 3. 현재 가격 (가상)
+    const currentPrice = 70000 + (Math.random() * 500);
+    
+    // 4. 로그 및 기록 추가
+    const pos = Math.random() > 0.5 ? 'LONG' : 'SHORT';
+    const msg = `AI EXECUTION: ${pos} ${config.target} | PNL: ${pnl > 0 ? '+' : ''}$${pnl.toFixed(2)}`;
+    
+    // 로그창에 출력
+    addLog(pos, msg);
+
+    // 지갑 내역에 추가
+    const now = new Date();
+    appState.tradeHistory.unshift({
+        date: `${now.getMonth()+1}/${now.getDate()}`,
+        time: now.toLocaleTimeString('en-US',{hour12:false}),
+        pos: pos,
+        in: currentPrice,
+        out: currentPrice + (isWin ? 50 : -50),
+        profit: pnl,
+        win: isWin
+    });
+
+    // 너무 많이 쌓이면 삭제
+    if(appState.tradeHistory.length > 50) appState.tradeHistory.pop();
 }
+
+// 실전 모드 UI 표시
+function updateRealModeUI(config) {
+    const modeText = document.getElementById('system-mode-text');
+    const keyDisplay = document.getElementById('api-key-display');
+    const panel = document.getElementById('api-status-panel');
+    const badge = document.getElementById('header-status-badge');
+
+    if(modeText) {
+        modeText.innerText = `AI TRADING ACTIVE (${config.target})`;
+        modeText.style.color = "#00ff41";
+    }
+    if(keyDisplay) {
+        const masked = config.apiKey.substring(0,4) + "****";
+        keyDisplay.innerText = `API: ${masked} | BET: $${config.amount}`;
+        keyDisplay.style.color = "#fff";
+    }
+    if(panel) panel.style.borderLeftColor = "#00ff41";
+    if(badge) {
+        badge.innerText = "REAL NET";
+        badge.style.borderColor = "#00ff41";
+        badge.style.color = "#00ff41";
+    }
+}
+
+/* --- [이하 기존 기본 로직 유지] --- */
+
+function saveState() { localStorage.setItem('neuroBotData', JSON.stringify(appState)); }
 
 function loadState() {
     const data = localStorage.getItem('neuroBotData');
@@ -89,22 +148,11 @@ function loadState() {
 
 function generateInitialData() {
     appState.tradeHistory = [];
-    for(let i=0; i<15; i++) {
-        const isWin = Math.random() > 0.4;
-        const profit = (Math.random() * 500) * (isWin ? 1 : -1);
+    for(let i=0; i<10; i++) {
         appState.tradeHistory.push({
-            date: `02/${10-Math.floor(i/3)}`,
-            time: `${10+i}:30:15`,
-            pos: Math.random()>0.5 ? 'LONG' : 'SHORT',
-            in: 60000 + (Math.random()*1000),
-            out: 60000 + (Math.random()*1000),
-            profit: parseFloat(profit.toFixed(2)),
-            win: isWin
+            date: `02/09`, time: `12:00:00`, pos: 'LONG', in: 60000, out: 60100, profit: 50.00, win: true
         });
     }
-    appState.transfers = [
-        { date: '2026-02-09 10:00', type: 'DEPOSIT', amount: 50000, status: 'Completed' }
-    ];
     saveState();
 }
 
@@ -128,14 +176,11 @@ function renderGlobalUI() {
 
     if(els.logCnt) {
         els.logCnt.innerText = `[${appState.totalLogCount.toLocaleString()}]`;
-        if(appState.totalLogCount >= 1000000) {
-            els.logCnt.style.color = '#ff003c';
-            els.logCnt.innerText += " FULL";
-        } else {
-            els.logCnt.style.color = '#fff';
-        }
+        if(appState.totalLogCount >= 1000000) els.logCnt.style.color = '#ff003c';
+        else els.logCnt.style.color = '#fff';
     }
 
+    // 지갑 리스트 갱신
     const histBody = document.getElementById('history-body');
     if(histBody) {
         let html = '';
@@ -145,7 +190,7 @@ function renderGlobalUI() {
                 <td class="num-font" style="color:#888; font-size:0.75rem;">${t.date}<br>${t.time}</td>
                 <td style="font-weight:bold;" class="${t.pos==='LONG'?'text-green':'text-red'}">${t.pos}</td>
                 <td class="num-font" style="font-size:0.8rem;">IN:${t.in.toFixed(0)}<br>OUT:${t.out.toFixed(0)}</td>
-                <td style="text-align:right;" class="num-font ${color}"><b>${t.profit>=0?'+':''}$${t.profit}</b></td>
+                <td style="text-align:right;" class="num-font ${color}"><b>${t.profit>=0?'+':''}$${t.profit.toFixed(2)}</b></td>
             </tr>`;
         });
         histBody.innerHTML = html;
@@ -158,6 +203,7 @@ function renderGlobalUI() {
         }
     }
 
+    // 입출금 리스트
     const transBody = document.getElementById('transfer-body');
     if(transBody) {
         let html = '';
@@ -176,22 +222,17 @@ function renderGlobalUI() {
 
 function processTransaction(amount) {
     if(!amount || amount <= 0) return alert("Invalid Amount");
-    if(amount < 0 && (appState.balance + amount) < 0) return alert("Insufficient Funds");
-
     appState.balance += amount;
     if(amount > 0) appState.startBalance += amount; 
-
     appState.transfers.unshift({
         date: new Date().toISOString().slice(0,16).replace('T', ' '),
         type: amount > 0 ? 'DEPOSIT' : 'WITHDRAW',
         amount: Math.abs(amount),
         status: 'Completed'
     });
-
     saveState();
     closeModal();
     renderGlobalUI(); 
-    alert("TRANSACTION COMPLETED");
 }
 
 function openModal(mode) {
@@ -199,7 +240,6 @@ function openModal(mode) {
     const title = document.getElementById('modal-title');
     const input = document.getElementById('amount-input');
     const confirmBtn = document.getElementById('modal-confirm-btn');
-
     modal.style.display = 'flex';
     input.value = '';
     
@@ -229,24 +269,15 @@ function initWebSocket() {
             priceEl.innerText = price.toLocaleString(undefined, {minimumFractionDigits:2});
             priceEl.style.color = isBuy ? '#00ff88' : '#ff3344';
         }
-        
-        const noise = (Math.random()-0.5)*5;
-        const dispBal = appState.balance + noise;
-        const balEl = document.getElementById('real-balance');
-        if(balEl) balEl.innerText = dispBal.toLocaleString(undefined, {minimumFractionDigits:2});
-
-        if(Math.random() < 0.05) addLog(isBuy?'LONG':'SHORT', `Price ${price.toFixed(1)} Executed`);
     };
     socket.onclose = () => setTimeout(initWebSocket, 2000);
 }
 
 function addLog(type, msg) {
     if (appState.totalLogCount >= 1000000) return;
-
     const time = new Date().toLocaleTimeString('en-US',{hour12:false});
     appState.logs.unshift({time, type, msg});
     appState.totalLogCount++;
-
     if(appState.logs.length > 500) appState.logs.pop();
     
     const terminal = document.getElementById('terminal');
@@ -259,24 +290,20 @@ function addLog(type, msg) {
 }
 
 function exportLogs() {
-    if(appState.logs.length === 0) return alert("No logs to save.");
-    
+    if(appState.logs.length === 0) return alert("No logs.");
     let csv = "Time,Type,Message\n";
     appState.logs.forEach(l => csv += `${l.time},${l.type},${l.msg}\n`);
     const blob = new Blob([csv], {type:'text/csv'});
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `NeuroLog_${Date.now()}.csv`;
+    link.download = `TradeLog.csv`;
     link.click();
-
     appState.logs = [];
     appState.totalLogCount = 0;
     saveState();
-    
     const terminal = document.getElementById('terminal');
     if(terminal) terminal.innerHTML = '';
     renderGlobalUI();
-    alert("LOGS SAVED & RESET.");
 }
 
 function highlightMenu() {
