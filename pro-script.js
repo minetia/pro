@@ -1,240 +1,126 @@
-/* pro-script.js - V13.0 (NaN 완벽 제거 & 무한 동력 엔진) */
-const BINANCE_WS_URL = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
-let socket;
-let autoTradeInterval = null;
-let dataCounterInterval = null;
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
-let appState = {
-    balance: 50000.00,
-    bankBalance: 1000000.00,
-    startBalance: 50000.00,
-    tradeHistory: [], 
-    transfers: [],
-    logs: [],
-    totalLogCount: 0,
-    isRealMode: false,
-    config: {},
-    dataCount: 425102 // 초기값
-};
-
-window.addEventListener('load', () => {
-    // 1. 데이터 로드 및 NaN 수리
-    loadState(); 
-    
-    // 2. 엔진 시동
-    checkRealModeAndStart(); 
-
-    fetch('header.html').then(r => r.text()).then(d => {
-        const slot = document.getElementById('internal-header-slot');
-        if(slot) { slot.innerHTML = d; highlightMenu(); }
-    });
-
-    renderGlobalUI();
-    if (document.getElementById('tv_chart')) initWebSocket();
-    
-    // 3. 0.5초마다 강제 갱신 (화면 멈춤 방지)
-    setInterval(() => { applyBankInterest(); saveState(); renderGlobalUI(); }, 500);
-
-    // 4. 데이터 카운터 시작
-    startDataCounter();
-});
-
-// [핵심] NaN 수리공 (잘못된 캐시 복구)
-function loadState() {
-    try {
-        const data = localStorage.getItem('neuroBotData');
-        if (data) { 
-            const parsed = JSON.parse(data);
-            
-            // 데이터 하나하나 검사해서 NaN이면 복구
-            appState.balance = isNaN(parsed.balance) ? 50000 : parsed.balance;
-            appState.bankBalance = isNaN(parsed.bankBalance) ? 1000000 : parsed.bankBalance;
-            appState.dataCount = isNaN(parsed.dataCount) ? 425102 : parsed.dataCount;
-            
-            // 나머지 복사
-            appState.tradeHistory = parsed.tradeHistory || [];
-            appState.transfers = parsed.transfers || [];
-            appState.config = parsed.config || {};
-            appState.totalLogCount = parsed.totalLogCount || 0;
-            
-            console.log("System State Loaded & Repaired.");
-        }
-    } catch (e) {
-        console.error("Save file corrupted. Resetting.", e);
-        // 에러나면 그냥 초기화
-        localStorage.removeItem('neuroBotData');
-    }
+/* [기본 테마] */
+:root {
+    --bg-main: linear-gradient(to bottom, #141824, #0f1118); 
+    --bg-card: linear-gradient(145deg, #222836, #1a1e29);
+    --border-highlight: 1px solid rgba(255, 255, 255, 0.08);
+    --border-soft: #2b3139;
+    --text-primary: #f5f6f7;  
+    --text-secondary: #9ba3b2;
+    --color-up: #2ebd85;
+    --color-down: #f6465d;
+    --accent: #fcd535;
 }
 
-function startDataCounter() {
-    if(dataCounterInterval) clearInterval(dataCounterInterval);
-    dataCounterInterval = setInterval(() => {
-        appState.dataCount += Math.floor(Math.random() * 5) + 1;
-        
-        // 또 NaN이 될까봐 이중 체크
-        if(isNaN(appState.dataCount)) appState.dataCount = 425102;
+* { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
 
-        const el = document.getElementById('data-mining-counter');
-        if(el) {
-            el.innerText = appState.dataCount.toLocaleString();
-        }
-    }, 50);
+body { 
+    background: var(--bg-main); color: var(--text-primary); 
+    font-family: 'Pretendard', sans-serif;
+    padding-top: 110px; padding-bottom: 40px; overflow-x: hidden; line-height: 1.5; min-height: 100vh;
 }
+.num-font { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+.text-green { color: var(--color-up) !important; }
+.text-red { color: var(--color-down) !important; }
 
-function applyBankInterest() {
-    if(appState.bankBalance > 0) appState.bankBalance += (appState.bankBalance * 0.0000008);
+/* 헤더 & 네비 */
+.cyber-header {
+    position: fixed; top: 0; left: 0; width: 100%; height: 55px;
+    background: rgba(26, 30, 41, 0.95); backdrop-filter: blur(10px); border-bottom: var(--border-highlight);
+    z-index: 4000; display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
+.brand-logo { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+.brand-logo span { color: var(--accent); text-shadow: 0 0 10px rgba(252, 213, 53, 0.3); }
 
-function renderGlobalUI() {
-    const totalAssets = appState.balance + (appState.bankBalance || 0);
-    const els = {
-        total: document.getElementById('total-val'),
-        bal: document.getElementById('real-balance'),
-        bank: document.getElementById('bank-balance-display')
-    };
-
-    if(els.total) els.total.innerText = `$ ${totalAssets.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-    if(els.bal) els.bal.innerText = appState.balance.toLocaleString(undefined, {minimumFractionDigits:2});
-    if(els.bank) els.bank.innerText = `$ ${appState.bankBalance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-
-    const profEl = document.getElementById('real-profit');
-    if(profEl) {
-        const profit = appState.balance - appState.startBalance;
-        const arrow = profit >= 0 ? '▲' : '▼';
-        profEl.innerText = `${arrow} $${Math.abs(profit).toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        profEl.className = `num-font ${profit>=0?'text-green':'text-red'}`;
-    }
-    renderTables();
+.cyber-nav {
+    position: fixed; top: 55px; left: 0; width: 100%; height: 50px;
+    background: rgba(20, 24, 36, 0.98); border-bottom: 1px solid var(--border-soft);
+    z-index: 3900; display: flex; align-items: center; overflow-x: auto; white-space: nowrap; padding: 0 10px;
 }
+.cyber-nav::-webkit-scrollbar { display: none; }
+.nav-item {
+    flex-shrink: 0; padding: 0 18px; height: 100%; display: flex; align-items: center;
+    color: var(--text-secondary); font-weight: 600; font-size: 0.9rem; text-decoration: none; 
+    border-bottom: 3px solid transparent; transition: all 0.3s ease;
+}
+.nav-item.active { 
+    color: var(--text-primary); border-bottom-color: var(--accent); 
+    background: linear-gradient(to top, rgba(252, 213, 53, 0.05), transparent);
+}
+.nav-item i { margin-right: 8px; }
 
-function exportLogs() {
-    // 데이터 없으면 1000개 즉시 생성
-    if(!appState.tradeHistory || appState.tradeHistory.length < 10) {
-        for(let i=0; i<1000; i++) {
-            const price = 69000 + Math.random()*100;
-            appState.tradeHistory.push({
-                date: '02/09', time: '12:00:00', pos: Math.random()>0.5?'LONG':'SHORT', 
-                in: price, out: price+10, profit: 5.00, win: true
-            });
-        }
-    }
-    let csvContent = "Date,Time,Position,Price_In,Price_Out,Profit(USDT),Result\n";
-    appState.tradeHistory.slice(0, 1000).forEach(t => {
-        const result = t.win ? "WIN" : "LOSS";
-        csvContent += `${t.date},${t.time},${t.pos},${t.in.toFixed(2)},${t.out.toFixed(2)},${t.profit.toFixed(2)},${result}\n`;
-    });
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    const timestamp = new Date().toISOString().slice(0,19).replace(/:/g,"-");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Neuro_Data_${timestamp}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+/* 메인 패널 */
+.main-content { max-width: 800px; margin: 0 auto; padding: 20px 15px; }
+.cyber-panel {
+    background: var(--bg-card); border-radius: 16px; padding: 25px; margin-bottom: 20px;
+    border: var(--border-highlight); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    transition: transform 0.2s;
+}
+#total-val { text-shadow: 0 0 25px rgba(255, 255, 255, 0.15); letter-spacing: -1px; }
+
+/* [NEW] 대형 데이터 마이닝 패널 스타일 */
+.data-mining-panel {
+    background: linear-gradient(90deg, rgba(20,24,36,0.8), rgba(20,24,36,0.6));
+    border: 1px solid var(--border-soft);
+    border-left: 4px solid var(--accent); /* 왼쪽에 노란색 포인트 */
+    border-radius: 12px;
+    padding: 20px 25px; /* 내부 여백 넉넉하게 */
+    margin-bottom: 20px; /* 아래 패널과 간격 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
-function executeAiTrade(config) {
-    const isWin = Math.random() > 0.48; 
-    const percent = (Math.random() * 0.8) + 0.1; 
-    const pnl = isWin ? (parseFloat(config.amount) * (percent / 100)) : -(parseFloat(config.amount) * (percent / 100) * 0.6);
-    appState.balance += pnl;
-    
-    // 여기도 NaN 체크
-    if(isNaN(appState.balance)) appState.balance = 50000;
-
-    const currentPrice = 69000 + (Math.random() * 1000);
-    const pos = Math.random() > 0.5 ? 'LONG' : 'SHORT';
-    const now = new Date();
-    const newTrade = {
-        date: `${now.getMonth()+1}/${now.getDate()}`,
-        time: now.toLocaleTimeString('en-US',{hour12:false}),
-        pos: pos, in: currentPrice, out: currentPrice + (isWin ? 50 : -50), profit: pnl, win: isWin
-    };
-    appState.tradeHistory.unshift(newTrade);
-    if(appState.tradeHistory.length > 2000) appState.tradeHistory.pop(); // 2000개 유지
-    
-    const msg = `AI: ${pos} ${config.target || 'BTC/USDT'} | PNL: ${pnl > 0 ? '+' : ''}$${pnl.toFixed(2)}`;
-    if(window.addSystemLog) window.addSystemLog(pos, msg);
-    appState.totalLogCount++;
+.mining-left {
+    display: flex;
+    flex-direction: column;
 }
 
-function checkRealModeAndStart() {
-    const config = JSON.parse(localStorage.getItem('neuroConfig') || '{}');
-    appState.config = config;
-    if(config.apiKey && config.mode === 'REAL') {
-        appState.isRealMode = true;
-        updateRealModeUI(config);
-        if(autoTradeInterval) clearInterval(autoTradeInterval);
-        autoTradeInterval = setInterval(() => { executeAiTrade(config); }, 1200);
-    }
+/* 다운로드 버튼 (크고 눈에 띄게) */
+.save-tag.big-btn {
+    background: rgba(255,255,255,0.08); 
+    height: 50px; 
+    padding: 0 25px; 
+    font-size: 0.9rem;
+    border: 1px solid rgba(255,255,255,0.1);
 }
-function forceStartTrade() {
-    checkRealModeAndStart();
-    if(!appState.config.target) {
-        executeAiTrade({target:'BTC/USDT', amount:1000});
-        autoTradeInterval = setInterval(() => { executeAiTrade({target:'BTC/USDT', amount:1000}); }, 1200);
-    }
+.save-tag.big-btn:hover {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
 }
-function renderTables() {
-    const histBody = document.getElementById('history-body');
-    if(histBody) {
-        let html = '';
-        appState.tradeHistory.slice(0, 15).forEach(t => { 
-            const color = t.profit >= 0 ? 'text-green' : 'text-red';
-            html += `<tr>
-                <td class="num-font" style="color:var(--text-secondary); font-size:0.75rem;">${t.time}</td>
-                <td style="font-weight:600;" class="${t.pos==='LONG'?'text-green':'text-red'}">${t.pos}</td>
-                <td class="num-font" style="text-align:right;">${t.profit>=0?'+':''}$${t.profit.toFixed(2)}</td>
-            </tr>`;
-        });
-        histBody.innerHTML = html;
-        const winEl = document.getElementById('win-rate-display');
-        if(winEl) {
-            const wins = appState.tradeHistory.filter(t => t.win).length;
-            const total = appState.tradeHistory.length;
-            const rate = total ? Math.round((wins/total)*100) : 0;
-            winEl.innerHTML = `WIN RATE: <span class="text-green">${rate}%</span>`;
-        }
-    }
-    const transBody = document.getElementById('transfer-body');
-    if(transBody) {
-        let html = '';
-        appState.transfers.slice(0, 10).forEach(t => {
-            const isDep = t.type === 'DEPOSIT';
-            html += `<tr>
-                <td class="num-font" style="color:var(--text-secondary);">${t.date.split(' ')[0]}</td>
-                <td style="font-weight:600;">${t.type}</td>
-                <td style="text-align:right;" class="num-font ${isDep?'text-green':'text-red'}">$${t.amount.toLocaleString()}</td>
-            </tr>`;
-        });
-        transBody.innerHTML = html;
-    }
+
+/* AI HUD (시각화) */
+.ai-hud-panel {
+    background: rgba(16, 20, 30, 0.95); border: 1px solid rgba(0, 255, 65, 0.2);
+    border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; overflow: hidden;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.05);
 }
-function saveState() { localStorage.setItem('neuroBotData', JSON.stringify(appState)); }
-function updateRealModeUI(config) {
-    const btn = document.getElementById('btn-status');
-    if(btn) { btn.innerText = "AI TRADING ACTIVE"; btn.classList.add('btn-auto'); }
-}
-function initWebSocket() { socket = new WebSocket(BINANCE_WS_URL); socket.onmessage = (e) => {
-    const d = JSON.parse(e.data);
-    const p = parseFloat(d.p);
-    const el = document.getElementById('coin-price');
-    if(el) { el.innerText = p.toLocaleString(undefined,{minimumFractionDigits:2}); el.style.color = !d.m ? '#0ecb81' : '#f6465d'; }
-};}
-function processTransaction(amount) {
-    if(!amount) return;
-    if(amount > 0) { appState.bankBalance -= amount; appState.balance += amount; } 
-    else { appState.balance -= Math.abs(amount); appState.bankBalance += Math.abs(amount); }
-    appState.transfers.unshift({date: new Date().toISOString().slice(0,16).replace('T',' '), type: amount>0?'DEPOSIT':'WITHDRAW', amount: Math.abs(amount), status:'Done'});
-    saveState(); closeModal(); renderGlobalUI();
-}
-function openModal(mode) {
-    const m = document.getElementById('transaction-modal'); m.style.display='flex';
-    document.getElementById('amount-input').value='';
-    const btn = document.getElementById('modal-confirm-btn');
-    if(mode==='deposit') { document.getElementById('modal-title').innerText="DEPOSIT"; btn.onclick=()=>processTransaction(parseFloat(document.getElementById('amount-input').value)); }
-    else { document.getElementById('modal-title').innerText="WITHDRAW"; btn.onclick=()=>processTransaction(-parseFloat(document.getElementById('amount-input').value)); }
-}
-function closeModal() { document.getElementById('transaction-modal').style.display='none'; }
-function highlightMenu() { /* 생략 */ }
+.radar-box { width: 50px; height: 50px; border: 2px solid rgba(0, 243, 255, 0.3); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; }
+.radar-scan { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 243, 255, 0.5) 360deg); animation: radar-spin 2s linear infinite; position: absolute; top: 0; left: 0; opacity: 0.3; }
+.radar-dot { width: 6px; height: 6px; background: #fff; border-radius: 50%; position: absolute; top: 10px; right: 10px; box-shadow: 0 0 10px #fff; animation: blink 1s infinite; }
+.scan-text-line { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; display: flex; justify-content: space-between; }
+.check-pass { color: var(--color-up); font-weight: bold; }
+.check-wait { color: var(--accent); }
+.confidence-bar-bg { width: 100%; height: 6px; background: #222; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+.confidence-bar-fill { height: 100%; width: 0%; background: var(--color-up); border-radius: 3px; transition: width 0.3s; box-shadow: 0 0 10px var(--color-up); }
+@keyframes radar-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* 기타 공통 */
+.status-bar { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; }
+.save-tag { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border-soft); padding: 0 14px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+.ctrl-group { display: flex; gap: 12px; margin-top: 20px; }
+.cyber-btn { flex: 1; padding: 16px; border: none; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; color: #fff; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+.btn-auto { background: linear-gradient(135deg, #2ebd85, #20a370); }
+.btn-stop { background: linear-gradient(135deg, #2b3139, #1f242b); color: var(--text-secondary); }
+.modal-input { width: 100%; padding: 16px; background: rgba(20, 24, 36, 0.8); border: 1px solid var(--border-soft); color: var(--text-primary); border-radius: 12px; font-size: 1rem; margin-bottom: 12px; transition: 0.3s; }
+.modal-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(252, 213, 53, 0.1); }
+.bank-card-bg { background: linear-gradient(135deg, #1e2330 0%, #141824 100%); border: 1px solid rgba(93, 120, 255, 0.1); box-shadow: 0 10px 30px -5px rgba(93, 120, 255, 0.15); }
+.history-table th { padding: 15px 0 10px 15px; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.5px; color: var(--text-secondary); }
+.history-table td { padding: 15px 0 15px 15px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.85rem; }
+.modal-overlay { backdrop-filter: blur(5px); background: rgba(0,0,0,0.6); display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999; justify-content:center; align-items:center;}
+.modal-box { background: var(--bg-card); border: var(--border-highlight); border-radius: 20px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); width:90%; max-width:380px;}
