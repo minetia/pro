@@ -11,21 +11,16 @@
 
     <header class="cyber-header">
         <div class="brand-logo">NEURAL <span>NODE</span></div>
-        <div id="header-status-badge" style="font-size:0.75rem; color:var(--text-secondary); background:var(--bg-main); padding:4px 8px; border-radius:4px;">
-            ONLINE
-        </div>
+        <div id="header-status-badge" style="font-size:0.75rem; color:var(--text-secondary); background:var(--bg-main); padding:4px 8px; border-radius:4px;">ONLINE</div>
     </header>
 
     <div id="internal-header-slot"></div>
 
     <div class="main-content">
-        
-        <div class="cyber-panel" style="text-align: center; padding: 20px 15px; margin-top: 10px;">
+        <div class="cyber-panel" style="text-align: center; padding: 25px 15px; margin-top: 10px;">
             <div style="margin-bottom: 15px;">
                 <div style="font-size:0.8rem; color:var(--text-secondary); letter-spacing:1px; margin-bottom:5px;">TOTAL NET WORTH (USDT)</div>
-                <div class="num-font" id="total-val" style="font-size:2.4rem; font-weight:bold; color:var(--text-primary); line-height:1;">
-                    Loading...
-                </div>
+                <div id="total-val" class="hero-number">Loading...</div>
             </div>
             <div style="height:1px; background:var(--border-soft); margin: 0 20px 15px 20px;"></div>
             <div style="display:flex; justify-content:center; gap:20px; align-items:center;">
@@ -39,39 +34,41 @@
                 <i class="fas fa-search" style="color:var(--accent); margin-right:5px;"></i>
                 <input type="text" id="coin-search-input" placeholder="SEARCH COIN (e.g. BTC)" onkeypress="handleEnter(event)">
             </div>
-            <button class="cyber-btn" onclick="openChartModal()" style="width:80px; padding:10px; font-size:0.8rem; background:var(--accent); color:#000;">
-                CHART
-            </button>
+            <button class="save-tag" onclick="openChartModal()" style="margin:0;">CHART</button>
         </div>
 
-        <div class="cyber-panel" style="padding:0; overflow:hidden; min-height:500px;">
+        <div class="cyber-panel" style="padding:0; overflow:hidden; min-height:400px;">
             <div class="table-header-row">
                 <div style="width:25%">DATE/TIME</div>
-                <div style="width:25%">POSITION</div>
+                <div style="width:25%">POS</div>
                 <div style="width:25%; text-align:right;">PRICE</div>
                 <div style="width:25%; text-align:right;">PNL</div>
             </div>
-            
-            <div id="main-ledger-list" class="ledger-scroll-area">
-                </div>
+            <div id="main-ledger-list" style="height:400px; overflow-y:auto;"></div>
         </div>
 
         <div class="data-mining-panel">
-            <div class="mining-left">
+            <div>
                 <div style="font-size:0.7rem; color:var(--accent); font-weight:bold;">DATA MINING</div>
-                <div class="num-font" id="data-mining-counter" style="font-size:1.5rem; font-weight:bold; color:#fff;">425,102</div>
+                <div class="num-font" id="data-mining-counter" style="font-size:1.3rem; font-weight:bold; color:#fff;">425,102</div>
             </div>
-            <button class="save-tag big-btn" onclick="exportLogs()">
-                <i class="fas fa-download"></i> CSV
-            </button>
+            <button class="save-tag big-btn" onclick="exportLogs()"><i class="fas fa-download"></i> CSV</button>
         </div>
 
+        <div class="ctrl-group">
+            <button class="cyber-btn btn-start" onclick="startSystem()">
+                <i class="fas fa-play"></i> START ENGINE
+            </button>
+            <button class="cyber-btn btn-stop" onclick="stopSystem()">
+                <i class="fas fa-stop"></i> STOP SYSTEM
+            </button>
+        </div>
     </div>
 
-    <div id="chart-modal" class="modal-overlay" style="display:none;">
-        <div class="modal-box" style="width:95%; max-width:95%; height:80vh; padding:10px; background:#000;">
+    <div id="chart-modal" class="modal-overlay">
+        <div class="modal-box" style="width:95%; max-width:95%; height:70vh; padding:10px; background:#000;">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:0 10px;">
-                <h3 id="chart-title" style="color:#fff;">BTC/USDT</h3>
+                <h3 id="chart-title" style="color:#fff;">CHART</h3>
                 <i class="fas fa-times" onclick="closeChartModal()" style="color:#fff; font-size:1.5rem; cursor:pointer;"></i>
             </div>
             <div id="modal_tv_chart" style="width:100%; height:90%;"></div>
