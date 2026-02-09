@@ -1,8 +1,8 @@
-/* pro-script.js - V16.0 (버튼 부활 & 폰트 최적화) */
+/* pro-script.js - V17.0 (무소음 패치: 팝업 제거) */
 let appState = {
     balance: 50000.00, bankBalance: 1000000.00, startBalance: 50000.00,
     tradeHistory: [], dataCount: 425102, config: {}, isRealMode: false,
-    isRunning: true // 시스템 가동 상태
+    isRunning: true // 기본값: 켜짐
 };
 let autoTradeInterval = null;
 let dataCounterInterval = null;
@@ -16,28 +16,48 @@ window.addEventListener('load', () => {
         if(slot) { slot.innerHTML = d; highlightMenu(); }
     });
 
-    // 즉시 렌더링 (Loading 제거)
     renderGlobalUI();
     
-    // 자동 시작
-    if(appState.isRunning) startSystem();
-    else stopSystem(); // 꺼진 상태면 멈춤 유지
+    // [중요] 페이지 로드 시, 팝업 없이 조용히 엔진 가동
+    if(appState.isRunning) {
+        startSystem(true); // true = 조용히 시작 (Silent Mode)
+    } else {
+        stopSystem(true);
+    }
 });
 
-// [NEW] 시스템 제어 함수
-function startSystem() {
+// [수정됨] 시스템 시작 (팝업 제거됨)
+function startSystem(isSilent = false) {
     if(autoTradeInterval) clearInterval(autoTradeInterval);
     appState.isRunning = true;
-    autoTradeInterval = setInterval(() => { executeAiTrade(appState.config); }, 1000); // 1초 간격
+    autoTradeInterval = setInterval(() => { executeAiTrade(appState.config); }, 1000); 
     startDataCounter();
-    alert("SYSTEM STARTED: AI ENGINE ONLINE");
+    
+    // 버튼 상태 업데이트
+    const btn = document.querySelector('.btn-start');
+    if(btn) { btn.style.opacity = "1"; btn.innerHTML = '<i class="fas fa-play"></i> RUNNING'; }
+    
+    // [핵심] 사용자가 직접 누른 게 아니면 알림창 띄우지 않음
+    if(!isSilent) {
+        // alert("SYSTEM STARTED"); // <--- 이 줄을 삭제하여 팝업 차단
+        console.log("System Started Silently");
+    }
 }
 
-function stopSystem() {
+// [수정됨] 시스템 정지
+function stopSystem(isSilent = false) {
     appState.isRunning = false;
     if(autoTradeInterval) clearInterval(autoTradeInterval);
     if(dataCounterInterval) clearInterval(dataCounterInterval);
-    alert("SYSTEM STOPPED: ENGINE OFFLINE");
+    
+    const btn = document.querySelector('.btn-start');
+    if(btn) { btn.style.opacity = "0.5"; btn.innerHTML = '<i class="fas fa-play"></i> START'; }
+
+    if(!isSilent) {
+        // alert("SYSTEM STOPPED"); // <--- 이 줄도 삭제
+        console.log("System Stopped Silently");
+    }
+    saveState();
 }
 
 function startDataCounter() {
@@ -49,7 +69,7 @@ function startDataCounter() {
     }, 50);
 }
 
-// 렌더링 (숫자 포맷)
+// 렌더링
 function renderGlobalUI() {
     const totalAssets = appState.balance + (appState.bankBalance || 0);
     const els = {
@@ -58,7 +78,6 @@ function renderGlobalUI() {
         bank: document.getElementById('bank-balance-display')
     };
 
-    // 소수점 2자리까지만 표시해서 길이 줄임
     if(els.total) els.total.innerText = `$ ${totalAssets.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
     if(els.bank) els.bank.innerText = `$ ${appState.bankBalance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
 
@@ -89,9 +108,8 @@ function renderMainLedger() {
 }
 
 function executeAiTrade(config) {
-    if(!appState.isRunning) return; // 멈췄으면 실행 안함
+    if(!appState.isRunning) return; 
     
-    // 이자 지급
     if(appState.bankBalance > 0) appState.bankBalance += (appState.bankBalance * 0.0000008);
 
     const isWin = Math.random() > 0.48; 
@@ -100,7 +118,7 @@ function executeAiTrade(config) {
     const pnl = isWin ? (amt * (percent / 100)) : -(amt * (percent / 100) * 0.6);
     
     appState.balance += pnl;
-    if(isNaN(appState.balance)) appState.balance = 50000; // NaN 방지
+    if(isNaN(appState.balance)) appState.balance = 50000;
 
     const currentPrice = 69000 + (Math.random() * 1000);
     const pos = Math.random() > 0.5 ? 'LONG' : 'SHORT';
@@ -125,7 +143,7 @@ function loadState() {
         const data = localStorage.getItem('neuroBotData');
         if (data) { 
             const parsed = JSON.parse(data);
-            appState = {...appState, ...parsed}; // 병합
+            appState = {...appState, ...parsed}; 
             if(isNaN(appState.balance)) appState.balance = 50000;
         }
     } catch(e) { localStorage.removeItem('neuroBotData'); }
@@ -139,5 +157,10 @@ function openChartModal() {
 }
 function closeChartModal() { document.getElementById('chart-modal').style.display = 'none'; document.getElementById('modal_tv_chart').innerHTML = ''; }
 function handleEnter(e) { if(e.key === 'Enter') openChartModal(); }
-function highlightMenu() { /* 생략 */ }
+function highlightMenu() {
+    const cur = window.location.pathname.split("/").pop() || 'index.html';
+    document.querySelectorAll('.nav-item').forEach(el => {
+        if(el.getAttribute('href') === cur) el.classList.add('active'); else el.classList.remove('active');
+    });
+}
 function exportLogs() { /* 생략 */ }
