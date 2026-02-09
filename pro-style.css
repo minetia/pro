@@ -17,35 +17,32 @@
 body { 
     background: var(--bg-main); color: var(--text-primary); 
     font-family: 'Pretendard', sans-serif;
-    /* 상단 메뉴바 공간 확보 */
     padding-top: 110px; padding-bottom: 40px; 
     overflow-x: hidden; line-height: 1.5; min-height: 100vh;
 }
 
-/* 숫자 폰트 & 색상 */
 .num-font { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
 .text-green { color: var(--color-up) !important; }
 .text-red { color: var(--color-down) !important; }
 
-/* [중요] 왕글씨 사이즈 축소 (반응형 적용) */
-/* 화면이 작으면 글씨도 자동으로 작아짐 */
+/* [중요] 왕글씨 사이즈 자동 조절 (깨짐 방지 핵심) */
 #total-val, #bank-balance-display, .hero-number {
-    font-size: clamp(1.5rem, 5vw, 2rem) !important; /* 최소 1.5rem ~ 최대 2rem */
+    /* 최소 24px ~ 최대 40px 사이에서 화면 폭에 따라 자동 조절 */
+    font-size: clamp(1.5rem, 6vw, 2.2rem) !important; 
     font-weight: 700;
     color: #fff;
-    text-shadow: 0 0 15px rgba(255,255,255,0.15);
+    text-shadow: 0 0 15px rgba(255,255,255,0.1);
     letter-spacing: -0.5px;
-    word-break: break-all; /* 숫자가 너무 길면 줄바꿈 */
+    word-break: break-all; /* 숫자가 너무 길면 줄바꿈 허용 */
     line-height: 1.2;
 }
 
-/* 헤더 & 네비게이션 */
+/* 헤더 & 네비 */
 .cyber-header {
     position: fixed; top: 0; left: 0; width: 100%; height: 55px;
-    background: rgba(26, 30, 41, 0.95); backdrop-filter: blur(10px); 
-    border-bottom: var(--border-highlight);
-    z-index: 4000; display: flex; justify-content: space-between; align-items: center; 
-    padding: 0 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    background: rgba(26, 30, 41, 0.95); backdrop-filter: blur(10px); border-bottom: var(--border-highlight);
+    z-index: 4000; display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 .brand-logo { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
 .brand-logo span { color: var(--accent); }
@@ -53,8 +50,7 @@ body {
 .cyber-nav {
     position: fixed; top: 55px; left: 0; width: 100%; height: 50px;
     background: rgba(20, 24, 36, 0.98); border-bottom: 1px solid var(--border-soft);
-    z-index: 3900; display: flex; align-items: center; overflow-x: auto; white-space: nowrap; 
-    padding: 0 5px;
+    z-index: 3900; display: flex; align-items: center; overflow-x: auto; white-space: nowrap; padding: 0 10px;
 }
 .cyber-nav::-webkit-scrollbar { display: none; }
 .nav-item {
@@ -68,29 +64,40 @@ body {
 }
 
 /* 패널 공통 */
-.main-content { max-width: 800px; margin: 0 auto; padding: 15px 15px; }
+.main-content { max-width: 800px; margin: 0 auto; padding: 10px 15px; }
 .cyber-panel {
     background: var(--bg-card); border-radius: 12px; padding: 20px; margin-bottom: 15px;
     border: var(--border-highlight); box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
-/* 데이터 허브 (모바일 고정) */
+/* 컨트롤 버튼 그룹 (Start/Stop 부활) */
+.ctrl-group { display: flex; gap: 10px; margin-top: 20px; }
+.cyber-btn { 
+    flex: 1; padding: 15px; border: none; border-radius: 8px; 
+    font-weight: 700; font-size: 0.95rem; cursor: pointer; color: #fff; 
+    transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.btn-start { background: var(--color-up); } /* 녹색 */
+.btn-stop { background: var(--color-down); opacity: 0.8; } /* 적색 */
+.btn-start:active, .btn-stop:active { transform: scale(0.95); opacity: 1; }
+
+/* 데이터 마이닝 패널 (깨짐 방지) */
 .data-mining-panel {
     background: linear-gradient(90deg, rgba(20,24,36,0.9), rgba(20,24,36,0.7));
     border: 1px solid var(--border-soft); border-left: 4px solid var(--accent);
-    border-radius: 12px; padding: 15px 20px; margin-bottom: 20px;
+    border-radius: 12px; padding: 15px; margin-bottom: 20px;
     display: flex; justify-content: space-between; align-items: center;
-    flex-wrap: nowrap; /* 줄바꿈 금지 */
+    flex-wrap: nowrap;
 }
 .save-tag.big-btn { 
     background: rgba(255,255,255,0.1); height: 40px; padding: 0 15px; 
     border: 1px solid rgba(255,255,255,0.1); color:#fff; border-radius: 8px; 
-    cursor: pointer; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0;
+    cursor: pointer; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0; margin-left: 10px;
 }
 
 /* 테이블 스타일 */
 .table-header-row {
-    display: flex; background: rgba(0,0,0,0.3); padding: 10px 10px;
+    display: flex; background: rgba(0,0,0,0.3); padding: 10px;
     font-size: 0.7rem; color: var(--text-secondary); font-weight: bold;
     border-bottom: 1px solid var(--border-soft);
 }
@@ -103,15 +110,13 @@ body {
 .ledger-price { font-family: 'JetBrains Mono'; text-align: right; color: var(--text-primary); }
 .ledger-pnl { font-family: 'JetBrains Mono'; text-align: right; font-weight: bold; }
 
-/* AI CORE 전용 */
-.ai-brain-container { margin: 20px auto; font-size: 3rem; color: var(--accent); background: radial-gradient(circle, rgba(252, 213, 53, 0.1) 0%, transparent 70%); width: 80px; height: 80px; border-radius: 50%; display:flex; align-items:center; justify-content:center; }
-.strategy-card { background: var(--bg-card); border: var(--border-highlight); padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; flex: 1; margin: 0 5px; }
-.strategy-card.active { border-color: var(--accent); background: linear-gradient(145deg, rgba(252, 213, 53, 0.1), rgba(252, 213, 53, 0.02)); }
-.st-icon { font-size: 1.5rem; color: var(--text-secondary); margin-bottom: 8px; }
-.strategy-card.active .st-icon { color: var(--accent); }
-.modal-input { width: 100%; padding: 14px; background: rgba(20, 24, 36, 0.8); border: 1px solid var(--border-soft); color: var(--text-primary); border-radius: 12px; font-size: 0.9rem; margin-bottom: 10px; }
-.cyber-btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: #fff; background: var(--color-up); margin-top: 10px; font-size: 1rem; }
+/* 검색창 */
+.search-panel {
+    display: flex; gap: 10px; background: var(--bg-card); padding: 10px 15px;
+    border-radius: 12px; border: var(--border-highlight); margin-bottom: 15px; align-items: center;
+}
+#coin-search-input { background: transparent; border: none; color: #fff; width: 100%; font-size: 1rem; font-weight: bold; text-transform: uppercase; }
 
 /* 모달 */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-.modal-box { background: var(--bg-card); border: var(--border-highlight); border-radius: 16px; padding: 25px; width: 90%; max-width: 350px; }
+.modal-box { background: var(--bg-card); border: var(--border-highlight); border-radius: 16px; padding: 20px; width: 95%; max-width: 380px; }
