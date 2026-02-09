@@ -114,7 +114,7 @@
                 // 빨간 테두리로 강조
                 document.getElementById('real-api-key').style.borderColor = "red";
                 document.getElementById('real-secret-key').style.borderColor = "red";
-                return;
+                return; // 여기서 멈춤!
             }
             
             localStorage.setItem('neuroConfig', JSON.stringify({
