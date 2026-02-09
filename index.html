@@ -36,32 +36,29 @@
                 <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:8px; letter-spacing:1px;">TOTAL NET WORTH (USDT)</div>
                 <div class="num-font" id="total-val" style="font-size:2.2rem; font-weight:bold; color:var(--text-primary); line-height:1.1;">Loading...</div>
             </div>
-
             <div style="height:1px; background:var(--border-soft); margin: 0 10px 15px 10px;"></div>
-
             <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 10px;">
                 <div style="font-size:0.85rem; color:var(--text-secondary);">24H PNL</div>
                 <div class="num-font" id="real-profit" style="font-size:1.4rem; font-weight:bold;">---</div>
             </div>
-            
             <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed var(--border-soft);">
                 <div id="last-log-msg" style="font-size:0.8rem; color:var(--text-secondary); font-family:'JetBrains Mono';">
                     <i class="fas fa-robot"></i> WAITING FOR SIGNAL...
                 </div>
             </div>
-            <div id="real-balance" style="display:none;"></div>
         </div>
 
         <div class="data-hub-container">
             <div class="data-hub-left">
-                <i class="fas fa-circle-notch fa-spin" style="color:var(--accent); font-size:1.2rem; margin-right:10px;"></i>
-                <div>
-                    <div style="font-size:0.7rem; color:var(--text-secondary);">DATA PROCESSED</div>
-                    <div class="num-font" id="data-mining-counter" style="font-size:1.1rem; color:var(--text-primary); font-weight:bold;">0</div>
+                <i class="fas fa-circle-notch fa-spin" style="color:var(--accent); font-size:1.5rem;"></i>
+                
+                <div class="data-hub-text">
+                    <span style="font-size:0.7rem; color:var(--text-secondary); font-weight:600;">DATA PROCESSED</span>
+                    <span class="num-font" id="data-mining-counter" style="font-size:1.1rem; color:var(--text-primary); font-weight:bold;">421,050</span>
                 </div>
             </div>
             
-            <button class="save-tag" onclick="exportLogs()" style="border:1px solid var(--border-soft); padding:10px 15px; font-size:0.85rem; background:rgba(255,255,255,0.05);">
+            <button class="save-tag" onclick="exportLogs()">
                 <i class="fas fa-download" style="color:var(--color-up); margin-right:5px;"></i> CSV
             </button>
         </div>
@@ -90,8 +87,6 @@
     <script src="pro-script.js"></script>
     <script>
         function closeConfig() { document.getElementById('config-modal').style.display = 'none'; }
-        
-        // 로그 헬퍼
         window.addSystemLog = function(type, msg) {
             const lastMsgEl = document.getElementById('last-log-msg');
             if(lastMsgEl) {
@@ -100,24 +95,14 @@
                 lastMsgEl.innerHTML = `<span style="color:${color}; font-weight:bold;">${type}</span> ${msg.split('|')[0]} <span style="color:#666; font-size:0.7rem;">(${time})</span>`;
             }
         };
-
         window.addEventListener('load', () => {
             new TradingView.widget({
-                "container_id": "tv_chart",
-                "symbol": "BINANCE:BTCUSDT",
-                "interval": "1",
-                "timezone": "Asia/Seoul",
-                "theme": "dark",
-                "style": "1",
-                "locale": "en",
-                "toolbar_bg": "#1e2329",
-                "enable_publishing": false,
-                "hide_side_toolbar": true,
-                "allow_symbol_change": true,
-                "autosize": true,
-                "backgroundColor": "rgba(18, 22, 28, 1)"
+                "container_id": "tv_chart", "symbol": "BINANCE:BTCUSDT", "interval": "1", "timezone": "Asia/Seoul",
+                "theme": "dark", "style": "1", "locale": "en", "toolbar_bg": "#1e2329", "enable_publishing": false,
+                "hide_side_toolbar": true, "allow_symbol_change": true, "autosize": true, "backgroundColor": "rgba(18, 22, 28, 1)"
             });
         });
     </script>
 </body>
 </html>
+
