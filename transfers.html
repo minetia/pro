@@ -7,59 +7,62 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="pro-style.css">
 </head>
-<body class="sub-page">
+<body>
 
     <header class="cyber-header">
         <div class="brand-logo">BANK <span>LINK</span></div>
-        <div style="font-size:0.75rem; color:#5d78ff; background:rgba(93, 120, 255, 0.1); padding:4px 8px; border-radius:4px; font-weight:bold;">
-            SECURE
-        </div>
+        <div style="font-size:0.7rem; color:#5d78ff; border:1px solid #5d78ff; padding:2px 6px; border-radius:4px;">SECURE</div>
     </header>
 
     <div id="internal-header-slot"></div>
 
     <div class="main-content">
-        
-        <div class="cyber-panel bank-card-bg">
-            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
+        <div class="cyber-panel" style="background: linear-gradient(135deg, #1e2330 0%, #141824 100%); border:1px solid rgba(93,120,255,0.2);">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
                 <div>
-                    <div style="font-size:0.85rem; color:#fff; font-weight:bold; display:flex; align-items:center; gap:8px;">
-                        <i class="fas fa-university" style="color:#5d78ff;"></i> PRIMARY ACCOUNT
-                    </div>
-                    <div style="font-size:0.75rem; color:#848e9c; margin-top:5px; font-family:'JetBrains Mono';">KBANK 110-382-******</div>
+                    <div style="font-size:0.8rem; color:#fff; font-weight:bold;"><i class="fas fa-university"></i> PRIMARY ACCOUNT</div>
+                    <div style="font-size:0.7rem; color:#848e9c;">KBANK 110-382-******</div>
                 </div>
-                <div style="background:#5d78ff; color:#fff; font-size:0.7rem; padding:3px 8px; font-weight:bold; border-radius:4px;">
-                    VERIFIED
-                </div>
+                <div style="background:#5d78ff; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px; height:fit-content;">VERIFIED</div>
             </div>
-
             <div style="text-align:right;">
-                <div style="font-size:0.75rem; color:#848e9c; margin-bottom:5px;">AVAILABLE CASH</div>
-                <div class="num-font" id="bank-balance-display" style="font-size:1.8rem; font-weight:bold; color:#fff;">
-                    $ 0.00
-                </div>
+                <div style="font-size:0.7rem; color:#848e9c; margin-bottom:5px;">AVAILABLE CASH</div>
+                <div id="bank-balance-display" class="hero-number">Loading...</div>
             </div>
         </div>
 
         <div class="cyber-panel" style="padding:0; overflow:hidden;">
-            <div style="padding:12px 15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:#fff; font-size:0.9rem;">
-                TRANSACTION HISTORY
+            <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:#5d78ff;">
+                <i class="fas fa-exchange-alt"></i> HISTORY
             </div>
-            <div style="overflow-x:auto;">
-                <table class="history-table">
-                    <thead>
-                        <tr>
-                            <th width="30%" style="padding-left:15px;">DATE</th>
-                            <th width="25%">TYPE</th>
-                            <th width="45%" align="right" style="padding-right:15px;">AMOUNT</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transfer-body"></tbody>
-                </table>
+            <div class="table-header-row">
+                <div style="width:30%">DATE</div>
+                <div style="width:30%">TYPE</div>
+                <div style="width:40%; text-align:right;">AMOUNT</div>
             </div>
+            <div id="bank-history-list" style="max-height:400px; overflow-y:auto;"></div>
         </div>
     </div>
 
     <script src="pro-script.js"></script>
+    <script>
+        window.addEventListener('load', () => {
+            setInterval(() => {
+                const listArea = document.getElementById('bank-history-list');
+                if(listArea && appState.transfers) {
+                    let html = '';
+                    appState.transfers.forEach(t => {
+                        const isDep = t.type === 'DEPOSIT';
+                        html += `<div class="ledger-row">
+                            <div style="width:30%" class="ledger-date">${t.date.split(' ')[0]}</div>
+                            <div style="width:30%; font-weight:bold; color:${isDep?'#0f0':'#f00'}">${t.type}</div>
+                            <div style="width:40%; text-align:right;" class="ledger-price">$${t.amount.toLocaleString()}</div>
+                        </div>`;
+                    });
+                    listArea.innerHTML = html;
+                }
+            }, 1000);
+        });
+    </script>
 </body>
 </html>
