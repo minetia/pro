@@ -16,32 +16,44 @@
         </div>
     </header>
 
-    <nav class="cyber-nav">
-        <a href="index.html" class="nav-item">DASHBOARD</a>
-        <a href="wallet.html" class="nav-item">WALLET</a>
-        <a href="transfers.html" class="nav-item active">TRANSFERS</a>
-        <a href="#" class="nav-item">AI-CORE</a>
-    </nav>
+    <div id="internal-header-slot"></div>
 
     <div class="main-content">
-        <div class="cyber-panel" style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <div style="font-size:0.7rem; color:#888;">CONNECTED ACCOUNT</div>
-                <div style="font-size:1rem; color:#fff; font-weight:bold;">KBANK ***-**-******</div>
+        
+        <div class="cyber-panel" style="background: linear-gradient(135deg, #1a0b2e 0%, #000 100%); border: 1px solid #bc13fe;">
+            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px;">
+                <div>
+                    <div style="font-size:0.8rem; color:#bc13fe; font-weight:bold;">
+                        <i class="fas fa-university"></i> PRIMARY ACCOUNT
+                    </div>
+                    <div style="font-size:0.7rem; color:#888; margin-top:5px;">KBANK 110-382-******</div>
+                </div>
+                <div style="background:#bc13fe; color:#000; font-size:0.7rem; padding:2px 6px; font-weight:bold; border-radius:2px;">
+                    VERIFIED
+                </div>
             </div>
-            <div style="font-size:1.5rem; color:#bc13fe;">
-                <i class="fas fa-university"></i>
+
+            <div style="text-align:right;">
+                <div style="font-size:0.7rem; color:#888;">AVAILABLE CASH (KRW/USD)</div>
+                <div class="num-font" id="bank-balance-display" style="font-size:2rem; font-weight:bold; color:#fff; text-shadow:0 0 10px rgba(188, 19, 254, 0.5);">
+                    $ 0.00
+                </div>
             </div>
         </div>
 
         <div class="cyber-panel" style="padding:0; overflow:hidden;">
             <div style="padding:10px; background:rgba(188,19,254,0.05); border-bottom:1px solid rgba(188,19,254,0.2); font-weight:bold; color:#bc13fe; font-size:0.85rem;">
-                <i class="fas fa-exchange-alt"></i> TRANSFER HISTORY
+                <i class="fas fa-exchange-alt"></i> TRANSACTION HISTORY
             </div>
             <div style="overflow-x:auto;">
                 <table class="history-table">
                     <thead>
-                        <tr><th width="25%" style="padding-left:10px;">DATE</th><th width="25%">TYPE</th><th width="30%" align="right">AMOUNT</th><th width="20%" align="right" style="padding-right:10px;">STATE</th></tr>
+                        <tr>
+                            <th width="25%" style="padding-left:10px;">DATE</th>
+                            <th width="20%">TYPE</th>
+                            <th width="35%" align="right">AMOUNT</th>
+                            <th width="20%" align="right" style="padding-right:10px;">STATE</th>
+                        </tr>
                     </thead>
                     <tbody id="transfer-body"></tbody>
                 </table>
