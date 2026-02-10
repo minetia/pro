@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="pro-style.css">
 </head>
 <body>
-
     <header class="cyber-header">
         <div class="brand-logo">NEURAL <span>CORE</span></div>
     </header>
@@ -21,115 +20,100 @@
     </nav>
 
     <div class="main-content">
-        <div class="cyber-panel" style="text-align:center;">
-            <div class="ai-brain-container"><i class="fas fa-brain"></i></div>
-            <div style="font-size:1.2rem; font-weight:bold; color:#fff;">NEURAL ENGINE: <span class="text-green">READY</span></div>
-            <div style="font-size:0.8rem; color:#888;">WAITING FOR INPUTS...</div>
-        </div>
-
         <div class="cyber-panel">
-            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px;"><i class="fas fa-plug"></i> CONNECT EXCHANGE</div>
-            <input type="text" id="real-api-key" class="modal-input" placeholder="Access Key (Required)">
-            <input type="password" id="real-secret-key" class="modal-input" placeholder="Secret Key (Required)">
+            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px;"><i class="fas fa-key"></i> API AUTHENTICATION</div>
+            <input type="text" id="real-api-key" class="modal-input" placeholder="Access Key">
+            <input type="password" id="real-secret-key" class="modal-input" placeholder="Secret Key">
             <button class="cyber-btn" onclick="checkKeys()" style="margin-top:5px; background:#333; border:1px solid #555;">
-                <i class="fas fa-link"></i> VERIFY KEYS
+                VERIFY KEYS
             </button>
         </div>
 
         <div class="cyber-panel">
-            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px;"><i class="fas fa-coins"></i> TRADE SETTINGS</div>
+            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px;"><i class="fas fa-sliders-h"></i> CONFIGURATION</div>
             
-            <div style="display:flex; gap:15px;"> 
+            <div style="display:flex; gap:15px; margin-bottom:15px;">
                 <div style="flex:1;"> 
-                    <label style="font-size:0.7rem; color:#888; margin-bottom:5px; display:block;">TARGET COIN</label>
+                    <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:5px;">TARGET COIN</label>
                     <select id="target-coin" class="modal-input select-box">
-                        <option value="BTC/USDT">BTC/USDT</option>
-                        <option value="ETH/USDT">ETH/USDT</option>
-                        <option value="SOL/USDT">SOL/USDT</option>
-                        <option value="XRP/USDT">XRP/USDT</option>
-                        <option value="DOGE/USDT">DOGE/USDT</option>
+                        <option value="BTC">BTC (Bitcoin)</option>
+                        <option value="ETH">ETH (Ethereum)</option>
+                        <option value="SOL">SOL (Solana)</option>
+                        <option value="XRP">XRP (Ripple)</option>
                     </select>
                 </div>
-                
                 <div style="flex:1;">
-                    <label style="font-size:0.7rem; color:#888; margin-bottom:5px; display:block;">AMOUNT (10k~100m)</label>
-                    <input type="number" id="trade-amount" class="modal-input" placeholder="10,000 ~" style="text-align:center;">
+                    <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:5px;">AMOUNT (USDT)</label>
+                    <div style="position:relative;">
+                        <input type="number" id="trade-amount" class="modal-input" placeholder="1000" style="padding-right:50px;">
+                        <span style="position:absolute; right:15px; top:14px; color:#888; font-size:0.8rem; font-weight:bold;">USDT</span>
+                    </div>
                 </div>
             </div>
-
-            <button class="cyber-btn" onclick="saveSettings()" style="margin-top:5px; background:#333; border:1px solid #555;">
-                <i class="fas fa-check"></i> CONFIRM SETTINGS
-            </button>
-        </div>
-
-        <div style="display:flex; gap:20px; margin-bottom:20px;">
-            <div class="strategy-card active" onclick="selectStrategy(this)">
-                <div class="st-icon"><i class="fas fa-bolt"></i></div>
-                <div style="font-weight:bold; color:#fff;">SCALPING</div>
-            </div>
-            <div class="strategy-card" onclick="selectStrategy(this)">
-                <div class="st-icon"><i class="fas fa-chart-line"></i></div>
-                <div style="font-weight:bold; color:#fff;">SWING</div>
+            
+            <div style="display:flex; gap:20px;">
+                <div class="strategy-card active" id="st-scalping" onclick="selectStrategy('SCALPING')">
+                    <div class="st-icon"><i class="fas fa-bolt"></i></div>
+                    <div style="font-size:0.8rem;">SCALPING</div>
+                </div>
+                <div class="strategy-card" id="st-swing" onclick="selectStrategy('SWING')">
+                    <div class="st-icon"><i class="fas fa-chart-line"></i></div>
+                    <div style="font-size:0.8rem;">SWING</div>
+                </div>
             </div>
         </div>
 
-        <button class="cyber-btn" onclick="activateRealTrading()" style="height:60px; font-size:1.2rem; background:var(--color-up); box-shadow: 0 0 20px rgba(46, 189, 133, 0.4);">
+        <button class="cyber-btn" onclick="activateSystem()" style="height:60px; font-size:1.2rem; background:var(--color-up); box-shadow: 0 0 20px rgba(46, 189, 133, 0.4);">
             ACTIVATE SYSTEM
         </button>
     </div>
 
     <script src="pro-script.js"></script>
     <script>
-        function selectStrategy(el) {
+        let selectedStrategy = 'SCALPING';
+        
+        function selectStrategy(type) {
+            selectedStrategy = type;
             document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active'));
-            el.classList.add('active');
+            if(type === 'SCALPING') document.getElementById('st-scalping').classList.add('active');
+            else document.getElementById('st-swing').classList.add('active');
         }
 
         function checkKeys() {
             const k1 = document.getElementById('real-api-key').value;
             const k2 = document.getElementById('real-secret-key').value;
-            if(!k1 || !k2) return alert("⚠️ Please enter BOTH Keys.");
-            alert("✅ KEYS VERIFIED!");
+            if(!k1 || !k2) {
+                alert("❌ Keys Missing!"); 
+                document.getElementById('real-api-key').style.borderColor = 'red';
+                return;
+            }
+            alert("✅ Keys Verified!");
+            document.getElementById('real-api-key').style.borderColor = '#2ebd85';
         }
 
-        function saveSettings() {
-            const coin = document.getElementById('target-coin').value;
-            const amt = parseFloat(document.getElementById('trade-amount').value);
-            
-            // 금액 검증
-            if(!amt || amt < 10000) return alert("⚠️ Minimum amount is 10,000.");
-            if(amt > 100000000) return alert("⚠️ Maximum amount is 100,000,000.");
-            
-            alert(`✅ SETTINGS CONFIRMED\nTarget: ${coin}\nAmount: ${amt.toLocaleString()}`);
-        }
-
-        // [중요] 최종 실행 시 체크
-        function activateRealTrading() {
+        function activateSystem() {
             const k1 = document.getElementById('real-api-key').value;
             const k2 = document.getElementById('real-secret-key').value;
-            const amt = parseFloat(document.getElementById('trade-amount').value);
-            
-            // 1. 키 체크
-            if(!k1 || !k2) {
-                alert("⛔ ACCESS DENIED\nAPI Keys are missing.");
-                return;
-            }
+            const coin = document.getElementById('target-coin').value;
+            const amt = document.getElementById('trade-amount').value;
 
-            // 2. 금액 체크 (1만 ~ 1억)
-            if(!amt || amt < 10000 || amt > 100000000) {
-                alert("⛔ INVALID AMOUNT\nRange: 10,000 ~ 100,000,000");
-                document.getElementById('trade-amount').focus();
-                document.getElementById('trade-amount').style.borderColor = "red";
-                return;
-            }
+            // 3단계 검증
+            if(!k1 || !k2) return alert("⚠️ Error: Please enter API Keys first.");
             
-            localStorage.setItem('neuroConfig', JSON.stringify({
-                apiKey: k1, secretKey: k2, mode: 'REAL',
-                target: document.getElementById('target-coin').value,
-                amount: amt // 입력한 금액 저장
-            }));
+            // 4단계 검증
+            if(!amt || amt <= 0) return alert("⚠️ Error: Invalid Amount (USDT).");
+
+            // 설정 저장
+            const config = {
+                apiKey: k1,
+                target: coin, // 예: "SOL"
+                amount: parseFloat(amt),
+                strategy: selectedStrategy,
+                isReady: true // 이게 true여야 메인에서 돌아감
+            };
             
-            alert("🚀 SYSTEM ARMED! INITIALIZING AI...");
+            localStorage.setItem('neuroConfig_V3', JSON.stringify(config));
+            alert(`🚀 SYSTEM ACTIVATED!\nTarget: ${coin}\nAmount: ${amt} USDT\nStrategy: ${selectedStrategy}`);
             window.location.href = 'index.html';
         }
     </script>
