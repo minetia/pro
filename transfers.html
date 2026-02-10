@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TRANSFERS</title>
+    <title>BANK</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="pro-style.css?v=20260210">
+    <link rel="stylesheet" href="pro-style.css?v=300">
 </head>
 <body>
     <header class="cyber-header">
@@ -16,21 +16,19 @@
         <div class="cyber-panel bank-card-bg" style="background: linear-gradient(135deg, #1f252e 0%, #13171c 100%);">
             <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
                 <div>
-                    <div style="font-size:0.8rem; color:#fff; font-weight:bold;"><i class="fas fa-university"></i> PRIMARY ACCOUNT</div>
+                    <div style="font-size:0.8rem; color:#fff; font-weight:bold;">PRIMARY ACCOUNT</div>
                     <div style="font-size:0.7rem; color:#848e9c;">KBANK 110-382-******</div>
                 </div>
                 <div style="background:#1261c4; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px; height:fit-content;">VERIFIED</div>
             </div>
             <div style="text-align:right;">
-                <div style="font-size:0.7rem; color:#848e9c; margin-bottom:5px;">AVAILABLE CASH (BANK)</div>
+                <div style="font-size:0.7rem; color:#848e9c; margin-bottom:5px;">AVAILABLE CASH</div>
                 <div id="bank-balance-display" class="hero-number" style="font-size:1.8rem;">Loading...</div>
             </div>
         </div>
 
         <div class="cyber-panel">
-            <div style="font-size:0.8rem; color:#fff; font-weight:bold; margin-bottom:10px;">
-                <i class="fas fa-money-bill-wave"></i> 현금 충전 (External Deposit)
-            </div>
+            <div style="font-size:0.8rem; color:#fff; font-weight:bold; margin-bottom:10px;">현금 충전 (Deposit)</div>
             <div style="display:flex; gap:10px;">
                 <input type="number" id="bank-deposit-input" class="modal-input" placeholder="Min $10 ~ Max $100,000" style="margin-bottom:0;">
                 <button class="save-tag" onclick="processBankDeposit()" style="width:100px; background:var(--color-up); color:#fff; height:46px; font-size:0.9rem;">
@@ -41,7 +39,7 @@
 
         <div class="cyber-panel" style="padding:0; overflow:hidden;">
             <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:#fff; font-size:0.9rem;">
-                <i class="fas fa-exchange-alt"></i> 은행 거래 내역
+                은행 거래 내역
             </div>
             <div id="bank-history-list" style="max-height:400px; overflow-y:auto;"></div>
         </div>
@@ -54,6 +52,7 @@
         <a href="transfers.html" class="nav-item active"><i class="fas fa-university"></i><span>입출금</span></a>
     </nav>
 
-    <script src="pro-script.js?v=20260210"></script>
+    <script src="core.js?v=300"></script>
+    <script src="wallet.js?v=300"></script>
 </body>
 </html>
