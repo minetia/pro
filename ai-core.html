@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI CORE</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="pro-style.css?v=230">
+    <link rel="stylesheet" href="pro-style.css?v=300">
 </head>
 <body>
     <header class="cyber-header">
@@ -14,26 +14,16 @@
 
     <div class="main-content">
         <div class="cyber-panel">
-            <div style="color:var(--accent); font-weight:bold; margin-bottom:15px;">
-                <i class="fas fa-key"></i> API AUTHENTICATION
-            </div>
-            
+            <div style="color:var(--accent); font-weight:bold; margin-bottom:15px;">API AUTHENTICATION</div>
             <div style="font-size:0.7rem; color:#888; margin-bottom:5px;">API KEY</div>
             <input type="text" id="api-key-input" class="modal-input" placeholder="Enter API Key">
-            
             <div style="font-size:0.7rem; color:#888; margin-bottom:5px;">SECRET KEY</div>
             <input type="password" id="secret-key-input" class="modal-input" placeholder="Enter Secret Key">
-            
-            <button class="cyber-btn verify-btn" onclick="checkKeys()" style="background:#2b3139; margin-top:10px;">
-                VERIFY KEYS
-            </button>
+            <button class="cyber-btn verify-btn" onclick="checkKeys()" style="background:#2b3139; margin-top:10px;">VERIFY KEYS</button>
         </div>
 
         <div class="cyber-panel">
-            <div style="color:#fff; font-weight:bold; margin-bottom:15px;">
-                <i class="fas fa-sliders-h"></i> TRADING CONFIG
-            </div>
-
+            <div style="color:#fff; font-weight:bold; margin-bottom:15px;">TRADING CONFIG</div>
             <div style="display:flex; gap:10px;">
                 <div style="flex:1;">
                     <div style="font-size:0.7rem; color:#888; margin-bottom:5px;">TARGET COIN</div>
@@ -47,9 +37,7 @@
         </div>
 
         <div class="cyber-panel">
-            <div style="color:#fff; font-weight:bold; margin-bottom:15px;">
-                <i class="fas fa-chess-board"></i> STRATEGY SELECT
-            </div>
+            <div style="color:#fff; font-weight:bold; margin-bottom:15px;">STRATEGY SELECT</div>
             <div class="strategy-container">
                 <div class="strategy-card active" onclick="selectStrategy(this, 'SCALPING')">
                     <div class="st-icon"><i class="fas fa-bolt"></i></div>
@@ -74,6 +62,7 @@
         <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
     </nav>
 
-    <script src="pro-script.js?v=230"></script>
+    <script src="core.js?v=300"></script>
+    <script src="ai.js?v=300"></script>
 </body>
 </html>
