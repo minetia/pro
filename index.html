@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NEURAL EXCHANGE</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="pro-style.css?v=20260210">
+    <link rel="stylesheet" href="pro-style.css?v=300">
 </head>
 <body>
     <header class="cyber-header">
@@ -16,7 +16,7 @@
     <div class="main-content">
         <div class="cyber-panel main-dashboard">
             <div style="text-align:center; padding:10px 0;">
-                <div id="balance-label" style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:5px;">총 보유 자산 (TOTAL BALANCE)</div>
+                <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:5px;">총 보유 자산</div>
                 <div id="total-val" class="hero-number" style="font-size:2.2rem; margin-bottom:10px;">$ 0.00</div>
                 <div style="font-size:0.9rem; color:#888;">
                     24H 수익 <span id="real-profit" style="font-weight:bold; color:#fff;">---</span>
@@ -24,10 +24,10 @@
             </div>
 
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button id="btn-main-control" class="cyber-btn btn-start" onclick="startSystem()">
+                <button id="btn-main-control" class="cyber-btn btn-start" onclick="startTradingSystem()">
                     <i class="fas fa-play"></i> START
                 </button>
-                <button class="cyber-btn btn-stop" onclick="stopSystem()">
+                <button class="cyber-btn btn-stop" onclick="stopTradingSystem()">
                     <i class="fas fa-stop"></i> STOP
                 </button>
             </div>
@@ -39,8 +39,8 @@
                     <i class="fas fa-search" style="position:absolute; left:12px; top:14px; color:#666;"></i>
                     <input type="text" id="coin-search-input" class="modal-input" placeholder="코인 검색 (예: BTC)" style="margin-bottom:0; padding-left:35px;">
                 </div>
-                <button class="save-tag" onclick="searchInfoCoin()" style="width:80px; height:46px; font-size:0.9rem; background:var(--accent); color:#000; border:none; border-radius:4px; font-weight:bold;">
-                    <i class="fas fa-chart-line"></i> 정보
+                <button class="save-tag" onclick="searchInfoCoin()" style="width:80px; height:46px; font-size:0.9rem; background:var(--accent); color:#000; font-weight:bold; border:none;">
+                    정보
                 </button>
             </div>
         </div>
@@ -50,27 +50,15 @@
                 <div style="font-weight:bold; color:#fff; font-size:1rem;"><i class="fas fa-list-ul"></i> 실시간 체결</div>
                 <div style="font-size:0.7rem; color:#666;">Live Feed</div>
             </div>
-            
             <div class="table-header-row" style="background:#111;">
                 <div style="width:25%">시간</div>
-                <div style="width:25%">포지션</div>
-                <div style="width:25%; text-align:right;">가격</div>
-                <div style="width:25%; text-align:right;">정산</div>
+                <div style="width:25%">코인</div>
+                <div style="width:25%; text-align:right;">포지션</div>
+                <div style="width:25%; text-align:right;">손익</div>
             </div>
-
             <div id="main-ledger-list" style="min-height:200px; max-height:400px; overflow-y:auto;">
                 <div style="padding:40px; text-align:center; color:#444;">시스템 대기중...</div>
             </div>
-        </div>
-
-        <div class="cyber-panel" style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <div style="font-size:0.6rem; color:var(--accent); font-weight:bold;">DATA MINING</div>
-                <div id="data-mining-counter" class="num-font" style="font-size:1.2rem; color:#fff;">Loading...</div>
-            </div>
-            <button class="cyber-btn" onclick="exportLogs()" style="width:auto; padding:8px 15px; background:#2b3139; font-size:0.8rem;">
-                <i class="fas fa-download"></i> CSV
-            </button>
         </div>
     </div>
 
@@ -81,6 +69,7 @@
         <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
     </nav>
 
-    <script src="pro-script.js?v=20260210"></script>
+    <script src="core.js?v=300"></script>
+    <script src="main.js?v=300"></script>
 </body>
 </html>
