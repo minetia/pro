@@ -13,10 +13,10 @@
     </header>
 
     <nav class="cyber-nav">
-        <a href="transfers.html" class="nav-item active"><i class="fas fa-university"></i> TRANSFERS</a>
+        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i> DASHBOARD</a>
         <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i> WALLET</a>
         <a href="ai-core.html" class="nav-item"><i class="fas fa-brain"></i> AI-CORE</a>
-        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i> DASHBOARD</a>
+        <a href="transfers.html" class="nav-item active"><i class="fas fa-university"></i> TRANSFERS</a>
     </nav>
 
     <div class="main-content">
@@ -43,31 +43,18 @@
                 <i class="fas fa-exchange-alt"></i> HISTORY
             </div>
             <div class="table-header-row">
-                <div style="width:30%">DATE</div>
-                <div style="width:30%">TYPE</div>
-                <div style="width:40%; text-align:right;">AMOUNT</div>
+                <div style="width:30%">DATE</div><div style="width:30%">TYPE</div><div style="width:40%; text-align:right;">AMOUNT</div>
             </div>
             <div id="bank-history-list" style="max-height:400px; overflow-y:auto;"></div>
         </div>
     </div>
-
     <script src="pro-script.js"></script>
     <script>
-        // 이 페이지 전용 스크립트 (외부 입금 시뮬레이션)
         function simulateExternalDeposit() {
             const amount = 1000;
-            // 전역 변수 appState가 로드되었는지 확인
             if(typeof appState !== 'undefined') {
                 appState.bankBalance += amount;
-                
-                // 내역 추가
-                appState.transfers.unshift({
-                    date: new Date().toISOString().slice(0, 10),
-                    type: "WIRE IN",
-                    amount: amount
-                });
-                
-                // 저장 및 새로고침
+                appState.transfers.unshift({ date: new Date().toISOString().slice(0, 10), type: "WIRE IN", amount: amount });
                 localStorage.setItem('neuroBotData_V4_FINAL', JSON.stringify(appState));
                 alert(`✅ $${amount.toLocaleString()} Received from External Bank!`);
                 window.location.reload();
