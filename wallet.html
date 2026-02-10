@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WALLET</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="pro-style.css">
+    <link rel="stylesheet" href="pro-style.css?v=20260210">
 </head>
 <body>
     <header class="cyber-header">
@@ -15,21 +15,15 @@
 
     <div class="main-content">
         <div class="cyber-panel">
-            <div style="font-size:0.8rem; color:var(--text-secondary);">총 보유자산 (Total Assets)</div>
-            <div id="wallet-display" class="hero-number" style="font-size:1.8rem; margin:5px 0;">$ 0.00</div>
-            
+            <div style="font-size:0.8rem; color:var(--text-secondary);">총 보유자산</div>
+            <div id="wallet-display" class="hero-number" style="font-size:1.8rem; margin:5px 0;">Loading...</div>
             <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:0.85rem;">
-                <span style="color:#888;">주문가능 (현금 USDT)</span>
+                <span style="color:#888;">주문가능 (현금)</span>
                 <div id="avail-cash" style="color:#fff;">$ 0.00</div>
             </div>
-            
             <div style="display:flex; gap:10px; margin-top:15px;">
-                <button class="cyber-btn" onclick="openModal('deposit')" style="background:#2b3139; border:1px solid #444;">
-                    <i class="fas fa-arrow-down"></i> 입금 (가져오기)
-                </button>
-                <button class="cyber-btn" onclick="openModal('withdraw')" style="background:#2b3139; border:1px solid #444;">
-                    <i class="fas fa-arrow-up"></i> 출금 (보내기)
-                </button>
+                <button class="cyber-btn" onclick="openModal('deposit')" style="background:#2b3139; border:1px solid #444;"><i class="fas fa-arrow-down"></i> 입금 (가져오기)</button>
+                <button class="cyber-btn" onclick="openModal('withdraw')" style="background:#2b3139; border:1px solid #444;"><i class="fas fa-arrow-up"></i> 출금 (보내기)</button>
             </div>
         </div>
 
@@ -52,10 +46,6 @@
             <div class="cyber-panel">
                 <div style="font-size:0.8rem; color:#888; margin-bottom:5px;">기간 누적 손익</div>
                 <div id="pnl-total-amount" class="hero-number" style="font-size:1.5rem;">$ 0.00</div>
-                <div style="display:flex; margin-top:15px; border-top:1px solid #333; padding-top:15px;">
-                    <div style="flex:1;"><div style="font-size:0.7rem; color:#888;">기간 수익률</div><div id="pnl-total-percent" style="font-weight:bold; font-size:1.1rem;">0.00%</div></div>
-                    <div style="flex:1; text-align:right;"><div style="font-size:0.7rem; color:#888;">평균 투자금</div><div id="pnl-avg-invest" style="font-weight:bold; font-size:1.1rem;">$ 0.00</div></div>
-                </div>
             </div>
         </div>
 
@@ -77,13 +67,11 @@
         <div class="modal-box">
             <h3 id="modal-title" style="color:#fff; margin-bottom:15px;">입출금</h3>
             <input type="number" id="amount-input" class="modal-input" placeholder="금액 입력 ($)">
-            
             <div class="percent-group" style="display:flex; gap:5px; margin-bottom:15px;">
                 <button class="cyber-btn" onclick="calcPercent(10)" style="background:#333; padding:5px; font-size:0.7rem;">10%</button>
                 <button class="cyber-btn" onclick="calcPercent(50)" style="background:#333; padding:5px; font-size:0.7rem;">50%</button>
                 <button class="cyber-btn" onclick="calcPercent(100)" style="background:#333; padding:5px; font-size:0.7rem;">MAX</button>
             </div>
-            
             <div style="display:flex; gap:10px;">
                 <button class="cyber-btn" onclick="closeModal()" style="background:#333;">취소</button>
                 <button id="modal-confirm-btn" class="cyber-btn" onclick="processTx()" style="background:var(--accent); color:#000;">확인</button>
@@ -98,6 +86,6 @@
         <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
     </nav>
 
-    <script src="pro-script.js"></script>
+    <script src="pro-script.js?v=20260210"></script>
 </body>
 </html>
