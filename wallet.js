@@ -169,15 +169,6 @@ function processTx() {
 }
 
 function formatMoney(num) { return num.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
-
-function showTab(t) {
-    // 모든 탭 숨기기
-    document.querySelectorAll('.tab-content').forEach(function(c) {
-        c.style.display = 'none';
-    });
-    // 선택한 탭만 보이기
-    var target = document.getElementById('tab-' + t);
-    if(target) target.style.display = 'block';
 }
 setInterval(function() {
     var tbody = document.getElementById('history-table-body');
