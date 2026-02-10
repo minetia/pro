@@ -1,4 +1,4 @@
-/* pro-script.js - V43.0 (Strict Fund Check & UI Fix) */
+/* pro-script.js - V43.0 (Key Matched & Strict Mode) */
 let appState = {
     balance: 0.00, cash: 0.00, bankBalance: 0.00, startBalance: 0.00, 
     tradeHistory: [], openOrders: [], transfers: [], dataCount: 42105, 
@@ -6,6 +6,8 @@ let appState = {
 };
 let autoTradeInterval = null;
 let dataCounterInterval = null;
+
+// [중요] ai-core.html과 동일한 키 사용
 const SAVE_KEY = 'neuroBotData_V43_FINAL';
 const CONFIG_KEY = 'neuroConfig_V43_FINAL';
 
@@ -31,12 +33,14 @@ window.addEventListener('load', () => {
     renderGlobalUI();
 });
 
-/* --- [중요] 시스템 시작 (잔고 검증) --- */
+/* --- 시스템 시작 --- */
 function startSystem(isSilent = false) {
     if (appState.balance <= 0) {
         if(!isSilent) alert("⚠️ 지갑 잔고가 0원입니다. [입출금]에서 충전해주세요.");
         stopSystem(true); return;
     }
+    
+    // 설정 확인 (키가 맞아야 여기서 통과됨)
     if (!appState.config || !appState.config.isReady) {
         if(!isSilent) {
             if(confirm("⚠️ AI 설정이 필요합니다. 이동할까요?")) window.location.href = 'ai-core.html';
@@ -44,19 +48,14 @@ function startSystem(isSilent = false) {
         stopSystem(true); return;
     }
 
-    // [핵심] 설정 금액 검증 (Strict Mode)
+    // 설정 금액 검증
     let setAmount = appState.config.amount || 0;
-    
-    // 지갑 잔고보다 설정액이 크면 실행 차단
     if (setAmount > appState.balance) {
-        if(!isSilent) {
-            alert(`⛔ [잔고 부족]\n설정 금액($${setAmount})이 보유 자산($${appState.balance})보다 큽니다.\nAI 설정에서 금액을 줄이거나 입금하세요.`);
-        }
-        stopSystem(true); 
-        return; 
+        if(!isSilent) alert(`⛔ [잔고 부족] 설정액($${setAmount})이 보유액($${appState.balance})보다 큽니다.`);
+        stopSystem(true); return; 
     }
 
-    // 통과 시 실행
+    // 실행
     appState.runningCoin = appState.config.target.split('/')[0]; 
     appState.investedAmount = setAmount;
     appState.cash = appState.balance - setAmount; 
@@ -77,7 +76,7 @@ function stopSystem(isSilent = false) {
     appState.isRunning = false;
     appState.runningCoin = null;
     appState.investedAmount = 0;
-    appState.cash = appState.balance; // 전액 현금화
+    appState.cash = appState.balance; 
     appState.openOrders = []; 
     if(autoTradeInterval) clearInterval(autoTradeInterval);
     updateButtonState(false);
@@ -110,7 +109,7 @@ function executeAiTrade() {
         type: type,
         vol: volume,
         price: price.toLocaleString(),
-        total: total.toFixed(2), // 거래 총액
+        total: total.toFixed(2),
         fee: fee.toFixed(2),
         net: net.toFixed(2)
     };
@@ -122,15 +121,7 @@ function executeAiTrade() {
 
 /* --- 렌더링 --- */
 function renderGlobalUI() {
-    const els = { 
-        total: document.getElementById('total-val'), 
-        wallet: document.getElementById('wallet-display'), 
-        avail: document.getElementById('avail-cash'),
-        bank: document.getElementById('bank-balance-display'), 
-        prof: document.getElementById('real-profit') 
-    };
-    
-    // 금액 표시 (현금은 실행 중엔 남은 돈, 정지 중엔 전체 돈)
+    const els = { total: document.getElementById('total-val'), wallet: document.getElementById('wallet-display'), avail: document.getElementById('avail-cash'), bank: document.getElementById('bank-balance-display'), prof: document.getElementById('real-profit') };
     const currentCash = appState.isRunning ? appState.cash : appState.balance;
 
     if(els.total) els.total.innerText = `$ ${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
@@ -138,90 +129,50 @@ function renderGlobalUI() {
     if(els.avail) els.avail.innerText = `$ ${currentCash.toLocaleString(undefined, {minimumFractionDigits:2})}`;
     if(els.bank) els.bank.innerText = `$ ${appState.bankBalance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
     
-    // 수익률
     const base = appState.startBalance > 0 ? appState.startBalance : appState.balance;
     const profit = appState.balance - base;
     const profitPercent = base > 0 ? (profit / base) * 100 : 0;
     const pnlColor = profit >= 0 ? 'text-green' : 'text-red';
     if(els.prof) els.prof.innerHTML = `<span class="${pnlColor}">${profit>=0?'+':''}${profitPercent.toFixed(2)}%</span> ($${profit.toFixed(2)})`;
 
-    // [메인 리스트] (CSS 클래스 적용으로 깨짐 방지)
     const mainList = document.getElementById('main-ledger-list');
     if(mainList) {
-        if(appState.tradeHistory.length === 0) {
-            mainList.innerHTML = '<div style="padding:40px; text-align:center; color:#444;">NO TRADES YET</div>';
-        } else {
+        if(appState.tradeHistory.length === 0) mainList.innerHTML = '<div style="padding:40px; text-align:center; color:#444;">NO TRADES YET</div>';
+        else {
             let html = '';
             appState.tradeHistory.slice(0, 50).forEach(t => {
                 const pnlColor = t.type === '매수' ? 'text-green' : 'text-red'; 
-                html += `
-                <div class="ledger-row">
-                    <div class="col-time">${t.time}</div>
-                    <div class="col-coin">${t.coin} <span class="${pnlColor}" style="font-size:0.7rem;">${t.type}</span></div>
-                    <div class="col-price">${t.price}</div>
-                    <div class="col-pnl ${t.net >= t.total ? 'text-green' : 'text-red'}">${t.net}</div>
-                </div>`;
+                html += `<div class="ledger-row"><div class="col-time">${t.time}</div><div class="col-coin">${t.coin} <span class="${pnlColor}" style="font-size:0.7rem;">${t.type}</span></div><div class="col-price">${t.price}</div><div class="col-pnl ${t.net >= t.total ? 'text-green' : 'text-red'}">${t.net}</div></div>`;
             });
             mainList.innerHTML = html;
         }
     }
 
-    // [지갑 페이지] 파이차트 및 보유현황
     if(document.getElementById('holdings-list')) {
         const invested = appState.isRunning ? (appState.balance - appState.cash) : 0;
         const total = appState.balance > 0 ? appState.balance : 1;
         const investPercent = (invested / total) * 100;
         const cashPercent = 100 - investPercent;
-
         const pie = document.getElementById('portfolio-pie');
-        if(pie) {
-            // 투자 중이면 [노랑|회색], 아니면 [회색 100%]
-            if(appState.isRunning && invested > 0) {
-                pie.style.background = `conic-gradient(var(--accent) 0% ${investPercent}%, #444 ${investPercent}% 100%)`;
-            } else {
-                pie.style.background = `conic-gradient(#444 0% 100%)`; // 전체 회색 (현금)
-            }
-        }
-
+        if(pie) pie.style.background = appState.isRunning && invested > 0 ? `conic-gradient(var(--accent) 0% ${investPercent}%, #444 ${investPercent}% 100%)` : `conic-gradient(#444 0% 100%)`;
+        
         const holdingsList = document.getElementById('holdings-list');
         let hHtml = '';
-        
-        // 1. 투자 코인 (실행 중일 때만)
-        if(appState.isRunning && invested > 0) {
-            hHtml += `
-                <div style="display:flex; justify-content:space-between; padding:12px 5px; border-bottom:1px solid #333;">
-                    <div><div style="font-weight:bold; color:#fff;">${appState.runningCoin}</div><div style="font-size:0.7rem; color:var(--accent);">AI TRADING</div></div>
-                    <div style="text-align:right;"><div style="color:#fff;">$${invested.toLocaleString()}</div><div style="font-size:0.75rem; color:#888;">${investPercent.toFixed(1)}%</div></div>
-                </div>`;
-        }
-        // 2. 현금 (항상)
-        hHtml += `
-            <div style="display:flex; justify-content:space-between; padding:12px 5px; border-bottom:1px solid #333;">
-                <div><div style="font-weight:bold; color:#fff;">USDT</div><div style="font-size:0.7rem; color:#888;">현금 자산</div></div>
-                <div style="text-align:right;"><div style="color:#fff;">$${currentCash.toLocaleString()}</div><div style="font-size:0.75rem; color:#888;">${cashPercent.toFixed(1)}%</div></div>
-            </div>`;
+        if(appState.isRunning && invested > 0) hHtml += `<div style="display:flex; justify-content:space-between; padding:12px 5px; border-bottom:1px solid #333;"><div><div style="font-weight:bold; color:#fff;">${appState.runningCoin}</div><div style="font-size:0.7rem; color:var(--accent);">AI TRADING</div></div><div style="text-align:right;"><div style="color:#fff;">$${invested.toLocaleString()}</div><div style="font-size:0.75rem; color:#888;">${investPercent.toFixed(1)}%</div></div></div>`;
+        hHtml += `<div style="display:flex; justify-content:space-between; padding:12px 5px; border-bottom:1px solid #333;"><div><div style="font-weight:bold; color:#fff;">USDT</div><div style="font-size:0.7rem; color:#888;">현금 자산</div></div><div style="text-align:right;"><div style="color:#fff;">$${currentCash.toLocaleString()}</div><div style="font-size:0.75rem; color:#888;">${cashPercent.toFixed(1)}%</div></div></div>`;
         holdingsList.innerHTML = hHtml;
     }
 
-    // [지갑 페이지] 거래내역 상세 테이블
     const historyTable = document.getElementById('history-table-body');
     if(historyTable) {
         let tHtml = '';
         appState.tradeHistory.slice(0, 30).forEach(t => {
             const typeColor = t.type === '매수' ? 'text-green' : 'text-red';
-            tHtml += `<tr>
-                <td>${t.time}</td>
-                <td><span style="font-weight:bold;">${t.coin}</span></td>
-                <td class="${typeColor}">${t.type}</td>
-                <td>${t.vol}</td>
-                <td>${t.total}</td>
-                <td><span style="font-weight:bold;">${t.net}</span></td>
-            </tr>`;
+            tHtml += `<tr><td>${t.time}</td><td><span style="font-weight:bold;">${t.coin}</span></td><td class="${typeColor}">${t.type}</td><td>${t.vol}</td><td>${t.total}</td><td><span style="font-weight:bold;">${t.net}</span></td></tr>`;
         });
         historyTable.innerHTML = tHtml;
     }
     
-    // 은행 입출금 내역
     const bankList = document.getElementById('bank-history-list');
     if(bankList && appState.transfers) { 
         let bHtml = ''; 
