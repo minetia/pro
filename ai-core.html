@@ -19,9 +19,7 @@
             </div>
             <input type="text" id="real-api-key" class="modal-input" placeholder="Access Key">
             <input type="password" id="real-secret-key" class="modal-input" placeholder="Secret Key">
-            <button class="cyber-btn" onclick="checkKeys()" style="margin-top:5px; background:#2b3139; border:1px solid #444;">
-                VERIFY KEYS
-            </button>
+            <button class="cyber-btn" onclick="checkKeys()" style="margin-top:5px; background:#2b3139; border:1px solid #444;">VERIFY KEYS</button>
         </div>
 
         <div class="cyber-panel">
@@ -32,20 +30,13 @@
             <div style="display:flex; gap:15px; margin-bottom:15px;">
                 <div style="flex:1;"> 
                     <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:5px;">TARGET COIN</label>
-                    <select id="target-coin" class="modal-input select-box">
-                        <option value="BTC">BTC</option>
-                        <option value="ETH">ETH</option>
-                        <option value="SOL">SOL</option>
-                        <option value="XRP">XRP</option>
+                    <select id="target-coin" class="modal-input select-box" style="height:45px;">
+                        <option value="BTC">BTC</option><option value="ETH">ETH</option><option value="SOL">SOL</option><option value="XRP">XRP</option>
                     </select>
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:5px;">AMOUNT (USDT)</label>
-                    <div style="position:relative;">
-                        <input type="number" id="trade-amount" class="modal-input" placeholder="Min 10" style="padding-right:50px;">
-                        <span style="position:absolute; right:15px; top:14px; color:#888; font-size:0.7rem; font-weight:bold;">USDT</span>
-                    </div>
-                    <div style="font-size:0.65rem; color:#666; margin-top:-5px;">Min $10 ~ Max $100,000</div>
+                    <input type="number" id="trade-amount" class="modal-input" placeholder="1000" style="height:45px;">
                 </div>
             </div>
             
@@ -61,30 +52,21 @@
             </div>
         </div>
 
-        <button class="cyber-btn" onclick="activateSystem()" style="height:55px; font-size:1.1rem; background:var(--color-up); box-shadow: 0 0 15px rgba(200, 74, 49, 0.3); margin-bottom: 20px;">
+        <button class="cyber-btn" onclick="activateSystem()" style="height:55px; font-size:1.1rem; background:var(--color-up); margin-bottom: 20px;">
             ACTIVATE SYSTEM
         </button>
     </div>
 
     <nav class="bottom-nav">
-        <a href="index.html" class="nav-item">
-            <i class="fas fa-chart-pie"></i><span>거래소</span>
-        </a>
-        <a href="wallet.html" class="nav-item">
-            <i class="fas fa-wallet"></i><span>투자내역</span>
-        </a>
-        <a href="ai-core.html" class="nav-item active">
-            <i class="fas fa-brain"></i><span>AI설정</span>
-        </a>
-        <a href="transfers.html" class="nav-item">
-            <i class="fas fa-university"></i><span>입출금</span>
-        </a>
+        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i><span>거래소</span></a>
+        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i><span>투자내역</span></a>
+        <a href="ai-core.html" class="nav-item active"><i class="fas fa-brain"></i><span>AI설정</span></a>
+        <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
     </nav>
 
     <script src="pro-script.js"></script>
     <script>
         let selectedStrategy = 'SCALPING';
-        
         window.addEventListener('load', () => {
             if(typeof appState !== 'undefined' && appState.config) {
                 if(appState.config.apiKey) document.getElementById('real-api-key').value = appState.config.apiKey;
@@ -92,50 +74,20 @@
                 if(appState.config.amount) document.getElementById('trade-amount').value = appState.config.amount;
             }
         });
-
-        function selectStrategy(type) { 
-            selectedStrategy = type; 
-            document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active')); 
-            if(type === 'SCALPING') document.getElementById('st-scalping').classList.add('active'); 
-            else document.getElementById('st-swing').classList.add('active'); 
-        }
-
-        function checkKeys() { 
-            const k1 = document.getElementById('real-api-key').value; 
-            const k2 = document.getElementById('real-secret-key').value; 
-            if(!k1 || !k2) { alert("❌ API 키를 입력해주세요!"); return; } 
-            alert("✅ 키 검증 완료!"); 
-        }
-
+        // (나머지 로직은 pro-script.js가 담당하므로 생략 가능하나, 개별 페이지 함수는 유지)
+        function selectStrategy(type) { selectedStrategy = type; document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active')); if(type === 'SCALPING') document.getElementById('st-scalping').classList.add('active'); else document.getElementById('st-swing').classList.add('active'); }
+        function checkKeys() { if(!document.getElementById('real-api-key').value) { alert("❌ 키 입력 필요!"); return; } alert("✅ 키 검증 완료!"); }
         function activateSystem() {
             const k1 = document.getElementById('real-api-key').value; 
-            const k2 = document.getElementById('real-secret-key').value; 
             const coin = document.getElementById('target-coin').value; 
             const amt = parseFloat(document.getElementById('trade-amount').value);
-            
-            if(!k1) return alert("API Access Key를 입력하세요."); 
-            
-            // [중요 수정] 최소/최대 금액 제한 로직 적용 ($10 ~ $100,000)
-            if(!amt || amt < 10) return alert("⛔ 최소 거래 금액은 $10 (약 1만원)입니다.");
-            if(amt > 100000) return alert("⛔ 최대 거래 금액은 $100,000 (약 1억원)입니다.");
-            
-            // 잔고 확인
-            if(typeof appState !== 'undefined') {
-                if(appState.balance < amt) {
-                    alert(`⛔ [설정 불가]\n보유 자산이 부족합니다.\n\n보유액: $${appState.balance.toLocaleString()}\n설정액: $${amt.toLocaleString()}`);
-                    return; 
-                }
-            }
-
-            const configData = { 
-                apiKey: k1, target: coin, amount: amt, 
-                strategy: selectedStrategy, isReady: true 
-            };
-            
-            if(typeof appState !== 'undefined') appState.config = configData;
-            localStorage.setItem('neuroConfig_V43_FINAL', JSON.stringify(configData));
-            
-            alert(`🚀 AI 설정 완료!\n투자금: $${amt.toLocaleString()}`); 
+            if(!k1) return alert("API 키를 입력하세요."); 
+            if(!amt || amt < 10) return alert("최소 거래 금액은 $10 입니다.");
+            if (appState.balance < amt) { alert(`⛔ 잔고 부족! (보유: $${appState.balance})`); return; }
+            const configData = { apiKey: k1, target: coin, amount: amt, strategy: selectedStrategy, isReady: true };
+            appState.config = configData;
+            localStorage.setItem('neuroConfig_V65_FINAL', JSON.stringify(configData));
+            alert("🚀 설정 완료! 메인으로 이동합니다."); 
             window.location.href = 'index.html';
         }
     </script>
