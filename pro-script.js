@@ -1,4 +1,4 @@
-/* pro-script.js - V43.0 (Key Matched & Strict Mode) */
+/* pro-script.js - V45.0 (Display Active Amount on Main) */
 let appState = {
     balance: 0.00, cash: 0.00, bankBalance: 0.00, startBalance: 0.00, 
     tradeHistory: [], openOrders: [], transfers: [], dataCount: 42105, 
@@ -6,8 +6,6 @@ let appState = {
 };
 let autoTradeInterval = null;
 let dataCounterInterval = null;
-
-// [중요] ai-core.html과 동일한 키 사용
 const SAVE_KEY = 'neuroBotData_V43_FINAL';
 const CONFIG_KEY = 'neuroConfig_V43_FINAL';
 
@@ -17,7 +15,6 @@ window.addEventListener('load', () => {
     highlightMenu();
     if(document.getElementById('tab-holdings')) showTab('holdings');
     
-    // 자동 재시작 확인
     if (appState.isRunning) {
         if (appState.balance > 0 && appState.config && appState.config.isReady) {
             startSystem(true);
@@ -39,8 +36,6 @@ function startSystem(isSilent = false) {
         if(!isSilent) alert("⚠️ 지갑 잔고가 0원입니다. [입출금]에서 충전해주세요.");
         stopSystem(true); return;
     }
-    
-    // 설정 확인 (키가 맞아야 여기서 통과됨)
     if (!appState.config || !appState.config.isReady) {
         if(!isSilent) {
             if(confirm("⚠️ AI 설정이 필요합니다. 이동할까요?")) window.location.href = 'ai-core.html';
@@ -48,14 +43,24 @@ function startSystem(isSilent = false) {
         stopSystem(true); return;
     }
 
-    // 설정 금액 검증
     let setAmount = appState.config.amount || 0;
+    
+    // 금액 범위 체크
+    if (setAmount < 10) {
+        if(!isSilent) alert("⛔ 최소 거래 금액은 $10 입니다.");
+        stopSystem(true); return;
+    }
+    if (setAmount > 100000) {
+        if(!isSilent) alert("⛔ 최대 거래 금액은 $100,000 입니다.");
+        stopSystem(true); return;
+    }
+
+    // 잔고 체크
     if (setAmount > appState.balance) {
         if(!isSilent) alert(`⛔ [잔고 부족] 설정액($${setAmount})이 보유액($${appState.balance})보다 큽니다.`);
         stopSystem(true); return; 
     }
 
-    // 실행
     appState.runningCoin = appState.config.target.split('/')[0]; 
     appState.investedAmount = setAmount;
     appState.cash = appState.balance - setAmount; 
@@ -119,28 +124,58 @@ function executeAiTrade() {
     renderGlobalUI();
 }
 
-/* --- 렌더링 --- */
+/* --- 렌더링 (메인화면 금액 표시 로직 수정) --- */
 function renderGlobalUI() {
-    const els = { total: document.getElementById('total-val'), wallet: document.getElementById('wallet-display'), avail: document.getElementById('avail-cash'), bank: document.getElementById('bank-balance-display'), prof: document.getElementById('real-profit') };
+    const els = { 
+        total: document.getElementById('total-val'), 
+        label: document.getElementById('balance-label'), // [NEW] 라벨
+        wallet: document.getElementById('wallet-display'), 
+        avail: document.getElementById('avail-cash'), 
+        bank: document.getElementById('bank-balance-display'), 
+        prof: document.getElementById('real-profit') 
+    };
+    
     const currentCash = appState.isRunning ? appState.cash : appState.balance;
 
-    if(els.total) els.total.innerText = `$ ${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+    // [핵심] 메인 화면 표시 로직
+    if(els.total && els.label) {
+        if(appState.isRunning) {
+            // 실행 중: 순수 투자중인 금액만 표시 (총액 - 현금)
+            const activeMoney = appState.balance - appState.cash;
+            els.total.innerText = `$ ${activeMoney.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+            els.label.innerText = `현재 운용 자산 (${appState.runningCoin})`;
+            els.label.style.color = "var(--accent)"; // 노란색으로 강조
+        } else {
+            // 정지 중: 전체 지갑 잔고 표시
+            els.total.innerText = `$ ${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+            els.label.innerText = `총 보유 자산 (TOTAL BALANCE)`;
+            els.label.style.color = "var(--text-secondary)";
+        }
+    }
+
     if(els.wallet) els.wallet.innerText = `$ ${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
     if(els.avail) els.avail.innerText = `$ ${currentCash.toLocaleString(undefined, {minimumFractionDigits:2})}`;
     if(els.bank) els.bank.innerText = `$ ${appState.bankBalance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
     
+    // 수익률
     const base = appState.startBalance > 0 ? appState.startBalance : appState.balance;
     const profit = appState.balance - base;
     const profitPercent = base > 0 ? (profit / base) * 100 : 0;
     const pnlColor = profit >= 0 ? 'text-green' : 'text-red';
     if(els.prof) els.prof.innerHTML = `<span class="${pnlColor}">${profit>=0?'+':''}${profitPercent.toFixed(2)}%</span> ($${profit.toFixed(2)})`;
 
+    // 메인 리스트
     const mainList = document.getElementById('main-ledger-list');
     if(mainList) {
-        if(appState.tradeHistory.length === 0) mainList.innerHTML = '<div style="padding:40px; text-align:center; color:#444;">NO TRADES YET</div>';
+        let displayData = appState.tradeHistory;
+        if (appState.searchQuery && appState.searchQuery !== "") {
+            displayData = appState.tradeHistory.filter(item => item.coin.includes(appState.searchQuery));
+        }
+
+        if(displayData.length === 0) mainList.innerHTML = '<div style="padding:40px; text-align:center; color:#444;">NO TRADES YET</div>';
         else {
             let html = '';
-            appState.tradeHistory.slice(0, 50).forEach(t => {
+            displayData.slice(0, 50).forEach(t => {
                 const pnlColor = t.type === '매수' ? 'text-green' : 'text-red'; 
                 html += `<div class="ledger-row"><div class="col-time">${t.time}</div><div class="col-coin">${t.coin} <span class="${pnlColor}" style="font-size:0.7rem;">${t.type}</span></div><div class="col-price">${t.price}</div><div class="col-pnl ${t.net >= t.total ? 'text-green' : 'text-red'}">${t.net}</div></div>`;
             });
@@ -148,6 +183,7 @@ function renderGlobalUI() {
         }
     }
 
+    // 지갑 파이차트
     if(document.getElementById('holdings-list')) {
         const invested = appState.isRunning ? (appState.balance - appState.cash) : 0;
         const total = appState.balance > 0 ? appState.balance : 1;
@@ -163,6 +199,7 @@ function renderGlobalUI() {
         holdingsList.innerHTML = hHtml;
     }
 
+    // 상세 테이블
     const historyTable = document.getElementById('history-table-body');
     if(historyTable) {
         let tHtml = '';
@@ -173,6 +210,7 @@ function renderGlobalUI() {
         historyTable.innerHTML = tHtml;
     }
     
+    // 입출금 리스트
     const bankList = document.getElementById('bank-history-list');
     if(bankList && appState.transfers) { 
         let bHtml = ''; 
@@ -198,7 +236,8 @@ function loadConfig() { try { const d = localStorage.getItem(CONFIG_KEY); if(d) 
 function startDataCounter() { if(dataCounterInterval) clearInterval(dataCounterInterval); dataCounterInterval = setInterval(() => { appState.dataCount += Math.floor(Math.random()*5); const el=document.getElementById('data-mining-counter'); if(el) el.innerText=appState.dataCount.toLocaleString(); }, 200); }
 function applyBankInterest() { if(appState.bankBalance>0) appState.bankBalance += (appState.bankBalance * 0.0000008); }
 function highlightMenu() { const cur = window.location.pathname.split("/").pop() || 'index.html'; document.querySelectorAll('.nav-item').forEach(el => { if(el.getAttribute('href') === cur) el.classList.add('active'); else el.classList.remove('active'); }); }
-function initWebSocket() {} function exportLogs() {} function handleEnter() {}
+function initWebSocket() {} function exportLogs() {} 
+function handleEnter(e) { if (e.key === 'Enter') { const input = document.getElementById('coin-search-input'); appState.searchQuery = input.value.trim().toUpperCase(); renderGlobalUI(); input.blur(); } }
 function openChartModal() { document.getElementById('chart-modal').style.display='flex'; }
 function closeChartModal() { document.getElementById('chart-modal').style.display='none'; }
 function showTab(tabName) { document.querySelectorAll('.wallet-tab-btn').forEach(btn => btn.classList.remove('active')); document.getElementById(`btn-${tabName}`).classList.add('active'); document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden')); document.getElementById(`tab-${tabName}`).classList.remove('hidden'); renderGlobalUI(); }
