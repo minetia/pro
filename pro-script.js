@@ -1,7 +1,7 @@
-/* pro-script.js - V60.0 (Logic Separation & Fixes) */
+/* pro-script.js - V61.0 (Custom Bank Deposit) */
 let appState = {
-    balance: 0.00,        // 지갑 총 자산 (코인+현금)
-    cash: 0.00,           // 지갑 내 현금
+    balance: 0.00,        // 지갑 총 자산
+    cash: 0.00,           // 지갑 현금
     bankBalance: 0.00,    // 은행 잔고
     startBalance: 0.00, 
     tradeHistory: [], openOrders: [], transfers: [], dataCount: 42105, 
@@ -18,23 +18,18 @@ window.addEventListener('load', () => {
     loadConfig(); 
     highlightMenu();
     
-    // 정보 페이지 로직
     if (window.location.pathname.includes('info.html')) {
         const urlParams = new URLSearchParams(window.location.search);
         const coin = urlParams.get('coin') || (appState.config.target ? appState.config.target.split('/')[0] : 'BTC');
-        // [수정2] 페이지 로드 시 최신 가격 반영
         initInfoPage(coin);
     } else {
-        // 탭 복구
         if(document.getElementById('tab-holdings')) {
             const lastTab = appState.activeTab || 'holdings';
             showTab(lastTab);
         }
-        // 검색어 복구
         const searchInput = document.getElementById('coin-search-input');
         if(searchInput && appState.searchQuery) searchInput.value = appState.searchQuery;
 
-        // 자동 시작 확인
         if (appState.isRunning && document.getElementById('total-val')) {
             if (appState.balance > 0 && appState.config && appState.config.isReady) startSystem(true);
             else stopSystem(true);
@@ -48,26 +43,38 @@ window.addEventListener('load', () => {
     }
 });
 
-/* --- 1. 은행 입금 (수정3: 잔고 표시 오류 해결) --- */
-function simulateExternalDeposit() {
-    const amt = 1000000; // 100만원 단위
+/* --- 1. [NEW] 사용자 지정 은행 입금 --- */
+function processBankDeposit() {
+    const input = document.getElementById('bank-deposit-input');
+    const amt = parseFloat(input.value);
+
+    // 유효성 검사
+    if (!amt || isNaN(amt)) return alert("금액을 입력해주세요.");
+    
+    // 한도 체크 ($10 ~ $100,000)
+    if (amt < 10) return alert("⛔ 최소 입금액은 $10 (약 1만원) 입니다.");
+    if (amt > 100000) return alert("⛔ 최대 입금액은 $100,000 (약 1억원) 입니다.");
+
     if(!appState) loadState();
     
-    // 숫자형으로 확실하게 변환하여 더하기
+    // 은행 잔고 증가
     appState.bankBalance = parseFloat(appState.bankBalance) + amt;
     
+    // 내역 기록
     appState.transfers.unshift({
         date: new Date().toISOString().slice(0,10), 
         type: "WIRE IN", 
         amount: amt
     });
+    
     saveState(); 
     renderGlobalUI(); 
+    
     alert(`✅ $${amt.toLocaleString()} 입금 완료!`);
-    window.location.reload();
+    input.value = ''; // 입력창 초기화
 }
 
-/* --- 2. 입출금 처리 (수정4: 지갑 연동 강화) --- */
+/* --- 2. 지갑 입출금 (은행 <-> 지갑) --- */
 let currentTxMode = '';
 function openModal(mode) {
     const modal = document.getElementById('transaction-modal'); if(!modal) return; 
@@ -87,7 +94,7 @@ function processTx() {
         if(appState.bankBalance < amt) return alert("은행 잔고가 부족합니다.");
         appState.bankBalance -= amt;
         appState.balance += amt;
-        appState.cash += amt; // 현금 증가
+        appState.cash += amt; 
     } else {
         if(appState.cash < amt) return alert("지갑 내 출금 가능 현금이 부족합니다.");
         appState.balance -= amt;
@@ -104,7 +111,7 @@ function processTx() {
     saveState(); renderGlobalUI(); closeModal();
 }
 
-/* --- 3. 렌더링 (★수정5: 거래소/지갑 화면 분리) --- */
+/* --- 3. 렌더링 --- */
 function renderGlobalUI() {
     const els = { 
         total: document.getElementById('total-val'), 
@@ -115,22 +122,18 @@ function renderGlobalUI() {
         prof: document.getElementById('real-profit')
     };
     
-    // [핵심 수정] 메인 화면 (거래소) 로직
     if(els.total) {
         if(appState.isRunning) {
-            // 실행 중일 때만: 투자금 + 수익금 표시
             const activeMoney = (appState.balance - appState.cash); 
             els.total.innerText = `$ ${activeMoney.toLocaleString(undefined, {minimumFractionDigits:2})}`;
             els.label.innerText = `현재 운용 자산 (${appState.runningCoin})`;
             els.label.style.color = "var(--accent)";
             
-            // 수익률 표시
             const profit = appState.balance - appState.startBalance;
             const profitPercent = appState.startBalance > 0 ? (profit / appState.startBalance) * 100 : 0;
             const pnlColor = profit >= 0 ? 'text-green' : 'text-red';
             els.prof.innerHTML = `<span class="${pnlColor}">${profit>=0?'+':''}${profitPercent.toFixed(2)}%</span> ($${profit.toFixed(2)})`;
         } else {
-            // ★ 정지 중일 때: 무조건 $0.00 표시 (지갑에 돈이 있어도 거래소엔 안 뜸)
             els.total.innerText = `$ 0.00`;
             els.label.innerText = `AI TRADING READY`;
             els.label.style.color = "var(--text-secondary)";
@@ -138,18 +141,15 @@ function renderGlobalUI() {
         }
     }
 
-    // [수정4] 지갑 화면 로직 (여기는 항상 전체 자산 표시)
     if(els.wallet) {
         els.wallet.innerText = `$ ${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
         els.avail.innerText = `$ ${appState.cash.toLocaleString(undefined, {minimumFractionDigits:2})}`;
     }
 
-    // 은행 화면 로직
     if(els.bank) {
         els.bank.innerText = `$ ${appState.bankBalance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
     }
     
-    // 리스트 렌더링 (메인)
     const mainList = document.getElementById('main-ledger-list');
     if(mainList) {
         if(appState.tradeHistory.length === 0) mainList.innerHTML = '<div style="padding:40px; text-align:center; color:#444;">NO TRADES YET</div>';
@@ -163,7 +163,6 @@ function renderGlobalUI() {
         }
     }
     
-    // 은행 내역 렌더링
     const bankList = document.getElementById('bank-history-list');
     if(bankList && appState.transfers) {
         let bHtml = '';
@@ -174,16 +173,12 @@ function renderGlobalUI() {
     }
 }
 
-/* --- 4. 정보 페이지 (수정1, 2) --- */
+/* --- 4. 정보 페이지 및 기타 --- */
 function initInfoPage(coin) {
-    // 1. 코인명 대문자 변환
     coin = coin.toUpperCase();
-    
-    // 2. 검색창에 코인명 표시
     const searchInInfo = document.getElementById('info-page-search');
     if(searchInInfo) searchInInfo.value = coin;
 
-    // 3. 차트 로드
     new TradingView.widget({
         "container_id": "info_tv_chart",
         "symbol": `BINANCE:${coin}USDT`,
@@ -199,7 +194,6 @@ function initInfoPage(coin) {
         "autosize": true
     });
 
-    // 4. [수정2] 최신 가격 생성 (이전 가격 아님)
     const price = getRealisticPrice(coin);
     const score = Math.floor(Math.random() * (99 - 60) + 60);
     
@@ -211,7 +205,6 @@ function initInfoPage(coin) {
     else if (score >= 60) verdict.innerHTML = `"현재 구간은 <span style='color:#aaa'>중립/관망</span> 구간입니다."`;
     else verdict.innerHTML = `"현재 구간은 <span class='text-red'>매도 우위</span>입니다."`;
 
-    // 5. [수정1] 텍스트 정리 및 데이터 채우기
     document.getElementById('val-support').innerText = `$ ${(price * 0.95).toFixed(2)}`;
     document.getElementById('val-resistance').innerText = `$ ${(price * 1.05).toFixed(2)}`;
     document.getElementById('val-stoploss').innerText = `$ ${(price * 0.92).toFixed(2)}`;
@@ -225,32 +218,16 @@ function initInfoPage(coin) {
         ⚠️ <strong>AI 조언:</strong> 현 구간 분할 매수 권장.
     `;
     document.getElementById('deep-report-text').innerHTML = reportHTML;
-
-    // 뉴스 로드
     loadNewsData(coin);
 }
 
-// 뉴스 데이터 생성
 function loadNewsData(coin) {
     const list = document.getElementById('news-board-list');
     if(!list) return;
     let html = '';
-    const newsTitles = [
-        `${coin} 고래 지갑 대규모 이동 포착`,
-        `[시장속보] ${coin} 거래량 급증, 변동성 확대`,
-        `글로벌 투자사, ${coin} 포트폴리오 추가 검토`,
-        `美 규제 완화 기대감, ${coin} 상승 동력 되나`,
-        `전문가 "${coin} 지지선 구축 완료, 반등 임박"`
-    ];
+    const newsTitles = [ `${coin} 고래 지갑 대규모 이동 포착`, `[시장속보] ${coin} 거래량 급증, 변동성 확대`, `글로벌 투자사, ${coin} 포트폴리오 추가 검토`, `美 규제 완화 기대감, ${coin} 상승 동력 되나`, `전문가 "${coin} 지지선 구축 완료, 반등 임박"` ];
     for(let i=0; i<5; i++) {
-        html += `
-        <div style="padding:12px 5px; border-bottom:1px solid #333;">
-            <div style="font-size:0.85rem; margin-bottom:4px; color:#ddd;">
-                <span style="background:var(--color-up); font-size:0.6rem; padding:2px 4px; border-radius:2px; margin-right:5px;">NEW</span>
-                ${newsTitles[i]}
-            </div>
-            <div style="font-size:0.7rem; color:#666;">${new Date().toLocaleTimeString()}</div>
-        </div>`;
+        html += `<div style="padding:12px 5px; border-bottom:1px solid #333;"><div style="font-size:0.85rem; margin-bottom:4px; color:#ddd;"><span style="background:var(--color-up); font-size:0.6rem; padding:2px 4px; border-radius:2px; margin-right:5px;">NEW</span>${newsTitles[i]}</div><div style="font-size:0.7rem; color:#666;">${new Date().toLocaleTimeString()}</div></div>`;
     }
     list.innerHTML = html;
 }
@@ -259,19 +236,13 @@ function loadNewsData(coin) {
 function startSystem(isSilent=false) {
     if (appState.balance < 10) { if(!isSilent) alert("지갑 잔고 부족 (최소 $10)"); stopSystem(true); return; }
     if (!appState.config.isReady) { if(!isSilent) alert("AI 설정 필요"); return; }
-    
-    // 설정 금액보다 잔고가 적은지 확인 (2차 검증)
-    if(appState.balance < appState.config.amount) {
-        if(!isSilent) alert("설정 금액이 현재 잔고보다 큽니다.");
-        stopSystem(true); return;
-    }
+    if(appState.balance < appState.config.amount) { if(!isSilent) alert("설정 금액이 현재 잔고보다 큽니다."); stopSystem(true); return; }
 
     appState.runningCoin = appState.config.target.split('/')[0];
     appState.investedAmount = appState.config.amount;
     appState.cash = appState.balance - appState.investedAmount;
     
     if(appState.openOrders.length===0) generateFakeOpenOrders(appState.runningCoin);
-    
     if(autoTradeInterval) clearInterval(autoTradeInterval);
     appState.isRunning = true;
     autoTradeInterval = setInterval(executeAiTrade, 1000);
@@ -282,11 +253,11 @@ function startSystem(isSilent=false) {
 function stopSystem(isSilent=false) {
     appState.isRunning = false;
     appState.investedAmount = 0;
-    appState.cash = appState.balance; // 전액 현금화
+    appState.cash = appState.balance; 
     if(autoTradeInterval) clearInterval(autoTradeInterval);
     updateButtonState(false);
     saveState();
-    renderGlobalUI(); // 즉시 0원 처리
+    renderGlobalUI();
 }
 
 function executeAiTrade() {
@@ -294,27 +265,20 @@ function executeAiTrade() {
     const isWin = Math.random() > 0.45;
     const pnl = isWin ? (appState.investedAmount * 0.005) : -(appState.investedAmount * 0.003);
     appState.balance += pnl;
-    
     const coin = appState.runningCoin;
     const price = getRealisticPrice(coin);
-    appState.tradeHistory.unshift({
-        time: new Date().toLocaleTimeString('en-GB'),
-        coin: coin, type: Math.random()>0.5?'매수':'매도',
-        price: price.toLocaleString(), net: pnl.toFixed(2),
-        vol: (appState.investedAmount/price).toFixed(4), total: appState.investedAmount.toFixed(2)
-    });
+    appState.tradeHistory.unshift({ time: new Date().toLocaleTimeString('en-GB'), coin: coin, type: Math.random()>0.5?'매수':'매도', price: price.toLocaleString(), net: pnl.toFixed(2), vol: (appState.investedAmount/price).toFixed(4), total: appState.investedAmount.toFixed(2) });
     if(appState.tradeHistory.length > 50) appState.tradeHistory.pop();
     renderGlobalUI();
 }
 
-// 기타 필수 함수들
 function saveState() { localStorage.setItem(SAVE_KEY, JSON.stringify(appState)); }
 function loadState() { try { const d = localStorage.getItem(SAVE_KEY); if(d) appState = {...appState, ...JSON.parse(d)}; } catch(e){} }
 function loadConfig() { try { const d = localStorage.getItem(CONFIG_KEY); if(d) appState.config = JSON.parse(d); } catch(e){} }
 function highlightMenu() { const cur = window.location.pathname.split("/").pop() || 'index.html'; document.querySelectorAll('.nav-item').forEach(el => { if(el.getAttribute('href') === cur || (cur.includes('info') && el.href.includes('index'))) el.classList.add('active'); else el.classList.remove('active'); }); }
 function getRealisticPrice(s) { const r = Math.random(); return s==='BTC'?96000+r*500 : s==='ETH'?2700+r*20 : s==='XRP'?2.4+r*0.05 : 100+r; }
 function updateButtonState(on) { const b = document.getElementById('btn-main-control'); if(b) { b.innerHTML = on ? '<i class="fas fa-play"></i> RUNNING' : '<i class="fas fa-play"></i> START'; b.style.background = on ? 'var(--color-up)' : '#2b3139'; } }
-function handleSearch(v) { appState.searchQuery = v.toUpperCase(); } // 엔터 없이 값만 저장
+function handleSearch(v) { appState.searchQuery = v.toUpperCase(); }
 function searchInfoCoin() { const input = document.getElementById('info-page-search'); if(input && input.value) window.location.href = `info.html?coin=${input.value.toUpperCase()}`; }
 function openInfoPage() { window.location.href = `info.html?coin=${appState.searchQuery || appState.runningCoin || 'BTC'}`; }
 function showTab(t) { appState.activeTab = t; saveState(); document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); document.getElementById('tab-'+t).classList.remove('hidden'); document.querySelectorAll('.wallet-tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('btn-'+t).classList.add('active'); }
