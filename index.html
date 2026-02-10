@@ -49,7 +49,7 @@
             </button>
         </div>
 
-        <div class="cyber-panel" style="padding:0; overflow:hidden; min-height:400px; margin-bottom: 60px;">
+        <div class="cyber-panel" style="padding:0; overflow:hidden; min-height:400px; margin-bottom: 15px;">
             <div style="padding:15px; border-bottom:1px solid var(--border-soft); display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-weight:bold; color:#fff;"><i class="fas fa-list-ul"></i> 실시간 체결</span>
                 <span style="font-size:0.7rem; color:var(--text-secondary);">Live Feed</span>
@@ -63,6 +63,16 @@
             </div>
             
             <div id="main-ledger-list" style="height:400px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="data-mining-panel" style="background:#121518; padding:15px; border-radius:8px; border:1px solid var(--border-soft); display:flex; justify-content:space-between; align-items:center; margin-bottom: 60px;">
+            <div>
+                <div style="font-size:0.7rem; color:var(--accent); font-weight:bold;">DATA MINING</div>
+                <div class="num-font" id="data-mining-counter" style="font-size:1.2rem; font-weight:bold; color:#fff;">Loading...</div>
+            </div>
+            <button class="save-tag" onclick="exportLogs()" style="background:#2b3139; color:#fff; border:none; padding:10px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">
+                <i class="fas fa-download"></i> CSV
+            </button>
         </div>
     </div>
 
