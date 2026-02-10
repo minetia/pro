@@ -10,6 +10,7 @@
 <body>
     <header class="cyber-header">
         <div class="brand-logo">SECURE <span>VAULT</span></div>
+        <div style="font-size:0.7rem; color:var(--text-secondary); border:1px solid var(--border-soft); padding:2px 6px;">REAL</div>
     </header>
 
     <div class="main-content">
@@ -57,7 +58,11 @@
                 <table class="detail-table">
                     <thead>
                         <tr>
-                            <th>시간</th><th>코인</th><th>종류</th><th>수량<br>단가</th><th>금액<br>수수료</th><th>정산금액</th>
+                            <th>시간</th>
+                            <th>코인</th>
+                            <th>종류</th>
+                            <th>수량</th>
+                            <th>거래금액</th> <th>정산금액</th>
                         </tr>
                     </thead>
                     <tbody id="history-table-body"></tbody>
@@ -74,7 +79,12 @@
         <div class="modal-box">
             <h3 id="modal-title" style="color:#fff; margin-bottom:15px;">입출금</h3>
             <input type="number" id="amount-input" class="modal-input" placeholder="수량 입력">
-            <div style="display:flex; gap:10px; margin-top:15px;">
+            <div class="percent-group" style="display:flex; gap:5px; margin-bottom:15px;">
+                <button class="cyber-btn" onclick="calcPercent(10)" style="background:#333; padding:5px; font-size:0.7rem;">10%</button>
+                <button class="cyber-btn" onclick="calcPercent(50)" style="background:#333; padding:5px; font-size:0.7rem;">50%</button>
+                <button class="cyber-btn" onclick="calcPercent(100)" style="background:#333; padding:5px; font-size:0.7rem;">MAX</button>
+            </div>
+            <div style="display:flex; gap:10px;">
                 <button class="cyber-btn" onclick="closeModal()" style="background:#333;">취소</button>
                 <button id="modal-confirm-btn" class="cyber-btn" style="background:var(--accent); color:#000;">확인</button>
             </div>
