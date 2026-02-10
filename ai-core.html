@@ -12,13 +12,6 @@
         <div class="brand-logo">NEURAL <span>CORE</span></div>
     </header>
 
-    <nav class="bottom-nav">
-        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i>거래소</a>
-        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i>투자내역</a>
-        <a href="ai-core.html" class="nav-item active"><i class="fas fa-brain"></i>AI설정</a>
-        <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i>입출금</a>
-    </nav>
-
     <div class="main-content">
         <div class="cyber-panel">
             <div style="font-weight:bold; color:var(--accent); margin-bottom:15px; font-size:0.9rem;">
@@ -26,7 +19,9 @@
             </div>
             <input type="text" id="real-api-key" class="modal-input" placeholder="Access Key">
             <input type="password" id="real-secret-key" class="modal-input" placeholder="Secret Key">
-            <button class="cyber-btn" onclick="checkKeys()" style="margin-top:5px; background:#2b3139; border:1px solid #444;">VERIFY KEYS</button>
+            <button class="cyber-btn" onclick="checkKeys()" style="margin-top:5px; background:#2b3139; border:1px solid #444;">
+                VERIFY KEYS
+            </button>
         </div>
 
         <div class="cyber-panel">
@@ -38,14 +33,17 @@
                 <div style="flex:1;"> 
                     <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:5px;">TARGET COIN</label>
                     <select id="target-coin" class="modal-input select-box">
-                        <option value="BTC">BTC</option><option value="ETH">ETH</option><option value="SOL">SOL</option><option value="XRP">XRP</option>
+                        <option value="BTC">BTC</option>
+                        <option value="ETH">ETH</option>
+                        <option value="SOL">SOL</option>
+                        <option value="XRP">XRP</option>
                     </select>
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:5px;">AMOUNT (USDT)</label>
                     <div style="position:relative;">
                         <input type="number" id="trade-amount" class="modal-input" placeholder="1000" style="padding-right:50px;">
-                        <span style="position:absolute; right:15px; top:14px; color:#888; font-size:0.8rem; font-weight:bold;">USDT</span>
+                        <span style="position:absolute; right:15px; top:14px; color:#888; font-size:0.7rem; font-weight:bold;">USDT</span>
                     </div>
                 </div>
             </div>
@@ -67,30 +65,83 @@
         </button>
     </div>
 
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <i class="fas fa-chart-pie"></i><span>거래소</span>
+        </a>
+        <a href="wallet.html" class="nav-item">
+            <i class="fas fa-wallet"></i><span>투자내역</span>
+        </a>
+        <a href="ai-core.html" class="nav-item active">
+            <i class="fas fa-brain"></i><span>AI설정</span>
+        </a>
+        <a href="transfers.html" class="nav-item">
+            <i class="fas fa-university"></i><span>입출금</span>
+        </a>
+    </nav>
+
     <script src="pro-script.js"></script>
     <script>
         let selectedStrategy = 'SCALPING';
+        
+        // 페이지 로드 시 기존 설정 불러오기
+        window.addEventListener('load', () => {
+            if(typeof appState !== 'undefined' && appState.config) {
+                if(appState.config.apiKey) document.getElementById('real-api-key').value = appState.config.apiKey;
+                if(appState.config.target) document.getElementById('target-coin').value = appState.config.target.split('/')[0];
+                if(appState.config.amount) document.getElementById('trade-amount').value = appState.config.amount;
+            }
+        });
+
         function selectStrategy(type) { 
             selectedStrategy = type; 
             document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active')); 
             if(type === 'SCALPING') document.getElementById('st-scalping').classList.add('active'); 
             else document.getElementById('st-swing').classList.add('active'); 
         }
+
         function checkKeys() { 
             const k1 = document.getElementById('real-api-key').value; 
             const k2 = document.getElementById('real-secret-key').value; 
-            if(!k1 || !k2) { alert("❌ Keys Missing!"); return; } 
-            alert("✅ Keys Verified!"); 
+            if(!k1 || !k2) { alert("❌ API 키를 입력해주세요!"); return; } 
+            alert("✅ 키 검증 완료!"); 
         }
+
         function activateSystem() {
             const k1 = document.getElementById('real-api-key').value; 
             const k2 = document.getElementById('real-secret-key').value; 
             const coin = document.getElementById('target-coin').value; 
-            const amt = document.getElementById('trade-amount').value;
-            if(!k1 || !k2) return alert("Please enter Keys."); 
-            if(!amt || amt<=0) return alert("Invalid Amount.");
-            localStorage.setItem('neuroConfig_V41_FIX', JSON.stringify({ apiKey: k1, target: coin, amount: parseFloat(amt), strategy: selectedStrategy, isReady: true }));
-            alert("🚀 SYSTEM ACTIVATED!"); window.location.href = 'index.html';
+            const amt = parseFloat(document.getElementById('trade-amount').value);
+            
+            // 1. 필수 입력 체크
+            if(!k1) return alert("API Access Key를 입력하세요."); 
+            if(!amt || amt <= 0) return alert("투자 금액을 입력하세요.");
+            
+            // 2. [중요] 잔고 확인 (pro-script.js의 appState 사용)
+            if(typeof appState !== 'undefined') {
+                if(appState.balance < amt) {
+                    alert(`⛔ [설정 불가]\n보유 자산이 부족합니다.\n\n보유액: $${appState.balance.toLocaleString()}\n설정액: $${amt.toLocaleString()}`);
+                    return; // 저장 안 하고 멈춤
+                }
+            }
+
+            // 3. 설정 저장 (키 통일됨: neuroConfig_V43_FINAL)
+            const configData = { 
+                apiKey: k1, 
+                target: coin, 
+                amount: amt, 
+                strategy: selectedStrategy, 
+                isReady: true 
+            };
+            
+            // 전역 변수 업데이트
+            if(typeof appState !== 'undefined') appState.config = configData;
+
+            // 로컬 스토리지 저장
+            localStorage.setItem('neuroConfig_V43_FINAL', JSON.stringify(configData));
+            
+            alert("🚀 AI 설정 완료! 메인 화면으로 이동합니다."); 
+            window.location.href = 'index.html';
         }
     </script>
 </body>
