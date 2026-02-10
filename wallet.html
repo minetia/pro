@@ -16,8 +16,8 @@
     <nav class="cyber-nav">
         <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i> DASHBOARD</a>
         <a href="wallet.html" class="nav-item active"><i class="fas fa-wallet"></i> WALLET</a>
-        <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i> TRANSFERS</a>
         <a href="ai-core.html" class="nav-item"><i class="fas fa-brain"></i> AI-CORE</a>
+        <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i> TRANSFERS</a>
     </nav>
 
     <div class="main-content">
@@ -26,7 +26,6 @@
                 <i class="fas fa-wallet"></i> TRADING WALLET BALANCE
             </div>
             <div id="wallet-display" class="hero-number">Loading...</div>
-            
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button class="cyber-btn btn-start" onclick="openModal('deposit')">
                     <i class="fas fa-arrow-down"></i> DEPOSIT
@@ -37,14 +36,14 @@
             </div>
         </div>
 
-        <div class="cyber-panel" style="padding:0; overflow:hidden;">
+        <div class="cyber-panel" style="padding:0; overflow:hidden; min-height:400px;">
             <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:var(--text-secondary);">
                 <i class="fas fa-history"></i> TRADE HISTORY
             </div>
             <div class="table-header-row">
                 <div style="width:25%">TIME</div><div style="width:25%">POS</div><div style="width:25%; text-align:right;">PRICE</div><div style="width:25%; text-align:right;">PNL</div>
             </div>
-            <div id="wallet-history-list" style="max-height:400px; overflow-y:auto;"></div>
+            <div id="wallet-history-list" style="height:400px; overflow-y:auto;"></div>
         </div>
     </div>
     
