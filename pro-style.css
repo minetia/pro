@@ -1,27 +1,122 @@
-/* ... 기존 변수 및 상단 스타일 유지 ... */
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
-/* [수정] 메인 리스트 & 테이블 스타일 */
+:root {
+    --bg-main: #0b0e11;
+    --bg-card: #161a1e;
+    --border-soft: #262a30;
+    --text-primary: #eaecef;
+    --text-secondary: #848e9c;
+    --color-up: #c84a31;    /* 매수/상승: 빨강 */
+    --color-down: #1261c4;  /* 매도/하락: 파랑 */
+    --accent: #fcd535;      /* 포인트: 노랑 */
+    --nav-height: 60px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+body { 
+    background-color: var(--bg-main) !important; 
+    color: var(--text-primary) !important; 
+    font-family: 'Pretendard', sans-serif;
+    padding-top: 50px; padding-bottom: calc(var(--nav-height) + 20px);
+    overflow-x: hidden; line-height: 1.5; min-height: 100vh;
+}
+a { text-decoration: none; color: inherit; }
+
+/* 폰트 및 색상 유틸 */
+.num-font { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+.text-green { color: var(--color-up) !important; }
+.text-red { color: var(--color-down) !important; }
+
+/* 헤더 & 네비게이션 */
+.cyber-header {
+    position: fixed; top: 0; left: 0; width: 100%; height: 50px;
+    background: var(--bg-main); border-bottom: 1px solid var(--border-soft);
+    z-index: 4000; display: flex; justify-content: space-between; align-items: center; 
+    padding: 0 15px;
+}
+.brand-logo { font-size: 1.1rem; font-weight: 800; color: #fff; }
+
+.bottom-nav {
+    position: fixed; bottom: 0; left: 0; width: 100%; height: var(--nav-height);
+    background: #1a1e24; border-top: 1px solid var(--border-soft);
+    display: flex; justify-content: space-around; align-items: center;
+    z-index: 5000; padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: var(--text-secondary); font-size: 0.7rem; gap: 4px; width: 25%; height: 100%;
+}
+.nav-item i { font-size: 1.2rem; margin-bottom: 2px; }
+.nav-item.active { color: #fff; font-weight: bold; }
+.nav-item.active i { color: var(--accent); }
+
+/* 패널 및 카드 */
+.main-content { max-width: 800px; margin: 0 auto; padding: 10px; }
+.cyber-panel {
+    background: var(--bg-card); border-radius: 10px; padding: 20px; margin-bottom: 10px;
+    border: none;
+}
+
+/* [중요] 리스트 정렬 스타일 (깨짐 방지) */
 .table-header-row {
-    display: flex; padding: 10px 15px; 
+    display: flex; padding: 10px; 
     font-size: 0.75rem; color: #888; 
     border-bottom: 1px solid #333;
 }
 .ledger-row {
-    display: flex; padding: 12px 15px; 
+    display: flex; padding: 12px 10px; 
     border-bottom: 1px solid #222; 
     font-size: 0.85rem; align-items: center;
 }
-/* 각 컬럼 너비 강제 고정 (깨짐 방지) */
-.col-1 { width: 25%; text-align: left; }
-.col-2 { width: 25%; text-align: left; }
-.col-3 { width: 25%; text-align: right; }
-.col-4 { width: 25%; text-align: right; font-weight: bold; }
+/* 컬럼 너비 강제 고정 */
+.col-time { width: 25%; text-align: left; color: #888; font-size: 0.75rem; }
+.col-coin { width: 25%; text-align: left; font-weight: bold; }
+.col-price { width: 25%; text-align: right; font-family: 'JetBrains Mono'; }
+.col-pnl { width: 25%; text-align: right; font-weight: bold; font-family: 'JetBrains Mono'; }
 
-/* 상세 테이블 (지갑용) */
-.detail-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; table-layout: fixed; }
-.detail-table th { color: var(--text-secondary); font-weight: normal; text-align: right; padding: 8px 4px; border-bottom: 1px solid var(--border-soft); white-space: nowrap; }
+/* AI 설정 카드 */
+.strategy-container { display: flex; gap: 15px; }
+.strategy-card { 
+    flex: 1; background: #000; border: 1px solid var(--border-soft); 
+    border-radius: 8px; padding: 15px; text-align: center; cursor: pointer;
+    color: var(--text-secondary); transition: 0.2s;
+}
+.strategy-card.active { border-color: var(--accent); color: #fff; background: rgba(252, 213, 53, 0.1); }
+.st-icon { font-size: 1.5rem; margin-bottom: 8px; }
+
+/* 지갑 탭 & 파이차트 */
+.wallet-tabs { display: flex; border-bottom: 1px solid var(--border-soft); margin-bottom: 15px; }
+.wallet-tab-btn {
+    flex: 1; padding: 12px 0; background: none; border: none;
+    color: var(--text-secondary); font-weight: bold; font-size: 0.9rem;
+    border-bottom: 2px solid transparent; cursor: pointer;
+}
+.wallet-tab-btn.active { color: #fff; border-bottom-color: #fff; }
+
+.pie-chart-container {
+    width: 150px; height: 150px; border-radius: 50%;
+    background: conic-gradient(#444 0% 100%); /* 기본 회색 */
+    margin: 0 auto 20px auto; position: relative;
+    display: flex; justify-content: center; align-items: center;
+}
+.pie-inner {
+    width: 110px; height: 110px; background: var(--bg-card); border-radius: 50%;
+    position: absolute; display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+}
+
+/* 상세 테이블 (스크롤 가능) */
+.detail-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; white-space: nowrap; }
+.detail-table th { position: sticky; top: 0; background: var(--bg-card); color: var(--text-secondary); text-align: right; padding: 8px 4px; border-bottom: 1px solid var(--border-soft); z-index: 10; }
 .detail-table th:first-child { text-align: left; }
-.detail-table td { padding: 10px 4px; text-align: right; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.05); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.detail-table td { padding: 10px 4px; text-align: right; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .detail-table td:first-child { text-align: left; }
 
-/* ... 나머지 스타일 유지 ... */
+/* 버튼 및 입력창 */
+.cyber-btn { width: 100%; padding: 12px; border:none; border-radius:4px; font-weight:700; cursor:pointer; color:#fff; }
+.btn-start { background: var(--color-up); } 
+.btn-stop { background: var(--color-down); }
+.modal-input { width: 100%; padding: 12px; background: #000; border: 1px solid var(--border-soft); color: #fff; border-radius: 4px; margin-bottom: 10px; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: none; justify-content: center; align-items: center; }
+.modal-box { background: var(--bg-card); width: 90%; max-width: 350px; padding: 20px; border-radius: 8px; }
+.hidden { display: none !important; }
