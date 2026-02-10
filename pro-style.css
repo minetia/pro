@@ -35,6 +35,7 @@ a { text-decoration: none; color: inherit; }
     padding: 0 15px;
 }
 .brand-logo { font-size: 1.1rem; font-weight: 800; color: #fff; }
+.brand-logo span { color: var(--accent); }
 
 .bottom-nav {
     position: fixed; bottom: 0; left: 0; width: 100%; height: var(--nav-height);
@@ -57,7 +58,7 @@ a { text-decoration: none; color: inherit; }
     border: none;
 }
 
-/* [중요] 리스트 정렬 스타일 (깨짐 방지) */
+/* 리스트 정렬 스타일 */
 .table-header-row {
     display: flex; padding: 10px; 
     font-size: 0.75rem; color: #888; 
@@ -68,7 +69,6 @@ a { text-decoration: none; color: inherit; }
     border-bottom: 1px solid #222; 
     font-size: 0.85rem; align-items: center;
 }
-/* 컬럼 너비 강제 고정 */
 .col-time { width: 25%; text-align: left; color: #888; font-size: 0.75rem; }
 .col-coin { width: 25%; text-align: left; font-weight: bold; }
 .col-price { width: 25%; text-align: right; font-family: 'JetBrains Mono'; }
@@ -95,7 +95,7 @@ a { text-decoration: none; color: inherit; }
 
 .pie-chart-container {
     width: 150px; height: 150px; border-radius: 50%;
-    background: conic-gradient(#444 0% 100%); /* 기본 회색 */
+    background: conic-gradient(#444 0% 100%);
     margin: 0 auto 20px auto; position: relative;
     display: flex; justify-content: center; align-items: center;
 }
@@ -105,7 +105,7 @@ a { text-decoration: none; color: inherit; }
     justify-content: center; align-items: center;
 }
 
-/* 상세 테이블 (스크롤 가능) */
+/* 상세 테이블 */
 .detail-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; white-space: nowrap; }
 .detail-table th { position: sticky; top: 0; background: var(--bg-card); color: var(--text-secondary); text-align: right; padding: 8px 4px; border-bottom: 1px solid var(--border-soft); z-index: 10; }
 .detail-table th:first-child { text-align: left; }
@@ -119,52 +119,8 @@ a { text-decoration: none; color: inherit; }
 .modal-input { width: 100%; padding: 12px; background: #000; border: 1px solid var(--border-soft); color: #fff; border-radius: 4px; margin-bottom: 10px; }
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: none; justify-content: center; align-items: center; }
 .modal-box { background: var(--bg-card); width: 90%; max-width: 350px; padding: 20px; border-radius: 8px; }
-
-/* [NEW] AI 분석 카드 스타일 */
-.ai-analysis-card {
-    background: linear-gradient(145deg, #1a1e24 0%, #0f1215 100%);
-    border: 1px solid var(--border-soft);
-}
-.ai-badge {
-    background: #6e00ff; color: #fff; 
-    font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; font-weight: bold;
-    box-shadow: 0 0 10px rgba(110, 0, 255, 0.4);
-}
-.ai-score {
-    font-size: 1.5rem; font-weight: 800; color: #6e00ff;
-    font-family: 'JetBrains Mono';
-}
-.analysis-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-    background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;
-}
-.grid-item { text-align: center; }
-.grid-label { font-size: 0.7rem; color: #888; margin-bottom: 2px; }
-.grid-val { font-size: 0.95rem; font-weight: bold; font-family: 'JetBrains Mono'; color: #fff; }
-
-/* [NEW] 뉴스 게시판 스타일 */
-.news-item {
-    padding: 12px 5px; border-bottom: 1px solid #222; cursor: pointer;
-}
-.news-title { font-size: 0.85rem; color: #ddd; line-height: 1.4; margin-bottom: 4px; }
-.news-meta { font-size: 0.7rem; color: #666; display: flex; align-items: center; gap: 8px; }
-.news-new-badge { 
-    background: var(--color-up); color: #fff; font-size: 0.6rem; 
-    padding: 1px 4px; border-radius: 2px; font-weight: bold; 
-}
-.news-content {
-    display: none; background: #222; padding: 10px; 
-    font-size: 0.8rem; color: #bbb; margin-top: 8px; border-radius: 4px; line-height: 1.5;
-}
-.news-content.show { display: block; }
-
-/* 페이지네이션 */
-.pagination { display: flex; justify-content: center; gap: 5px; margin-top: 20px; }
-.page-btn {
-    width: 30px; height: 30px; display: flex; justify-content: center; align-items: center;
-    background: #222; color: #888; border-radius: 4px; font-size: 0.8rem; cursor: pointer;
-}
-.page-btn.active { background: var(--accent); color: #000; font-weight: bold; }
-
-@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 .hidden { display: none !important; }
+
+/* 기타 유틸 */
+.hero-number { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #fff; }
+.save-tag { background: var(--accent); color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
