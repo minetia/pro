@@ -1,8 +1,9 @@
-/* pro-script.js - V46.0 (PNL Calculation & Charting) */
+/* pro-script.js - V47.0 (Tab Memory & PnL Fix) */
 let appState = {
     balance: 0.00, cash: 0.00, bankBalance: 0.00, startBalance: 0.00, 
     tradeHistory: [], openOrders: [], transfers: [], dataCount: 42105, 
-    config: {}, isRunning: false, runningCoin: null, investedAmount: 0     
+    config: {}, isRunning: false, runningCoin: null, investedAmount: 0,
+    activeTab: 'holdings' // [NEW] 마지막 탭 기억
 };
 let autoTradeInterval = null;
 let dataCounterInterval = null;
@@ -13,7 +14,12 @@ window.addEventListener('load', () => {
     loadState();
     loadConfig(); 
     highlightMenu();
-    if(document.getElementById('tab-holdings')) showTab('holdings');
+    
+    // [NEW] 마지막에 보고 있던 탭 열기 (없으면 holdings)
+    const lastTab = appState.activeTab || 'holdings';
+    if(document.getElementById(`tab-${lastTab}`)) {
+        showTab(lastTab);
+    }
     
     if (appState.isRunning) {
         if (appState.balance > 0 && appState.config && appState.config.isReady) {
@@ -29,6 +35,24 @@ window.addEventListener('load', () => {
     setInterval(() => { applyBankInterest(); saveState(); renderGlobalUI(); }, 500);
     renderGlobalUI();
 });
+
+/* --- 탭 기능 (저장 기능 추가) --- */
+function showTab(tabName) {
+    // 1. 버튼 활성화
+    document.querySelectorAll('.wallet-tab-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById(`btn-${tabName}`);
+    if(activeBtn) activeBtn.classList.add('active');
+
+    // 2. 내용 표시
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+    const activeContent = document.getElementById(`tab-${tabName}`);
+    if(activeContent) activeContent.classList.remove('hidden');
+
+    // 3. [중요] 상태 저장
+    appState.activeTab = tabName;
+    saveState();
+    renderGlobalUI(); 
+}
 
 /* --- 시스템 시작 --- */
 function startSystem(isSilent = false) {
@@ -116,7 +140,6 @@ function renderGlobalUI() {
     const els = { total: document.getElementById('total-val'), label: document.getElementById('balance-label'), wallet: document.getElementById('wallet-display'), avail: document.getElementById('avail-cash'), bank: document.getElementById('bank-balance-display'), prof: document.getElementById('real-profit') };
     const currentCash = appState.isRunning ? appState.cash : appState.balance;
 
-    // 메인화면
     if(els.total && els.label) {
         if(appState.isRunning) {
             const activeMoney = appState.balance - appState.cash;
@@ -143,7 +166,7 @@ function renderGlobalUI() {
 
     if(els.prof) els.prof.innerHTML = `<span class="${pnlColor}">${pnlSign}${profitPercent.toFixed(2)}%</span> ($${profit.toFixed(2)})`;
 
-    // [NEW] 지갑 - 투자손익 탭 데이터 채우기
+    // [지갑 - 투자손익 탭 렌더링]
     if(document.getElementById('pnl-total-amount')) {
         document.getElementById('pnl-total-amount').innerText = `${pnlSign} $${Math.abs(profit).toLocaleString(undefined, {minimumFractionDigits:2})}`;
         document.getElementById('pnl-total-amount').className = `hero-number ${pnlColor}`;
@@ -151,32 +174,33 @@ function renderGlobalUI() {
         document.getElementById('pnl-total-percent').innerText = `${pnlSign}${profitPercent.toFixed(2)}%`;
         document.getElementById('pnl-total-percent').className = pnlColor;
         
-        // 평균 투자금 (실행 중이면 설정금액, 아니면 전체)
         const avgInvest = appState.isRunning ? appState.investedAmount : appState.balance;
         document.getElementById('pnl-avg-invest').innerText = `$ ${avgInvest.toLocaleString()}`;
 
-        // [NEW] 손익 차트 그리기 (막대 7개 시뮬레이션)
+        // [차트 리셋 및 그리기]
         const chartArea = document.getElementById('pnl-chart-area');
-        if(chartArea && chartArea.innerHTML === '') {
-            let bars = '';
+        if(chartArea) {
+            // 차트 초기화 (항상 다시 그리기)
+            chartArea.innerHTML = '';
+            
             for(let i=0; i<7; i++) {
-                // 마지막 막대는 현재 수익률 반영, 나머지는 랜덤
-                let h = i===6 ? Math.abs(profitPercent)*5 : Math.random() * 40; 
-                if(h < 5) h = 5; if(h > 100) h = 100;
+                // i=6 (오늘)은 실제 수익률 반영, 나머지는 가상 데이터
+                let h = 0;
+                let color = '#333';
                 
-                // 색상: 마지막은 현재 상태, 나머지는 랜덤
-                let color = i===6 ? (profit>=0?'var(--color-up)':'var(--color-down)') : (Math.random()>0.5?'var(--color-up)':'var(--color-down)');
+                if(i === 6) {
+                    h = Math.abs(profitPercent) * 5; 
+                    if(h < 5) h = 5; // 최소 높이
+                    if(h > 100) h = 100;
+                    color = profit >= 0 ? 'var(--color-up)' : 'var(--color-down)';
+                    if(profit === 0) color = '#555'; // 수익 없으면 회색
+                } else {
+                    // 과거 데이터 시뮬레이션 (약간의 랜덤성)
+                    h = Math.random() * 30 + 5;
+                    color = Math.random() > 0.5 ? 'rgba(200, 74, 49, 0.3)' : 'rgba(18, 97, 196, 0.3)';
+                }
                 
-                bars += `<div style="width:12%; height:${h}%; background:${color}; border-radius:4px 4px 0 0; opacity:${0.3 + (i*0.1)}"></div>`;
-            }
-            chartArea.innerHTML = bars;
-        } else if(chartArea) {
-            // 마지막 막대만 실시간 업데이트
-            const lastBar = chartArea.lastElementChild;
-            if(lastBar) {
-                let h = Math.abs(profitPercent) * 5; if(h<5) h=5; if(h>100) h=100;
-                lastBar.style.height = `${h}%`;
-                lastBar.style.background = profit >= 0 ? 'var(--color-up)' : 'var(--color-down)';
+                chartArea.innerHTML += `<div style="width:12%; height:${h}%; background:${color}; border-radius:4px 4px 0 0; transition: height 0.3s;"></div>`;
             }
         }
     }
@@ -199,7 +223,7 @@ function renderGlobalUI() {
         }
     }
 
-    // 지갑 파이차트 및 리스트
+    // 지갑 파이차트
     if(document.getElementById('holdings-list')) {
         const invested = appState.isRunning ? (appState.balance - appState.cash) : 0;
         const total = appState.balance > 0 ? appState.balance : 1;
@@ -215,7 +239,7 @@ function renderGlobalUI() {
         holdingsList.innerHTML = hHtml;
     }
 
-    // 거래내역 테이블
+    // 거래내역
     const historyTable = document.getElementById('history-table-body');
     if(historyTable) {
         let tHtml = '';
@@ -226,7 +250,7 @@ function renderGlobalUI() {
         historyTable.innerHTML = tHtml;
     }
     
-    // 입출금 리스트
+    // 입출금
     const bankList = document.getElementById('bank-history-list');
     if(bankList && appState.transfers) { 
         let bHtml = ''; 
@@ -252,8 +276,8 @@ function loadConfig() { try { const d = localStorage.getItem(CONFIG_KEY); if(d) 
 function startDataCounter() { if(dataCounterInterval) clearInterval(dataCounterInterval); dataCounterInterval = setInterval(() => { appState.dataCount += Math.floor(Math.random()*5); const el=document.getElementById('data-mining-counter'); if(el) el.innerText=appState.dataCount.toLocaleString(); }, 200); }
 function applyBankInterest() { if(appState.bankBalance>0) appState.bankBalance += (appState.bankBalance * 0.0000008); }
 function highlightMenu() { const cur = window.location.pathname.split("/").pop() || 'index.html'; document.querySelectorAll('.nav-item').forEach(el => { if(el.getAttribute('href') === cur) el.classList.add('active'); else el.classList.remove('active'); }); }
-function initWebSocket() {} function exportLogs() {} function handleEnter() {}
+function initWebSocket() {} function exportLogs() {} 
+function handleEnter(e) { if (e.key === 'Enter') { const input = document.getElementById('coin-search-input'); appState.searchQuery = input.value.trim().toUpperCase(); renderGlobalUI(); input.blur(); } }
 function openChartModal() { document.getElementById('chart-modal').style.display='flex'; }
 function closeChartModal() { document.getElementById('chart-modal').style.display='none'; }
-function showTab(tabName) { document.querySelectorAll('.wallet-tab-btn').forEach(btn => btn.classList.remove('active')); document.getElementById(`btn-${tabName}`).classList.add('active'); document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden')); document.getElementById(`tab-${tabName}`).classList.remove('hidden'); renderGlobalUI(); }
 function simulateExternalDeposit() { const amt = 1000; if(!appState) loadState(); appState.bankBalance += amt; appState.transfers.unshift({ date: new Date().toISOString().slice(0, 10), type: "WIRE IN", amount: amt }); saveState(); renderGlobalUI(); alert(`✅ $${amt.toLocaleString()} 입금 확인되었습니다.`); }
