@@ -167,4 +167,28 @@ function processTx() {
     closeModal();
     alert("처리되었습니다.");
 }
+
 function formatMoney(num) { return num.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+
+function showTab(t) {
+    // 모든 탭 숨기기
+    document.querySelectorAll('.tab-content').forEach(function(c) {
+        c.style.display = 'none';
+    });
+    // 선택한 탭만 보이기
+    var target = document.getElementById('tab-' + t);
+    if(target) target.style.display = 'block';
+}
+setInterval(function() {
+    var tbody = document.getElementById('history-table-body');
+    if (!tbody) return;
+
+    var h = "";
+    // 장부(tradeHistory)에서 데이터 가져오기
+    appState.tradeHistory.forEach(function(t) {
+        var c = Number(t.pnl) >= 0 ? "text-green" : "text-red";
+        h += '<tr><td>' + t.time + '</td><td>' + t.coin + '</td>' +
+             '<td class="' + c + '">' + t.type + '</td><td>' + t.pnl + '</td></tr>';
+    });
+    tbody.innerHTML = h || '<tr><td colspan="4">내역 없음</td></tr>';
+}, 1000);
