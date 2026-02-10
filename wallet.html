@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WALLET</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="pro-style.css?v=20260210">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="pro-style.css?v=240">
 </head>
 <body>
     <header class="cyber-header">
@@ -43,9 +44,27 @@
         </div>
 
         <div id="tab-pnl" class="tab-content hidden">
-            <div class="cyber-panel">
-                <div style="font-size:0.8rem; color:#888; margin-bottom:5px;">기간 누적 손익</div>
-                <div id="pnl-total-amount" class="hero-number" style="font-size:1.5rem;">$ 0.00</div>
+            <div class="cyber-panel" style="padding: 20px 15px;">
+                <div style="font-size:0.9rem; font-weight:bold; color:#fff; margin-bottom:15px;">
+                    기간 수익률 (7일)
+                </div>
+
+                <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                    <div>
+                        <div style="font-size:0.75rem; color:#888;">기간 누적 손익</div>
+                        <div id="pnl-total-amount" class="hero-number" style="font-size:1.4rem; margin-top:5px;">$ 0.00</div>
+                        <div id="pnl-total-percent" style="font-size:1rem; font-weight:bold; margin-top:3px;">0.00%</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:0.75rem; color:#888;">평균 투자금액</div>
+                        <div id="pnl-avg-invest" style="font-size:1.1rem; color:#fff; margin-top:5px;">$ 0.00</div>
+                    </div>
+                </div>
+
+                <div style="background:#1a1e24; border-radius:8px; padding:10px;">
+                    <div style="font-size:0.75rem; color:#888; margin-bottom:10px;">투자손익 그래프</div>
+                    <canvas id="pnlChart" width="300" height="200"></canvas>
+                </div>
             </div>
         </div>
 
@@ -86,6 +105,6 @@
         <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
     </nav>
 
-    <script src="pro-script.js?v=20260210"></script>
+    <script src="pro-script.js?v=240"></script>
 </body>
 </html>
