@@ -42,9 +42,10 @@
                 <div style="flex:1;">
                     <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:5px;">AMOUNT (USDT)</label>
                     <div style="position:relative;">
-                        <input type="number" id="trade-amount" class="modal-input" placeholder="1000" style="padding-right:50px;">
+                        <input type="number" id="trade-amount" class="modal-input" placeholder="Min 10" style="padding-right:50px;">
                         <span style="position:absolute; right:15px; top:14px; color:#888; font-size:0.7rem; font-weight:bold;">USDT</span>
                     </div>
+                    <div style="font-size:0.65rem; color:#666; margin-top:-5px;">Min $10 ~ Max $100,000</div>
                 </div>
             </div>
             
@@ -84,7 +85,6 @@
     <script>
         let selectedStrategy = 'SCALPING';
         
-        // 페이지 로드 시 기존 설정 불러오기
         window.addEventListener('load', () => {
             if(typeof appState !== 'undefined' && appState.config) {
                 if(appState.config.apiKey) document.getElementById('real-api-key').value = appState.config.apiKey;
@@ -113,34 +113,29 @@
             const coin = document.getElementById('target-coin').value; 
             const amt = parseFloat(document.getElementById('trade-amount').value);
             
-            // 1. 필수 입력 체크
             if(!k1) return alert("API Access Key를 입력하세요."); 
-            if(!amt || amt <= 0) return alert("투자 금액을 입력하세요.");
             
-            // 2. [중요] 잔고 확인 (pro-script.js의 appState 사용)
+            // [중요 수정] 최소/최대 금액 제한 로직 적용 ($10 ~ $100,000)
+            if(!amt || amt < 10) return alert("⛔ 최소 거래 금액은 $10 (약 1만원)입니다.");
+            if(amt > 100000) return alert("⛔ 최대 거래 금액은 $100,000 (약 1억원)입니다.");
+            
+            // 잔고 확인
             if(typeof appState !== 'undefined') {
                 if(appState.balance < amt) {
                     alert(`⛔ [설정 불가]\n보유 자산이 부족합니다.\n\n보유액: $${appState.balance.toLocaleString()}\n설정액: $${amt.toLocaleString()}`);
-                    return; // 저장 안 하고 멈춤
+                    return; 
                 }
             }
 
-            // 3. 설정 저장 (키 통일됨: neuroConfig_V43_FINAL)
             const configData = { 
-                apiKey: k1, 
-                target: coin, 
-                amount: amt, 
-                strategy: selectedStrategy, 
-                isReady: true 
+                apiKey: k1, target: coin, amount: amt, 
+                strategy: selectedStrategy, isReady: true 
             };
             
-            // 전역 변수 업데이트
             if(typeof appState !== 'undefined') appState.config = configData;
-
-            // 로컬 스토리지 저장
             localStorage.setItem('neuroConfig_V43_FINAL', JSON.stringify(configData));
             
-            alert("🚀 AI 설정 완료! 메인 화면으로 이동합니다."); 
+            alert(`🚀 AI 설정 완료!\n투자금: $${amt.toLocaleString()}`); 
             window.location.href = 'index.html';
         }
     </script>
