@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MARKET INTELLIGENCE</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="pro-style.css">
+</head>
+<body>
+    <header class="cyber-header">
+        <div class="brand-logo">MARKET <span>INSIGHT</span></div>
+        <div id="header-status-badge" style="font-size:0.75rem; color:var(--text-secondary); background:rgba(255,255,255,0.1); padding:4px 8px; border-radius:4px;">
+            <i class="fas fa-satellite-dish" style="color:var(--accent);"></i> LIVE
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="cyber-panel" style="padding:0; overflow:hidden; height:350px; background:#000;">
+            <div id="info_tv_chart" style="width:100%; height:100%;"></div>
+        </div>
+
+        <div class="cyber-panel ai-analysis-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <div class="ai-badge"><i class="fas fa-robot"></i> AI 분석 완료</div>
+                <div class="ai-score"><span id="ai-score-val">--</span> <span style="font-size:0.9rem; color:#666;">/ 100</span></div>
+            </div>
+
+            <div style="text-align:center; margin-bottom:20px;">
+                <div id="analysis-price" style="font-size:1.8rem; font-weight:bold; font-family:'JetBrains Mono'; color:#fff;">Loading...</div>
+                <div id="analysis-verdict" style="font-size:1rem; margin-top:5px; color:#888;">"데이터 분석 중..."</div>
+            </div>
+
+            <div class="analysis-grid">
+                <div class="grid-item">
+                    <div class="grid-label">단기 지지</div>
+                    <div id="val-support" class="grid-val text-red">---</div>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-label">단기 저항</div>
+                    <div id="val-resistance" class="grid-val text-green">---</div>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-label">손절가</div>
+                    <div id="val-stoploss" class="grid-val">---</div>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-label">목표가</div>
+                    <div id="val-target" class="grid-val">---</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cyber-panel">
+            <div style="border-left:3px solid var(--accent); padding-left:10px; font-weight:bold; margin-bottom:10px; color:#fff;">
+                <i class="fas fa-file-alt"></i> 심층 분석 보고서
+            </div>
+            <div id="deep-report-text" style="font-size:0.85rem; line-height:1.6; color:#bbb; text-align:justify;">
+                데이터를 불러오는 중입니다...
+            </div>
+        </div>
+
+        <div class="cyber-panel" style="padding: 15px 10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding:0 5px;">
+                <div style="font-weight:bold; color:#fff;"><i class="fas fa-newspaper"></i> 실시간 속보</div>
+                <div style="font-size:0.7rem; color:var(--color-up); animation: blink 1s infinite;">● LIVE FEED</div>
+            </div>
+            
+            <div id="news-board-list">
+                </div>
+
+            <div class="pagination" id="news-pagination">
+                </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i><span>거래소</span></a>
+        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i><span>투자내역</span></a>
+        <a href="ai-core.html" class="nav-item"><i class="fas fa-brain"></i><span>AI설정</span></a>
+        <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
+    </nav>
+
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script src="pro-script.js"></script>
+</body>
+</html>
