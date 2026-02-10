@@ -12,35 +12,31 @@ window.addEventListener('load', () => {
 /* --- [핵심] 탭 전환 기능 (CSS 의존성 제거) --- */
 // 13번 줄부터 33번 줄까지를 이 내용으로 수정하세요
 function showTab(t) {
+function showTab(t) {
     localStorage.setItem('lastTab', t);
 
     // 1. 모든 탭 숨기기
     document.querySelectorAll('.tab-content').forEach(function(c) {
         c.style.display = 'none';
-        c.classList.add('hidden'); // hidden 클래스 강제 추가
+        c.classList.add('hidden'); 
     });
 
-    // 2. 버튼 스타일 변경
+    // 2. 버튼 활성화 표시
     document.querySelectorAll('.wallet-tab-btn').forEach(function(b) {
         b.classList.remove('active');
     });
     const btn = document.getElementById('btn-' + t);
     if (btn) btn.classList.add('active');
 
-    // 3. 선택한 탭만 보이기
+    // 3. 선택한 탭 보이기 (핵심!)
     const targetDiv = document.getElementById('tab-' + t);
     if (targetDiv) {
         targetDiv.style.display = 'block';
-        targetDiv.classList.remove('hidden'); // hidden 클래스 제거!
+        targetDiv.classList.remove('hidden'); // 여기서 hidden을 꼭 지워야 합니다!
     }
 
-    // 4. 투자손익 탭이면 차트 그리기
+    // 4. 차트 재생성
     if (t === 'pnl') setTimeout(renderPnLChart, 100);
-}
-
-
-    // 3. 투자손익 탭이면 차트 그리기
-    if(t === 'pnl') setTimeout(renderPnLChart, 100);
 }
 
 /* --- UI 업데이트 --- */
