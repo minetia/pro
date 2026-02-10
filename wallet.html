@@ -1,198 +1,103 @@
-/* pro-script.js - V190.0 (Search Button Fix) */
-const SAVE_KEY = 'neuroBot_V180_FIXED'; 
-const CONFIG_KEY = 'neuroConfig_V180_FIXED';
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WALLET</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="pro-style.css">
+</head>
+<body>
+    <header class="cyber-header">
+        <div class="brand-logo">SECURE <span>VAULT</span></div>
+        <div style="font-size:0.7rem; color:var(--text-secondary); border:1px solid var(--border-soft); padding:2px 6px;">REAL</div>
+    </header>
 
-let appState = {
-    balance: 0.00, cash: 0.00, bankBalance: 0.00, startBalance: 0.00, 
-    dailyTotalProfit: 0.00, tradeHistory: [], transfers: [], dataCount: 1240, 
-    config: { isReady: false, target: 'BTC', amount: 1000 }, 
-    isRunning: false, runningCoin: 'BTC', investedAmount: 0, 
-    realPrices: {}, position: null, searchQuery: ""
-};
-
-let autoTradeInterval = null;
-let dataCounterInterval = null;
-let socket = null;
-let currentTxMode = '';
-
-window.addEventListener('load', () => {
-    loadState();
-    loadConfig(); 
-    highlightMenu();
-    
-    // 페이지별 초기화
-    if (window.location.pathname.includes('info.html')) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const coin = urlParams.get('coin') || 'BTC';
-        initInfoPage(coin);
-    } else {
-        if(document.getElementById('tab-holdings')) showTab(localStorage.getItem('lastTab') || 'holdings');
-        
-        // [중요] 검색창 상태 복구
-        const searchInput = document.getElementById('coin-search-input');
-        if(searchInput) {
-            // 이전에 검색한 내용이 있으면 복원
-            if(appState.searchQuery) searchInput.value = appState.searchQuery;
+    <div class="main-content">
+        <div class="cyber-panel">
+            <div style="font-size:0.8rem; color:var(--text-secondary);">총 보유자산 (Total Assets)</div>
+            <div id="wallet-display" class="hero-number" style="font-size:1.8rem; margin:5px 0;">$ 0.00</div>
             
-            // 엔터키 쳐도 검색되게 하기
-            searchInput.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') searchInfoCoin();
-            });
-        }
-        
-        if (appState.isRunning) startSystem(true);
-    }
-
-    startDataCounter();
-    setInterval(() => { saveState(); renderGlobalUI(); }, 500);
-    renderGlobalUI();
-});
-
-/* --- [핵심 수정] 검색 버튼 기능 --- */
-function handleSearch(val) {
-    // 입력할 때마다 대문자로 변환해서 저장
-    appState.searchQuery = val.toUpperCase();
-}
-
-function searchInfoCoin() {
-    const input = document.getElementById('coin-search-input');
-    let coin = 'BTC'; // 기본값
-    
-    // 입력값이 있으면 그걸 사용
-    if (input && input.value.trim() !== "") {
-        coin = input.value.trim().toUpperCase();
-    } else if (appState.searchQuery) {
-        coin = appState.searchQuery;
-    }
-    
-    // 정보 페이지로 이동 (코인 이름 들고감)
-    window.location.href = `info.html?coin=${coin}`;
-}
-
-/* --- (이하 기존 핵심 로직 유지) --- */
-function startPriceStream(coin) {
-    if (appState.socket) appState.socket.close();
-    const symbol = coin.toLowerCase() + 'usdt';
-    appState.socket = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
-
-    appState.socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        const price = parseFloat(data.p);
-        appState.realPrices[coin] = price;
-        if(appState.isRunning) checkStrategy(price);
-        if(document.getElementById('analysis-price')) updateInfoUI(price);
-    };
-    appState.socket.onerror = (e) => { console.log("WS Error", e); };
-}
-
-function checkStrategy(currentPrice) {
-    if (!appState.isRunning) return;
-    if (appState.position === null) {
-        enterPosition(currentPrice);
-        return;
-    }
-    const entryPrice = appState.position.entryPrice;
-    const pnlRate = (currentPrice - entryPrice) / entryPrice;
-    const TAKE_PROFIT = 0.0015; 
-    const STOP_LOSS = -0.0010;
-
-    if (pnlRate >= TAKE_PROFIT) closePosition(currentPrice, '익절');
-    else if (pnlRate <= STOP_LOSS) closePosition(currentPrice, '손절');
-}
-
-function enterPosition(price) {
-    const qty = appState.investedAmount / price;
-    appState.position = { entryPrice: price, quantity: qty, entryTime: new Date().toLocaleTimeString('en-GB') };
-    logTrade('매수', price, 0, 0);
-}
-
-function closePosition(price, type) {
-    if (!appState.position) return;
-    const entryPrice = appState.position.entryPrice;
-    const qty = appState.position.quantity;
-    const rawPnL = (price * qty) - (entryPrice * qty);
-    const fee = (price * qty) * 0.0005; 
-    const netPnL = rawPnL - fee;
-
-    appState.balance += netPnL;
-    appState.dailyTotalProfit += netPnL;
-    logTrade(type, price, netPnL, fee);
-    appState.position = null;
-}
-
-function logTrade(type, price, pnl, fee) {
-    const coin = appState.runningCoin;
-    const tradeAmt = appState.position ? (appState.position.quantity * price) : appState.investedAmount;
-    appState.tradeHistory.unshift({
-        time: new Date().toLocaleTimeString('en-GB'), coin: coin, market: 'USDT', type: type,
-        price: price.toLocaleString(undefined, {minimumFractionDigits:2}),
-        qty: appState.position ? appState.position.quantity.toFixed(6) : (appState.investedAmount/price).toFixed(6),
-        tradeAmt: tradeAmt.toFixed(2), fee: fee.toFixed(4), net: pnl !== 0 ? (tradeAmt + pnl).toFixed(2) : '-', pnl: pnl.toFixed(2)
-    });
-    if(appState.tradeHistory.length > 100) appState.tradeHistory.pop();
-}
-
-function renderGlobalUI() {
-    const els = { total: document.getElementById('total-val'), prof: document.getElementById('real-profit') };
-    
-    if(els.total) {
-        if(appState.isRunning) {
-            let currentVal = appState.balance; 
-            if (appState.position) {
-                const currentPrice = appState.realPrices[appState.runningCoin] || appState.position.entryPrice;
-                currentVal = (appState.balance - appState.investedAmount) + (currentPrice * appState.position.quantity);
-            }
-            els.total.innerText = `$ ${currentVal.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+            <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:0.85rem;">
+                <span style="color:#888;">주문가능 (현금 USDT)</span>
+                <div id="avail-cash" style="color:#fff;">$ 0.00</div>
+            </div>
             
-            const profit = appState.dailyTotalProfit;
-            let profitRate = 0;
-            if(appState.startBalance > 0) profitRate = (profit / appState.startBalance) * 100;
-            const color = profit >= 0 ? 'text-green' : 'text-red';
-            const sign = profit >= 0 ? '+' : '';
-            const status = appState.position ? `<span style="font-size:0.7rem; color:var(--accent);">[HOLDING]</span>` : `<span style="font-size:0.7rem; color:#888;">[WAITING]</span>`;
-            
-            els.prof.innerHTML = `${status} <span class="${color}">${sign}${profitRate.toFixed(2)}%</span> <span style="font-size:0.8rem; color:#bbb;">($${profit.toFixed(2)})</span>`;
-        } else {
-            els.total.innerText = `$ 0.00`;
-            els.prof.innerText = "---";
-        }
-    }
-    
-    if(document.getElementById('wallet-display')) {
-        const currentCash = appState.isRunning ? (appState.balance - appState.investedAmount) : appState.balance;
-        document.getElementById('wallet-display').innerText = `$ ${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        document.getElementById('avail-cash').innerText = `$ ${currentCash.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        updatePortfolio(currentCash);
-        updatePnLTab();
-    }
-    if(document.getElementById('bank-balance-display')) {
-        document.getElementById('bank-balance-display').innerText = `$ ${appState.bankBalance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        updateBankList();
-    }
-    updateHistoryTables();
-}
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="cyber-btn" onclick="openModal('deposit')" style="background:#2b3139; border:1px solid #444;">
+                    <i class="fas fa-arrow-down"></i> 입금 (가져오기)
+                </button>
+                <button class="cyber-btn" onclick="openModal('withdraw')" style="background:#2b3139; border:1px solid #444;">
+                    <i class="fas fa-arrow-up"></i> 출금 (보내기)
+                </button>
+            </div>
+        </div>
 
-// ... (기타 필수 함수) ...
-function openModal(m){const d=document.getElementById('transaction-modal');const t=document.getElementById('modal-title');const i=document.getElementById('amount-input');if(!d)return;currentTxMode=m;i.value='';d.style.display='flex';if(m==='deposit'){t.innerText="입금 (은행 → 지갑)";t.style.color="var(--color-up)";i.placeholder=`가져올 금액 입력 (은행잔고: $${appState.bankBalance.toLocaleString()})`}else{t.innerText="출금 (지갑 → 은행)";t.style.color="var(--color-down)";i.placeholder=`보낼 금액 입력 (보유현금: $${appState.cash.toLocaleString()})`}}
-function processTx(){const i=document.getElementById('amount-input');const a=parseFloat(i.value);if(isNaN(a)||a<=0)return alert("올바른 금액을 입력해주세요.");if(currentTxMode==='deposit'){if(appState.bankBalance<a)return alert("은행 잔고 부족");appState.bankBalance-=a;appState.balance+=a;appState.cash+=a;alert(`✅ $${a.toLocaleString()} 가져오기 성공!`)}else{if(appState.cash<a)return alert("현금 부족");appState.balance-=a;appState.cash-=a;appState.bankBalance+=a;alert(`✅ $${a.toLocaleString()} 보내기 성공!`)}appState.transfers.unshift({date:new Date().toISOString().slice(0,10),type:currentTxMode==='deposit'?"WALLET IMPORT":"WALLET EXPORT",amount:a});saveState();renderGlobalUI();closeModal()}
-function calcPercent(p){const i=document.getElementById('amount-input');let b=0;if(currentTxMode==='deposit')b=appState.bankBalance;else b=appState.cash;if(p===100)i.value=b;else i.value=Math.floor(b*(p/100))}
-function closeModal(){document.getElementById('transaction-modal').style.display='none'}
-function processBankDeposit(){const i=document.getElementById('bank-deposit-input');if(!i)return;const a=parseFloat(i.value);if(!a||a<=0)return alert("금액 입력");appState.bankBalance+=a;appState.transfers.unshift({date:new Date().toISOString().slice(0,10),type:"WIRE IN",amount:a});saveState();renderGlobalUI();alert(`✅ $${a.toLocaleString()} 입금 완료`);i.value=''}
-function updateBankList(){const l=document.getElementById('bank-history-list');if(l&&appState.transfers){let h='';if(appState.transfers.length===0)h='<div style="padding:20px; text-align:center;">내역 없음</div>';else appState.transfers.forEach(t=>{h+=`<div class="ledger-row"><div style="width:30%">${t.date}</div><div style="width:30%">${t.type}</div><div style="width:40%; text-align:right;">$${t.amount.toLocaleString()}</div></div>`});l.innerHTML=h}}
-function loadState(){try{const d=localStorage.getItem(SAVE_KEY);if(d)appState={...appState,...JSON.parse(d)}}catch(e){saveState()}}
-function saveState(){localStorage.setItem(SAVE_KEY,JSON.stringify(appState))}
-function loadConfig(){try{const d=localStorage.getItem(CONFIG_KEY);if(d)appState.config=JSON.parse(d)}catch(e){}}
-function highlightMenu(){const c=window.location.pathname.split("/").pop()||'index.html';document.querySelectorAll('.nav-item').forEach(e=>{if(e.getAttribute('href')===c)e.classList.add('active');else e.classList.remove('active')})}
-function showTab(t){localStorage.setItem('lastTab',t);document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));document.getElementById('tab-'+t).classList.remove('hidden');document.querySelectorAll('.wallet-tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+t).classList.add('active');renderGlobalUI()}
-function startSystem(s=false){if(appState.balance<10){const hasW=document.querySelector('a[href="wallet.html"]');if(!hasW){if(!s)alert("테스트 자금 자동 충전 ($1,000)");appState.balance+=1000}else{if(!s)alert("지갑 잔고 부족! [입출금] 메뉴 이용하세요.");stopSystem(true);return}}if(!appState.config.isReady){if(!s)runQuickSetup();return}appState.runningCoin=appState.config.target;appState.investedAmount=appState.config.amount;if(appState.balance<appState.investedAmount)appState.investedAmount=appState.balance;appState.cash=appState.balance-appState.investedAmount;if(appState.startBalance===0)appState.startBalance=appState.balance;startPriceStream(appState.runningCoin);appState.isRunning=true;if(autoTradeInterval)clearInterval(autoTradeInterval);autoTradeInterval=setInterval(executeAiTrade,1000);updateButtonState(true);saveState()}
-function stopSystem(s=false){appState.isRunning=false;appState.investedAmount=0;appState.cash=appState.balance;if(socket)socket.close();appState.position=null;updateButtonState(false);saveState();renderGlobalUI()}
-function updateHistoryTables(){const ml=document.getElementById('main-ledger-list');const ht=document.getElementById('history-table-body');let h='';if(appState.tradeHistory.length===0)h='NO DATA';else{if(ml){let mh='';appState.tradeHistory.slice(0,50).forEach(t=>{let c=t.type==='손절'?'text-red':'text-green';mh+=`<div class="ledger-row"><div class="col-time">${t.time}</div><div class="col-coin">${t.coin} <span class="${c}" style="font-size:0.7rem;">${t.type}</span></div><div class="col-price">${t.price}</div><div class="col-pnl ${c}">${t.type==='매수'?'-':t.pnl}</div></div>`});ml.innerHTML=mh}if(ht){let th='';appState.tradeHistory.slice(0,30).forEach(t=>{let c=t.type==='손절'?'text-red':'text-green';th+=`<tr><td style="color:#bbb">${t.time}</td><td style="font-weight:bold">${t.coin}</td><td>USDT</td><td class="${c}">${t.type}</td><td>-</td><td>$${t.tradeAmt}</td><td style="color:#aaa">$${t.fee}</td><td style="font-weight:bold; color:#fff">$${t.net}</td></tr>`});ht.innerHTML=th}}}
-function updatePortfolio(c){const l=document.getElementById('holdings-list');if(!l)return;let iv=0;if(appState.position){const cp=appState.realPrices[appState.runningCoin]||appState.position.entryPrice;iv=cp*appState.position.quantity}const tv=c+iv;let ip=tv>0?(iv/tv)*100:0;const pie=document.getElementById('portfolio-pie');if(pie)pie.style.background=ip>0?`conic-gradient(var(--accent) 0% ${ip}%, #444 ${ip}% 100%)`:`conic-gradient(#444 0% 100%)`;l.innerHTML=`<div style="padding:10px; border-bottom:1px solid #333; display:flex; justify-content:space-between;"><div><div style="font-weight:bold; color:#fff;">${appState.runningCoin}</div><div style="font-size:0.7rem; color:var(--accent);">Holding</div></div><div style="text-align:right;"><div>$${iv.toFixed(2)}</div><div style="font-size:0.7rem;">${ip.toFixed(1)}%</div></div></div><div style="padding:10px; border-bottom:1px solid #333; display:flex; justify-content:space-between;"><div><div style="font-weight:bold; color:#fff;">USDT</div><div style="font-size:0.7rem; color:#888;">Cash</div></div><div style="text-align:right;"><div>$${c.toFixed(2)}</div><div style="font-size:0.7rem;">${(100-ip).toFixed(1)}%</div></div></div>`}
-function updatePnLTab(){const a=document.getElementById('pnl-total-amount');if(a){const p=appState.dailyTotalProfit;a.innerText=`$ ${p.toLocaleString()}`;a.className=`hero-number ${p>=0?'text-green':'text-red'}`}}
-function startDataCounter(){const e=document.getElementById('data-mining-counter');if(e)setInterval(()=>{appState.dataCount+=Math.floor(Math.random()*5);e.innerText=appState.dataCount.toLocaleString()},100)}
-function runQuickSetup(){if(confirm("설정 하시겠습니까?")){appState.config={isReady:true,target:'BTC',amount:1000};startSystem(true)}}
-function updateButtonState(o){const b=document.getElementById('btn-main-control');if(b)b.innerHTML=o?'Running':'Start'}
-function updateInfoUI(p){const e=document.getElementById('analysis-price');if(e)e.innerText=`$ ${p.toLocaleString()}`}
-function initInfoPage(c){startPriceStream(c)}
-function exportLogs(){alert('다운로드')}
-function applyBankInterest(){if(appState.bankBalance>0)appState.bankBalance+=appState.bankBalance*0.0000001}
+        <div class="wallet-tabs">
+            <button id="btn-holdings" class="wallet-tab-btn active" onclick="showTab('holdings')">보유자산</button>
+            <button id="btn-pnl" class="wallet-tab-btn" onclick="showTab('pnl')">투자손익</button>
+            <button id="btn-history" class="wallet-tab-btn" onclick="showTab('history')">거래내역</button>
+            <button id="btn-orders" class="wallet-tab-btn" onclick="showTab('orders')">미체결</button>
+        </div>
+
+        <div id="tab-holdings" class="tab-content">
+            <div class="cyber-panel" style="text-align:center;">
+                <div style="font-size:0.8rem; margin-bottom:15px; color:#888;">포트폴리오 비중</div>
+                <div id="portfolio-pie" class="pie-chart-container"><div class="pie-inner"><span style="font-size:0.7rem; color:#888;">ASSETS</span></div></div>
+                <div id="holdings-list" style="text-align:left;"></div>
+            </div>
+        </div>
+
+        <div id="tab-pnl" class="tab-content hidden">
+            <div class="cyber-panel">
+                <div style="font-size:0.8rem; color:#888; margin-bottom:5px;">기간 누적 손익</div>
+                <div id="pnl-total-amount" class="hero-number" style="font-size:1.5rem;">$ 0.00</div>
+                <div style="display:flex; margin-top:15px; border-top:1px solid #333; padding-top:15px;">
+                    <div style="flex:1;"><div style="font-size:0.7rem; color:#888;">기간 수익률</div><div id="pnl-total-percent" style="font-weight:bold; font-size:1.1rem;">0.00%</div></div>
+                    <div style="flex:1; text-align:right;"><div style="font-size:0.7rem; color:#888;">평균 투자금</div><div id="pnl-avg-invest" style="font-weight:bold; font-size:1.1rem;">$ 0.00</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-history" class="tab-content hidden">
+            <div class="history-container" style="background-color: #161a1e; border:1px solid var(--border-soft); border-radius:8px; padding:5px; overflow-x:auto;">
+                <table class="detail-table" style="background-color: #161a1e;">
+                    <thead>
+                        <tr><th>시간</th><th>코인</th><th>마켓</th><th>종류</th><th>수량</th><th>거래금액</th><th>수수료</th><th>정산금액</th></tr>
+                    </thead>
+                    <tbody id="history-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-orders" class="tab-content hidden"><div class="cyber-panel" id="open-orders-list"></div></div>
+    </div>
+    
+    <div id="transaction-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 id="modal-title" style="color:#fff; margin-bottom:15px;">입출금</h3>
+            <input type="number" id="amount-input" class="modal-input" placeholder="금액 입력 ($)">
+            
+            <div class="percent-group" style="display:flex; gap:5px; margin-bottom:15px;">
+                <button class="cyber-btn" onclick="calcPercent(10)" style="background:#333; padding:5px; font-size:0.7rem;">10%</button>
+                <button class="cyber-btn" onclick="calcPercent(50)" style="background:#333; padding:5px; font-size:0.7rem;">50%</button>
+                <button class="cyber-btn" onclick="calcPercent(100)" style="background:#333; padding:5px; font-size:0.7rem;">MAX</button>
+            </div>
+            
+            <div style="display:flex; gap:10px;">
+                <button class="cyber-btn" onclick="closeModal()" style="background:#333;">취소</button>
+                <button id="modal-confirm-btn" class="cyber-btn" onclick="processTx()" style="background:var(--accent); color:#000;">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i><span>거래소</span></a>
+        <a href="wallet.html" class="nav-item active"><i class="fas fa-wallet"></i><span>투자내역</span></a>
+        <a href="ai-core.html" class="nav-item"><i class="fas fa-brain"></i><span>AI설정</span></a>
+        <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
+    </nav>
+
+    <script src="pro-script.js"></script>
+</body>
+</html>
