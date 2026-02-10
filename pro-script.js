@@ -1,4 +1,4 @@
-/* pro-script.js - V33.0 (상세 계산식 & PNL 금액 표시) */
+/* pro-script.js - V34.0 (자산 상세 수식: 원금+수익=총액) */
 let appState = {
     balance: 0.00, bankBalance: 0.00, startBalance: 0.00, 
     tradeHistory: [], transfers: [], dataCount: 0, 
@@ -42,7 +42,7 @@ function startSystem(isSilent = false) {
         }
         stopSystem(true); return;
     }
-    // 시작할 때 startBalance가 0이면 현재 잔고로 설정 (PNL 계산 기준점)
+    // 시작할 때 startBalance가 0이면 현재 잔고로 설정
     if(appState.startBalance === 0) appState.startBalance = appState.balance;
 
     if(autoTradeInterval) clearInterval(autoTradeInterval);
@@ -128,7 +128,7 @@ function processTx(amt) {
     if(amt > 0) { 
         if(appState.bankBalance < amt) return alert("Low Bank Funds"); 
         appState.bankBalance -= amt; appState.balance += amt; 
-        // 입금 시 시작 잔고 재설정 (PNL 리셋 효과)
+        // 입금하면 그 시점을 새로운 시작점(원금)으로 잡음
         appState.startBalance = appState.balance; 
     } else { 
         const abs = Math.abs(amt); 
@@ -144,53 +144,52 @@ function processTx(amt) {
 function calcPercent(pct) { const input = document.getElementById('amount-input'); let base = currentTxMode==='deposit' ? appState.bankBalance : appState.balance; if(pct===100) input.value = base; else input.value = Math.floor(base * (pct/100)*100)/100; }
 function closeModal() { document.getElementById('transaction-modal').style.display='none'; isTransactionPending=false; }
 
-/* --- [핵심] 화면 렌더링 (PNL 및 계산식 표시) --- */
+/* --- [핵심] 화면 렌더링 (원금 + 수익 = 총액) --- */
 function renderGlobalUI() {
     const els = { 
         total: document.getElementById('total-val'), 
         wallet: document.getElementById('wallet-display'), 
         bank: document.getElementById('bank-balance-display'), 
         prof: document.getElementById('real-profit'),
-        walletDetail: document.getElementById('wallet-detail-text'), // 지갑 상세 텍스트
-        walletPnl: document.getElementById('wallet-pnl-display')     // 지갑 PNL
+        walletDetail: document.getElementById('wallet-detail-text'), 
+        walletPnl: document.getElementById('wallet-pnl-display')
     };
     
-    // 기본 잔고 표시
+    // 1. 기본 잔고 표시
     if(els.total) els.total.innerText = `$ ${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
     if(els.wallet) els.wallet.innerText = `$ ${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
     if(els.bank) els.bank.innerText = `$ ${appState.bankBalance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
     
-    // [중요] PNL 계산 (현재 잔고 - 시작 잔고)
-    // 만약 startBalance가 없으면 현재 잔고를 기준으로 함
+    // 2. PNL 계산
+    // 원금(Base) = startBalance가 있으면 그걸 쓰고, 없으면 현재 잔고를 원금으로 침
     const base = appState.startBalance > 0 ? appState.startBalance : appState.balance;
     const profit = appState.balance - base;
     const pnlSign = profit >= 0 ? '+' : '-';
     const pnlColorClass = profit >= 0 ? 'text-green' : 'text-red';
-    const coinName = appState.config.target ? appState.config.target.split('/')[0] : 'CASH';
+    // 코인 이름
+    const coinName = appState.config.target ? appState.config.target.split('/')[0] : 'READY';
 
-    // 1. 메인 화면 PNL 표시
+    // 3. 메인화면 PNL
     if(els.prof) { 
         els.prof.innerText = `${pnlSign} $${Math.abs(profit).toLocaleString(undefined, {minimumFractionDigits:2})}`; 
         els.prof.className = `num-font ${pnlColorClass}`; 
     }
-
-    // 2. 지갑 화면 PNL 표시
+    // 4. 지갑화면 PNL
     if(els.walletPnl) {
         els.walletPnl.innerText = `${pnlSign} $${Math.abs(profit).toLocaleString(undefined, {minimumFractionDigits:2})}`;
         els.walletPnl.className = `num-font ${pnlColorClass}`;
     }
 
-    // 3. [핵심] 지갑 상세 계산식 표시 (COIN ± PNL = TOTAL)
+    // 5. [수정됨] 지갑 상세 수식: [원금] ± [수익] = [총액]
     if(els.walletDetail) {
         if(appState.balance <= 0) {
             els.walletDetail.innerHTML = `<span style="color:#666">Wallet Empty</span>`;
         } else {
-            // 예: SOL + $50.00 = $1,050.00
             const html = `
-                <span style="color:#fff; font-weight:bold;">${coinName}</span> 
-                <span class="${pnlColorClass}">${pnlSign} $${Math.abs(profit).toLocaleString(undefined, {minimumFractionDigits:2})}</span> 
+                <span style="color:#888;">$${base.toLocaleString(undefined, {minimumFractionDigits:0})}</span> 
+                <span class="${pnlColorClass}" style="margin:0 5px;">${pnlSign} $${Math.abs(profit).toLocaleString(undefined, {minimumFractionDigits:2})}</span> 
                 <span style="color:#666"> = </span> 
-                <span style="color:#fff">$${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2})}</span>
+                <span style="color:#fff; font-weight:bold;">$${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2})}</span>
             `;
             els.walletDetail.innerHTML = html;
         }
