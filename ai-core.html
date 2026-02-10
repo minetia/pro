@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI CORE</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="pro-style.css">
+    <link rel="stylesheet" href="pro-style.css?v=210">
 </head>
 <body>
     <header class="cyber-header">
@@ -14,45 +14,38 @@
 
     <div class="main-content">
         <div class="cyber-panel">
-            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px; font-size:0.9rem;">
+            <div style="color:var(--accent); font-weight:bold; margin-bottom:15px;">
                 <i class="fas fa-key"></i> API AUTHENTICATION
             </div>
-            <input type="text" id="real-api-key" class="modal-input" placeholder="Access Key">
-            <input type="password" id="real-secret-key" class="modal-input" placeholder="Secret Key">
-            <button class="cyber-btn" onclick="checkKeys()" style="margin-top:5px; background:#2b3139; border:1px solid #444;">VERIFY KEYS</button>
+            
+            <div style="font-size:0.7rem; color:#888; margin-bottom:5px;">API KEY</div>
+            <input type="text" id="api-key-input" class="modal-input" placeholder="Enter your Exchange API Key">
+            
+            <div style="font-size:0.7rem; color:#888; margin-bottom:5px;">SECRET KEY</div>
+            <input type="password" id="secret-key-input" class="modal-input" placeholder="Enter Secret Key">
+            
+            <button class="cyber-btn verify-btn" onclick="checkKeys()" style="background:#2b3139; margin-top:10px;">
+                VERIFY KEYS
+            </button>
         </div>
 
         <div class="cyber-panel">
-            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px; font-size:0.9rem;">
-                <i class="fas fa-sliders-h"></i> CONFIGURATION
+            <div style="color:#fff; font-weight:bold; margin-bottom:15px;">
+                <i class="fas fa-chess-board"></i> STRATEGY SELECT
             </div>
-            
-            <div style="display:flex; gap:15px; margin-bottom:15px;">
-                <div style="flex:1;"> 
-                    <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:5px;">TARGET COIN</label>
-                    <select id="target-coin" class="modal-input select-box" style="height:45px;">
-                        <option value="BTC">BTC</option><option value="ETH">ETH</option><option value="SOL">SOL</option><option value="XRP">XRP</option>
-                    </select>
-                </div>
-                <div style="flex:1;">
-                    <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:5px;">AMOUNT (USDT)</label>
-                    <input type="number" id="trade-amount" class="modal-input" placeholder="1000" style="height:45px;">
-                </div>
-            </div>
-            
             <div class="strategy-container">
-                <div class="strategy-card active" id="st-scalping" onclick="selectStrategy('SCALPING')">
+                <div class="strategy-card active" onclick="selectStrategy(this)">
                     <div class="st-icon"><i class="fas fa-bolt"></i></div>
-                    <div style="font-size:0.7rem;">SCALPING</div>
+                    <div style="font-size:0.8rem;">SCALPING</div>
                 </div>
-                <div class="strategy-card" id="st-swing" onclick="selectStrategy('SWING')">
+                <div class="strategy-card" onclick="selectStrategy(this)">
                     <div class="st-icon"><i class="fas fa-chart-line"></i></div>
-                    <div style="font-size:0.7rem;">SWING</div>
+                    <div style="font-size:0.8rem;">SWING</div>
                 </div>
             </div>
         </div>
 
-        <button class="cyber-btn" onclick="activateSystem()" style="height:55px; font-size:1.1rem; background:var(--color-up); margin-bottom: 20px;">
+        <button class="cyber-btn btn-start" onclick="runQuickSetup()" style="margin-top:20px; height:50px; font-size:1.1rem;">
             ACTIVATE SYSTEM
         </button>
     </div>
@@ -64,32 +57,6 @@
         <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
     </nav>
 
-    <script src="pro-script.js"></script>
-    <script>
-        let selectedStrategy = 'SCALPING';
-        window.addEventListener('load', () => {
-            if(typeof appState !== 'undefined' && appState.config) {
-                if(appState.config.apiKey) document.getElementById('real-api-key').value = appState.config.apiKey;
-                if(appState.config.target) document.getElementById('target-coin').value = appState.config.target.split('/')[0];
-                if(appState.config.amount) document.getElementById('trade-amount').value = appState.config.amount;
-            }
-        });
-        // (나머지 로직은 pro-script.js가 담당하므로 생략 가능하나, 개별 페이지 함수는 유지)
-        function selectStrategy(type) { selectedStrategy = type; document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active')); if(type === 'SCALPING') document.getElementById('st-scalping').classList.add('active'); else document.getElementById('st-swing').classList.add('active'); }
-        function checkKeys() { if(!document.getElementById('real-api-key').value) { alert("❌ 키 입력 필요!"); return; } alert("✅ 키 검증 완료!"); }
-        function activateSystem() {
-            const k1 = document.getElementById('real-api-key').value; 
-            const coin = document.getElementById('target-coin').value; 
-            const amt = parseFloat(document.getElementById('trade-amount').value);
-            if(!k1) return alert("API 키를 입력하세요."); 
-            if(!amt || amt < 10) return alert("최소 거래 금액은 $10 입니다.");
-            if (appState.balance < amt) { alert(`⛔ 잔고 부족! (보유: $${appState.balance})`); return; }
-            const configData = { apiKey: k1, target: coin, amount: amt, strategy: selectedStrategy, isReady: true };
-            appState.config = configData;
-            localStorage.setItem('neuroConfig_V65_FINAL', JSON.stringify(configData));
-            alert("🚀 설정 완료! 메인으로 이동합니다."); 
-            window.location.href = 'index.html';
-        }
-    </script>
+    <script src="pro-script.js?v=210"></script>
 </body>
 </html>
