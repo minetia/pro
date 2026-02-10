@@ -12,13 +12,6 @@
         <div class="brand-logo">BANK <span>LINK</span></div>
     </header>
 
-    <nav class="cyber-nav">
-        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i> DASHBOARD</a>
-        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i> WALLET</a>
-        <a href="ai-core.html" class="nav-item"><i class="fas fa-brain"></i> AI-CORE</a>
-        <a href="transfers.html" class="nav-item active"><i class="fas fa-university"></i> TRANSFERS</a>
-    </nav>
-
     <div class="main-content">
         <div class="cyber-panel bank-card-bg">
             <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
@@ -26,7 +19,7 @@
                     <div style="font-size:0.8rem; color:#fff; font-weight:bold;"><i class="fas fa-university"></i> PRIMARY ACCOUNT</div>
                     <div style="font-size:0.7rem; color:#848e9c;">KBANK 110-382-******</div>
                 </div>
-                <div style="background:#5d78ff; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px; height:fit-content;">VERIFIED</div>
+                <div style="background:#1261c4; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px; height:fit-content;">VERIFIED</div>
             </div>
             <div style="text-align:right;">
                 <div style="font-size:0.7rem; color:#848e9c; margin-bottom:5px;">AVAILABLE CASH</div>
@@ -34,28 +27,50 @@
             </div>
         </div>
 
-        <button class="cyber-btn" onclick="simulateExternalDeposit()" style="margin-bottom:15px; background:#2b3139; border:1px solid #555;">
+        <button class="cyber-btn" onclick="simulateExternalDeposit()" style="margin-bottom:15px; background:#2b3139; border:1px solid #444;">
             <i class="fas fa-arrow-down"></i> RECEIVE FUNDS (Simulate)
         </button>
 
         <div class="cyber-panel" style="padding:0; overflow:hidden;">
-            <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:#5d78ff;">
+            <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:#fff; font-size:0.9rem;">
                 <i class="fas fa-exchange-alt"></i> HISTORY
             </div>
             <div class="table-header-row">
-                <div style="width:30%">DATE</div><div style="width:30%">TYPE</div><div style="width:40%; text-align:right;">AMOUNT</div>
+                <div style="width:30%">DATE</div>
+                <div style="width:30%">TYPE</div>
+                <div style="width:40%; text-align:right;">AMOUNT</div>
             </div>
             <div id="bank-history-list" style="max-height:400px; overflow-y:auto;"></div>
         </div>
     </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <i class="fas fa-chart-pie"></i><span>거래소</span>
+        </a>
+        <a href="wallet.html" class="nav-item">
+            <i class="fas fa-wallet"></i><span>투자내역</span>
+        </a>
+        <a href="ai-core.html" class="nav-item">
+            <i class="fas fa-brain"></i><span>AI설정</span>
+        </a>
+        <a href="transfers.html" class="nav-item active">
+            <i class="fas fa-university"></i><span>입출금</span>
+        </a>
+    </nav>
+
     <script src="pro-script.js"></script>
     <script>
         function simulateExternalDeposit() {
             const amount = 1000;
             if(typeof appState !== 'undefined') {
                 appState.bankBalance += amount;
-                appState.transfers.unshift({ date: new Date().toISOString().slice(0, 10), type: "WIRE IN", amount: amount });
-                localStorage.setItem('neuroBotData_V4_FINAL', JSON.stringify(appState));
+                appState.transfers.unshift({ 
+                    date: new Date().toISOString().slice(0, 10), 
+                    type: "WIRE IN", 
+                    amount: amount 
+                });
+                localStorage.setItem('neuroBotData_V40_KR', JSON.stringify(appState));
                 alert(`✅ $${amount.toLocaleString()} Received from External Bank!`);
                 window.location.reload();
             }
