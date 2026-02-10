@@ -3,74 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CYBER TRADER</title>
+    <title>NEURAL EXCHANGE</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="pro-style.css">
 </head>
 <body>
     <header class="cyber-header">
         <div class="brand-logo">NEURAL <span>NODE</span></div>
-        <div id="header-status-badge" style="font-size:0.75rem; color:var(--text-secondary); background:rgba(255,255,255,0.1); padding:4px 8px; border-radius:4px;">
-            <i class="fas fa-wifi" style="color:#2ebd85;"></i> ONLINE
-        </div>
+        <div class="status-badge"><span class="blink-dot"></span>ONLINE</div>
     </header>
 
     <div class="main-content">
-        <div class="cyber-panel" style="text-align: center; padding: 25px 15px; margin-top: 10px;">
-            <div style="margin-bottom: 10px;">
-                <div id="balance-label" style="font-size:0.8rem; color:var(--text-secondary); letter-spacing:1px; margin-bottom:5px;">총 보유 자산 (TOTAL BALANCE)</div>
-                <div id="total-val" class="hero-number" style="font-size: 2.2rem;">$ 0.00</div>
+        <div class="cyber-panel main-dashboard">
+            <div style="text-align:center; padding:10px 0;">
+                <div id="balance-label" style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:5px;">총 보유 자산 (TOTAL BALANCE)</div>
+                <div id="total-val" class="hero-number" style="font-size:2.2rem; margin-bottom:10px;">$ 0.00</div>
+                <div style="font-size:0.9rem; color:#888;">
+                    24H 수익 <span id="real-profit" style="font-weight:bold; color:#fff;">---</span>
+                </div>
             </div>
-            
-            <div style="height:1px; background:var(--border-soft); margin: 15px 20px;"></div>
-            
-            <div style="display:flex; justify-content:center; gap:15px; align-items:center;">
-                <div style="font-size:0.85rem; color:var(--text-secondary);">24H 수익</div>
-                <div class="num-font" id="real-profit" style="font-size:1.2rem; font-weight:bold;">---</div>
+
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button id="btn-main-control" class="cyber-btn btn-start" onclick="startSystem()">
+                    <i class="fas fa-play"></i> START
+                </button>
+                <button class="cyber-btn btn-stop" onclick="stopSystem()">
+                    <i class="fas fa-stop"></i> STOP
+                </button>
             </div>
         </div>
 
-        <div class="ctrl-group" style="display:flex; gap:10px; margin-bottom: 15px;">
-            <button id="btn-main-control" class="cyber-btn btn-start" onclick="startSystem()">
-                <i class="fas fa-play"></i> START
-            </button>
-            <button class="cyber-btn btn-stop" onclick="stopSystem()">
-                <i class="fas fa-stop"></i> STOP
-            </button>
-        </div>
-
-        <div class="search-panel" style="display:flex; gap:10px; background:var(--bg-card); padding:10px; border-radius:8px; margin-bottom:15px;">
-            <div style="flex:1; display:flex; align-items:center; background:rgba(0,0,0,0.3); border-radius:4px; padding:0 10px;">
-                <i class="fas fa-search" style="color:var(--accent);"></i>
-                <input type="text" id="coin-search-input" class="modal-input" style="border:none; margin:0; background:transparent;" placeholder="코인 검색 (예: BTC)" oninput="handleSearch(this.value)">
+        <div class="cyber-panel" style="padding:15px;">
+            <div style="display:flex; gap:8px;">
+                <div style="flex:1; position:relative;">
+                    <i class="fas fa-search" style="position:absolute; left:12px; top:14px; color:#666;"></i>
+                    <input type="text" id="coin-search-input" class="modal-input" placeholder="코인 검색 (예: BTC)" style="margin-bottom:0; padding-left:35px;">
+                </div>
+                <button class="save-tag" onclick="searchInfoCoin()" style="width:80px; height:46px; font-size:0.9rem; background:var(--accent); color:#000; border:none; border-radius:4px; font-weight:bold;">
+                    <i class="fas fa-chart-line"></i> 정보
+                </button>
             </div>
-            <button class="save-tag" onclick="openInfoPage()" style="margin:0; width:80px; background:var(--accent); color:#000; font-weight:bold; border:none; border-radius:4px;">
-                <i class="fas fa-chart-line"></i> 정보
-            </button>
         </div>
 
-        <div class="cyber-panel" style="padding:0; overflow:hidden; min-height:400px; margin-bottom: 15px;">
-            <div style="padding:15px; border-bottom:1px solid var(--border-soft); display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-weight:bold; color:#fff;"><i class="fas fa-list-ul"></i> 실시간 체결</span>
-                <span style="font-size:0.7rem; color:var(--text-secondary);">Live Feed</span>
+        <div class="cyber-panel" style="padding:0; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid #333; align-items:center;">
+                <div style="font-weight:bold; color:#fff; font-size:1rem;"><i class="fas fa-list-ul"></i> 실시간 체결</div>
+                <div style="font-size:0.7rem; color:#666;">Live Feed</div>
             </div>
             
-            <div class="table-header-row">
-                <div class="col-time">시간</div>
-                <div class="col-coin">포지션</div>
-                <div class="col-price">가격</div>
-                <div class="col-pnl">정산</div>
+            <div class="table-header-row" style="background:#111;">
+                <div style="width:25%">시간</div>
+                <div style="width:25%">포지션</div>
+                <div style="width:25%; text-align:right;">가격</div>
+                <div style="width:25%; text-align:right;">정산</div>
             </div>
-            
-            <div id="main-ledger-list" style="height:400px; overflow-y:auto;"></div>
+
+            <div id="main-ledger-list" style="min-height:200px; max-height:400px; overflow-y:auto;">
+                <div style="padding:40px; text-align:center; color:#444;">시스템 대기중...</div>
+            </div>
         </div>
 
-        <div class="data-mining-panel" style="background:#121518; padding:15px; border-radius:8px; border:1px solid var(--border-soft); display:flex; justify-content:space-between; align-items:center; margin-bottom: 60px;">
+        <div class="cyber-panel" style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
             <div>
-                <div style="font-size:0.7rem; color:var(--accent); font-weight:bold;">DATA MINING</div>
-                <div class="num-font" id="data-mining-counter" style="font-size:1.2rem; font-weight:bold; color:#fff;">Loading...</div>
+                <div style="font-size:0.6rem; color:var(--accent); font-weight:bold;">DATA MINING</div>
+                <div id="data-mining-counter" class="num-font" style="font-size:1.2rem; color:#fff;">Loading...</div>
             </div>
-            <button class="save-tag" onclick="exportLogs()" style="background:#2b3139; color:#fff; border:none; padding:10px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">
+            <button class="cyber-btn" onclick="exportLogs()" style="width:auto; padding:8px 15px; background:#2b3139; font-size:0.8rem;">
                 <i class="fas fa-download"></i> CSV
             </button>
         </div>
@@ -83,18 +81,6 @@
         <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
     </nav>
 
-    <div id="chart-modal" class="modal-overlay">
-        <div class="modal-box" style="width:95%; max-width:95%; height:70vh; padding:10px; background:#000;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:0 10px;">
-                <h3 id="chart-title" style="color:#fff;">MARKET CHART</h3>
-                <i class="fas fa-times" onclick="closeChartModal()" style="color:#fff; font-size:1.5rem; cursor:pointer;"></i>
-            </div>
-            <div id="modal_tv_chart" style="width:100%; height:90%;"></div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script src="pro-script.js"></script>
 </body>
 </html>
