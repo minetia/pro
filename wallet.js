@@ -169,7 +169,7 @@ function processTx() {
 }
 
 function formatMoney(num) { return num.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
-
+}
 setInterval(function() {
     var tbody = document.getElementById('history-table-body');
     if (!tbody) return;
