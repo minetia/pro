@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CYBER TRADER</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="pro-style.css"> 
+    <link rel="stylesheet" href="pro-style.css">
 </head>
 <body>
     <header class="cyber-header">
@@ -18,7 +18,7 @@
     <div class="main-content">
         <div class="cyber-panel" style="text-align: center; padding: 25px 15px; margin-top: 10px;">
             <div style="margin-bottom: 10px;">
-                <div style="font-size:0.8rem; color:var(--text-secondary); letter-spacing:1px; margin-bottom:5px;">운용 자산 (TRADING BALANCE)</div>
+                <div id="balance-label" style="font-size:0.8rem; color:var(--text-secondary); letter-spacing:1px; margin-bottom:5px;">총 보유 자산 (TOTAL BALANCE)</div>
                 <div id="total-val" class="hero-number" style="font-size: 2.2rem;">$ 0.00</div>
             </div>
             
@@ -62,8 +62,7 @@
                 <div class="col-pnl">정산</div>
             </div>
             
-            <div id="main-ledger-list" style="height:400px; overflow-y:auto;">
-                </div>
+            <div id="main-ledger-list" style="height:400px; overflow-y:auto;"></div>
         </div>
     </div>
 
