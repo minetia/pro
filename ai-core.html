@@ -12,57 +12,104 @@
         <div class="brand-logo">NEURAL <span>CORE</span></div>
     </header>
 
-    <nav class="cyber-nav">
-        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i> DASHBOARD</a>
-        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i> WALLET</a>
-        <a href="ai-core.html" class="nav-item active"><i class="fas fa-brain"></i> AI-CORE</a>
-        <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i> TRANSFERS</a>
-    </nav>
-
     <div class="main-content">
         <div class="cyber-panel">
-            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px;"><i class="fas fa-key"></i> API AUTHENTICATION</div>
+            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px; font-size:0.9rem;">
+                <i class="fas fa-key"></i> API AUTHENTICATION
+            </div>
             <input type="text" id="real-api-key" class="modal-input" placeholder="Access Key">
             <input type="password" id="real-secret-key" class="modal-input" placeholder="Secret Key">
-            <button class="cyber-btn" onclick="checkKeys()" style="margin-top:5px; background:#333; border:1px solid #555;">VERIFY KEYS</button>
+            <button class="cyber-btn" onclick="checkKeys()" style="margin-top:5px; background:#2b3139; border:1px solid #444;">
+                VERIFY KEYS
+            </button>
         </div>
 
         <div class="cyber-panel">
-            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px;"><i class="fas fa-sliders-h"></i> CONFIGURATION</div>
+            <div style="font-weight:bold; color:var(--accent); margin-bottom:15px; font-size:0.9rem;">
+                <i class="fas fa-sliders-h"></i> CONFIGURATION
+            </div>
+            
             <div style="display:flex; gap:15px; margin-bottom:15px;">
                 <div style="flex:1;"> 
                     <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:5px;">TARGET COIN</label>
                     <select id="target-coin" class="modal-input select-box">
-                        <option value="BTC">BTC</option><option value="ETH">ETH</option><option value="SOL">SOL</option><option value="XRP">XRP</option>
+                        <option value="BTC">BTC</option>
+                        <option value="ETH">ETH</option>
+                        <option value="SOL">SOL</option>
+                        <option value="XRP">XRP</option>
                     </select>
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:0.7rem; color:#888; display:block; margin-bottom:5px;">AMOUNT (USDT)</label>
                     <div style="position:relative;">
                         <input type="number" id="trade-amount" class="modal-input" placeholder="1000" style="padding-right:50px;">
-                        <span style="position:absolute; right:15px; top:14px; color:#888; font-size:0.8rem; font-weight:bold;">USDT</span>
+                        <span style="position:absolute; right:15px; top:14px; color:#888; font-size:0.7rem; font-weight:bold;">USDT</span>
                     </div>
                 </div>
             </div>
-            <div style="display:flex; gap:20px;">
-                <div class="strategy-card active" id="st-scalping" onclick="selectStrategy('SCALPING')"><div class="st-icon"><i class="fas fa-bolt"></i></div><div style="font-size:0.8rem;">SCALPING</div></div>
-                <div class="strategy-card" id="st-swing" onclick="selectStrategy('SWING')"><div class="st-icon"><i class="fas fa-chart-line"></i></div><div style="font-size:0.8rem;">SWING</div></div>
+            
+            <div style="display:flex; gap:10px;">
+                <div class="strategy-card active" id="st-scalping" onclick="selectStrategy('SCALPING')">
+                    <div class="st-icon"><i class="fas fa-bolt"></i></div>
+                    <div style="font-size:0.7rem;">SCALPING</div>
+                </div>
+                <div class="strategy-card" id="st-swing" onclick="selectStrategy('SWING')">
+                    <div class="st-icon"><i class="fas fa-chart-line"></i></div>
+                    <div style="font-size:0.7rem;">SWING</div>
+                </div>
             </div>
         </div>
 
-        <button class="cyber-btn" onclick="activateSystem()" style="height:60px; font-size:1.2rem; background:var(--color-up); box-shadow: 0 0 20px rgba(46, 189, 133, 0.4);">ACTIVATE SYSTEM</button>
+        <button class="cyber-btn" onclick="activateSystem()" style="height:55px; font-size:1.1rem; background:var(--color-up); box-shadow: 0 0 15px rgba(200, 74, 49, 0.3); margin-bottom: 20px;">
+            ACTIVATE SYSTEM
+        </button>
     </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <i class="fas fa-chart-pie"></i><span>거래소</span>
+        </a>
+        <a href="wallet.html" class="nav-item">
+            <i class="fas fa-wallet"></i><span>투자내역</span>
+        </a>
+        <a href="ai-core.html" class="nav-item active">
+            <i class="fas fa-brain"></i><span>AI설정</span>
+        </a>
+        <a href="transfers.html" class="nav-item">
+            <i class="fas fa-university"></i><span>입출금</span>
+        </a>
+    </nav>
 
     <script src="pro-script.js"></script>
     <script>
         let selectedStrategy = 'SCALPING';
-        function selectStrategy(type) { selectedStrategy = type; document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active')); if(type === 'SCALPING') document.getElementById('st-scalping').classList.add('active'); else document.getElementById('st-swing').classList.add('active'); }
-        function checkKeys() { const k1 = document.getElementById('real-api-key').value; const k2 = document.getElementById('real-secret-key').value; if(!k1 || !k2) { alert("❌ Keys Missing!"); return; } alert("✅ Keys Verified!"); }
+        function selectStrategy(type) { 
+            selectedStrategy = type; 
+            document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active')); 
+            if(type === 'SCALPING') document.getElementById('st-scalping').classList.add('active'); 
+            else document.getElementById('st-swing').classList.add('active'); 
+        }
+        function checkKeys() { 
+            const k1 = document.getElementById('real-api-key').value; 
+            const k2 = document.getElementById('real-secret-key').value; 
+            if(!k1 || !k2) { alert("❌ Keys Missing!"); return; } 
+            alert("✅ Keys Verified!"); 
+        }
         function activateSystem() {
-            const k1 = document.getElementById('real-api-key').value; const k2 = document.getElementById('real-secret-key').value; const coin = document.getElementById('target-coin').value; const amt = document.getElementById('trade-amount').value;
-            if(!k1 || !k2) return alert("Please enter Keys."); if(!amt || amt<=0) return alert("Invalid Amount.");
-            localStorage.setItem('neuroConfig_V4', JSON.stringify({ apiKey: k1, target: coin, amount: parseFloat(amt), strategy: selectedStrategy, isReady: true }));
-            alert("🚀 SYSTEM ACTIVATED!"); window.location.href = 'index.html';
+            const k1 = document.getElementById('real-api-key').value; 
+            const k2 = document.getElementById('real-secret-key').value; 
+            const coin = document.getElementById('target-coin').value; 
+            const amt = document.getElementById('trade-amount').value;
+            
+            if(!k1 || !k2) return alert("Please enter Keys."); 
+            if(!amt || amt<=0) return alert("Invalid Amount.");
+            
+            localStorage.setItem('neuroConfig_V40_KR', JSON.stringify({ 
+                apiKey: k1, target: coin, amount: parseFloat(amt), strategy: selectedStrategy, isReady: true 
+            }));
+            
+            alert("🚀 SYSTEM ACTIVATED!"); 
+            window.location.href = 'index.html';
         }
     </script>
 </body>
