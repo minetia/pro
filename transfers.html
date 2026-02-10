@@ -52,7 +52,19 @@
         <a href="transfers.html" class="nav-item active"><i class="fas fa-university"></i><span>입출금</span></a>
     </nav>
 
-    <script src="core.js?v=300"></script>
+        <script src="core.js?v=300"></script>
     <script src="wallet.js?v=300"></script>
+
+    <script>
+        function processBankDeposit() {
+            var v = document.getElementById('bank-deposit-input').value;
+            if (!v) return alert("금액을 입력하세요"); // 비어있을 때 방어 코드
+            appState.bankBalance += Number(v);
+            saveState();
+            alert("OK");
+            location.reload(); // 돈이 들어온 걸 확인하기 위해 새로고침 추가 (추천)
+        }
+    </script>
 </body>
 </html>
+
