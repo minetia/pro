@@ -37,7 +37,40 @@ function showTab(t) {
 
     // 4. 차트 재생성
     if (t === 'pnl') setTimeout(renderPnLChart, 100);
+}// 잔고 및 UI 업데이트 함수
+function updateWalletUI() {
+    const elBank = document.getElementById('bank-balance-display');
+    const elWallet = document.getElementById('wallet-display');
+    const elCash = document.getElementById('avail-cash');
+
+    // 숫자를 예쁘게 콤마 찍어서 표시
+    if (elBank) elBank.innerText = '$ ' + appState.bankBalance.toLocaleString();
+    if (elWallet) elWallet.innerText = '$ ' + appState.balance.toLocaleString();
+    if (elCash) elCash.innerText = '$ ' + appState.balance.toLocaleString();
+
+    // 내역 테이블 업데이트 호출
+    updateHistoryTables();
 }
+
+// 내역 테이블을 그려주는 보조 함수
+function updateHistoryTables() {
+    const tbody = document.getElementById('history-table-body');
+    if (!tbody) return;
+
+    let html = "";
+    appState.tradeHistory.forEach(t => {
+        const color = Number(t.pnl) >= 0 ? "text-green" : "text-red";
+        html += `<tr><td>${t.time}</td><td>${t.coin}</td><td class="${color}">${t.type}</td><td>${t.pnl}</td></tr>`;
+    });
+    tbody.innerHTML = html || '<tr><td colspan="4">내역 없음</td></tr>';
+}
+
+// 페이지 로드 시 실행
+window.addEventListener('load', () => {
+    updateWalletUI();
+    showTab('holdings'); // 기본 탭 보여주기
+});
+
 
 /* --- UI 업데이트 --- */
 function updateWalletUI() {
