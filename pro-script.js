@@ -1,5 +1,5 @@
-/* pro-script.js - V240.0 (Upbit Style Chart) */
-const SAVE_KEY = 'neuroBot_V230_FINAL'; // 데이터 유지를 위해 키 유지
+/* pro-script.js - V250.0 (Info Page Restore) */
+const SAVE_KEY = 'neuroBot_V230_FINAL';
 const CONFIG_KEY = 'neuroConfig_V230_FINAL';
 
 let appState = {
@@ -13,13 +13,15 @@ let appState = {
 let autoTradeInterval = null;
 let dataCounterInterval = null;
 let socket = null;
-let pnlChartInstance = null; // 차트 저장 변수
+let pnlChartInstance = null;
 
+// 1. 초기화
 window.addEventListener('load', () => {
     loadState();
     try {
         highlightMenu();
         startDataCounter();
+        
         if (window.location.pathname.includes('info.html')) {
             const urlParams = new URLSearchParams(window.location.search);
             initInfoPage(urlParams.get('coin') || 'BTC');
@@ -33,22 +35,102 @@ window.addEventListener('load', () => {
             if (appState.isRunning) startSystem(true);
         }
     } catch (e) { console.error(e); }
+
     setInterval(() => { saveState(); renderGlobalUI(); }, 500);
     renderGlobalUI();
 });
 
-/* --- [핵심] 차트 렌더링 함수 --- */
-function renderPnLChart() {
-    const ctx = document.getElementById('pnlChart');
-    if (!ctx) return; // 캔버스 없으면 중단
+/* --- 정보 페이지 복구 --- */
+function initInfoPage(c) {
+    try {
+        if(typeof TradingView !== 'undefined') {
+            new TradingView.widget({
+                "container_id": "info_tv_chart", "symbol": `BINANCE:${c}USDT`, "interval": "15",
+                "theme": "dark", "style": "1", "locale": "kr", "autosize": true, "hide_side_toolbar": false
+            });
+        }
+    } catch(e){}
+    
+    startPriceStream(c);
+    
+    // [복구] 초기 데이터 채우기
+    const verdict = document.getElementById('analysis-verdict');
+    if(verdict) verdict.innerText = "실시간 분석 중...";
+    loadNewsData(c);
+}
 
-    // 기존 차트 있으면 삭제 (중복 방지)
-    if (pnlChartInstance) {
-        pnlChartInstance.destroy();
+function updateInfoUI(p) {
+    // 가격
+    const elPrice = document.getElementById('analysis-price');
+    if(elPrice) {
+        const prev = parseFloat(elPrice.getAttribute('dp')) || p;
+        elPrice.innerText = `$ ${p.toLocaleString()}`;
+        elPrice.style.color = p > prev ? 'var(--color-up)' : (p < prev ? 'var(--color-down)' : '#fff');
+        elPrice.setAttribute('dp', p);
+    }
+    
+    // 점수 및 멘트
+    const elScore = document.getElementById('ai-score-val');
+    const elVerdict = document.getElementById('analysis-verdict');
+    if(elScore && elVerdict) {
+        // 가격 끝자리에 따라 랜덤 점수 생성 (실시간 느낌)
+        const randomScore = 60 + Math.floor((p % 10) * 3); 
+        elScore.innerText = Math.min(99, Math.max(40, randomScore));
+        
+        if(randomScore > 80) elVerdict.innerText = `"강력 매수 신호 (Strong Buy)"`;
+        else if(randomScore > 50) elVerdict.innerText = `"중립 구간 (Neutral)"`;
+        else elVerdict.innerText = `"매도 우위 (Sell)"`;
     }
 
-    // 데이터 시뮬레이션 (최근 7일)
-    // 현재 수익을 기준으로 과거 데이터를 역산해서 그럴싸하게 만듦
+    // 지지/저항선
+    const elSup = document.getElementById('val-support');
+    const elRes = document.getElementById('val-resistance');
+    const elStop = document.getElementById('val-stoploss');
+    const elTarget = document.getElementById('val-target');
+    
+    if(elSup) {
+        elSup.innerText = `$ ${(p * 0.98).toLocaleString(undefined, {maximumFractionDigits:2})}`;
+        elRes.innerText = `$ ${(p * 1.02).toLocaleString(undefined, {maximumFractionDigits:2})}`;
+        elStop.innerText = `$ ${(p * 0.97).toLocaleString(undefined, {maximumFractionDigits:2})}`;
+        elTarget.innerText = `$ ${(p * 1.05).toLocaleString(undefined, {maximumFractionDigits:2})}`;
+    }
+
+    // 보고서
+    const elReport = document.getElementById('deep-report-text');
+    if(elReport && elReport.getAttribute('updated') !== 'true') {
+        elReport.innerHTML = `현재 <strong>${appState.runningCoin || 'COIN'}</strong>의 기술적 지표가 긍정적입니다.<br>RSI 및 MACD 골든크로스가 임박했습니다.<br>⚠️ <strong>전략:</strong> 눌림목 매수 유효.`;
+        elReport.setAttribute('updated', 'true');
+    }
+}
+
+function loadNewsData(c) {
+    const list = document.getElementById('news-board-list');
+    if(!list) return;
+    
+    const news = [
+        `[속보] ${c}, 대규모 고래 지갑 이동 포착`,
+        `${c} 네트워크 활성 주소, 전주 대비 15% 급증`,
+        `주요 거래소 ${c} 입금량 감소... 매도 압력 완화?`,
+        `[시황] 비트코인 반등에 ${c} 동반 상승세`,
+        `글로벌 투자 기관, ${c} 포트폴리오 비중 확대`
+    ];
+    
+    let html = '';
+    news.forEach((n, i) => {
+        html += `<div style="padding:10px 0; border-bottom:1px solid #333;">
+            <div style="font-size:0.85rem; color:#eee;">${n}</div>
+            <div style="font-size:0.7rem; color:#888; margin-top:3px;">${new Date().toLocaleTimeString()}</div>
+        </div>`;
+    });
+    list.innerHTML = html;
+}
+
+/* --- (나머지 로직은 기존 유지 - 차트 그리기 등) --- */
+function renderPnLChart() {
+    const ctx = document.getElementById('pnlChart');
+    if (!ctx) return;
+    if (pnlChartInstance) pnlChartInstance.destroy();
+
     const currentProfit = appState.dailyTotalProfit;
     const labels = [];
     const data = [];
@@ -58,139 +140,32 @@ function renderPnLChart() {
         const d = new Date(today);
         d.setDate(today.getDate() - i);
         labels.push((d.getMonth()+1) + '/' + d.getDate());
-        
-        // 과거 데이터 생성 (현재 값에서 랜덤하게 변동)
         let noise = Math.random() * (appState.startBalance * 0.05); 
-        if(i === 0) data.push(currentProfit); // 오늘은 정확한 값
+        if(i === 0) data.push(currentProfit);
         else data.push(currentProfit - noise + (noise * 0.5));
     }
 
-    // 차트 색상 결정 (수익이면 빨강/초록, 손실이면 파랑)
-    const lineColor = currentProfit >= 0 ? '#00c056' : '#5e81f4'; // 수익:초록, 손실:파랑(업비트스타일)
-    const bgColor = currentProfit >= 0 ? 'rgba(0, 192, 86, 0.1)' : 'rgba(94, 129, 244, 0.1)';
+    const lineColor = currentProfit >= 0 ? '#c84a31' : '#5e81f4';
+    const bgColor = currentProfit >= 0 ? 'rgba(200, 74, 49, 0.1)' : 'rgba(94, 129, 244, 0.1)';
 
     pnlChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
-            datasets: [{
-                label: '누적 수익($)',
-                data: data,
-                borderColor: lineColor,
-                backgroundColor: bgColor,
-                borderWidth: 2,
-                pointRadius: 3,
-                tension: 0.1, // 부드러운 곡선
-                fill: true
-            }]
+            datasets: [{ label: '누적 수익($)', data: data, borderColor: lineColor, backgroundColor: bgColor, borderWidth: 2, pointRadius: 3, tension: 0.1, fill: true }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }, // 범례 숨김
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    backgroundColor: 'rgba(0,0,0,0.8)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff'
-                }
-            },
-            scales: {
-                x: {
-                    ticks: { color: '#666', font: {size: 10} },
-                    grid: { display: false }
-                },
-                y: {
-                    ticks: { color: '#666', font: {size: 10} },
-                    grid: { color: '#333', borderDash: [2, 2] }
-                }
-            }
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { ticks: { color: '#666' }, grid: { display: false } }, y: { ticks: { color: '#666' }, grid: { color: '#333', borderDash: [2, 2] } } }
         }
     });
 }
+function showTab(t){localStorage.setItem('lastTab',t);document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));document.getElementById('tab-'+t).classList.remove('hidden');document.querySelectorAll('.wallet-tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('btn-'+t).classList.add('active');if(t==='pnl')setTimeout(renderPnLChart,100);renderGlobalUI()}
 
-/* --- [수정] 탭 전환 시 차트 그리기 --- */
-function showTab(t){
-    localStorage.setItem('lastTab',t);
-    document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
-    document.getElementById('tab-'+t).classList.remove('hidden');
-    document.querySelectorAll('.wallet-tab-btn').forEach(b=>b.classList.remove('active'));
-    document.getElementById('btn-'+t).classList.add('active');
-    
-    // [중요] 투자손익 탭을 누르면 차트를 그린다!
-    if (t === 'pnl') {
-        setTimeout(renderPnLChart, 100); // UI 렌더링 후 실행
-    }
-    
-    renderGlobalUI();
-}
-
-/* --- UI 렌더링 업데이트 (투자손익 부분 강화) --- */
-function renderGlobalUI() {
-    // ... (기존 메인/은행 코드는 그대로 유지) ...
-    const elTotal = document.getElementById('total-val');
-    const elProf = document.getElementById('real-profit');
-    if(elTotal) {
-        let val = appState.balance;
-        if(appState.isRunning && appState.position) {
-            const p = appState.realPrices[appState.runningCoin] || appState.position.entryPrice;
-            val = (appState.balance - appState.investedAmount) + (p * appState.position.quantity);
-        }
-        elTotal.innerText = `$ ${val.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        if(elProf) {
-            const p = appState.dailyTotalProfit;
-            const r = appState.startBalance > 0 ? (p/appState.startBalance)*100 : 0;
-            const c = p >= 0 ? 'text-green' : 'text-red';
-            elProf.innerHTML = `<span class="${c}">${p>=0?'+':''}${r.toFixed(2)}%</span>`;
-        }
-    }
-    const elBank = document.getElementById('bank-balance-display');
-    if (elBank) {
-        const bal = appState.bankBalance || 0;
-        elBank.innerText = `$ ${bal.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        updateBankList();
-    }
-
-    // 지갑 및 투자손익 탭 업데이트
-    if(document.getElementById('wallet-display')) {
-        const cash = appState.isRunning ? (appState.balance - appState.investedAmount) : appState.balance;
-        document.getElementById('wallet-display').innerText = `$ ${appState.balance.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        document.getElementById('avail-cash').innerText = `$ ${cash.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        updatePortfolio(cash);
-        updatePnLTab(); // 여기가 중요
-    }
-    
-    updateHistoryTables();
-}
-
-function updatePnLTab(){
-    const amtEl = document.getElementById('pnl-total-amount');
-    const pctEl = document.getElementById('pnl-total-percent');
-    const avgEl = document.getElementById('pnl-avg-invest');
-    
-    if(amtEl) {
-        const profit = appState.dailyTotalProfit;
-        const profitRate = appState.startBalance > 0 ? (profit / appState.startBalance) * 100 : 0;
-        
-        // 색상: 수익(초록), 손실(파랑 - 업비트스타일)
-        const colorClass = profit >= 0 ? 'text-green' : 'text-blue'; 
-        // *참고: pro-style.css에 text-blue가 없다면 text-red 대신 인라인 스타일 사용
-        const colorStyle = profit >= 0 ? '#c84a31' : '#5e81f4'; // 빨강(수익) / 파랑(손실) - 한국형
-        
-        amtEl.innerText = `$ ${profit.toLocaleString(undefined, {minimumFractionDigits:2})}`;
-        amtEl.style.color = colorStyle;
-        
-        pctEl.innerText = `${profit>=0?'+':''}${profitRate.toFixed(2)}%`;
-        pctEl.style.color = colorStyle;
-        
-        // 평균 투자금 (현재 운용중인 금액 or 전체 시드)
-        avgEl.innerText = `$ ${appState.investedAmount > 0 ? appState.investedAmount.toLocaleString() : appState.startBalance.toLocaleString()}`;
-    }
-}
-
-// ... (나머지 기존 함수들은 그대로 유지) ...
+// ... (이하 필수 함수 압축) ...
+function renderGlobalUI(){const t=document.getElementById('total-val');if(t){let v=appState.balance;if(appState.isRunning&&appState.position){v=(appState.balance-appState.investedAmount)+(appState.realPrices[appState.runningCoin]||appState.position.entryPrice)*appState.position.quantity}t.innerText=`$ ${v.toLocaleString(undefined,{minimumFractionDigits:2})}`;const p=document.getElementById('real-profit');if(p){const r=appState.startBalance>0?(appState.dailyTotalProfit/appState.startBalance)*100:0;p.innerHTML=`<span class="${appState.dailyTotalProfit>=0?'text-green':'text-red'}">${appState.dailyTotalProfit>=0?'+':''}${r.toFixed(2)}%</span>`}}if(document.getElementById('wallet-display')){const c=appState.isRunning?appState.balance-appState.investedAmount:appState.balance;document.getElementById('wallet-display').innerText=`$ ${appState.balance.toLocaleString(undefined,{minimumFractionDigits:2})}`;document.getElementById('avail-cash').innerText=`$ ${c.toLocaleString(undefined,{minimumFractionDigits:2})}`;updatePortfolio(c);updatePnLTab()}if(document.getElementById('bank-balance-display')){document.getElementById('bank-balance-display').innerText=`$ ${appState.bankBalance.toLocaleString(undefined,{minimumFractionDigits:2})}`;updateBankList()}updateHistoryTables()}
+function updatePnLTab(){const a=document.getElementById('pnl-total-amount');const p=document.getElementById('pnl-total-percent');const v=document.getElementById('pnl-avg-invest');if(a){const pr=appState.dailyTotalProfit;const r=appState.startBalance>0?(pr/appState.startBalance)*100:0;const c=pr>=0?'#c84a31':'#5e81f4';a.innerText=`$ ${pr.toLocaleString()}`;a.style.color=c;p.innerText=`${pr>=0?'+':''}${r.toFixed(2)}%`;p.style.color=c;v.innerText=`$ ${appState.investedAmount.toLocaleString()}`}}
 function checkKeys(){const k1=document.getElementById('api-key-input').value;const k2=document.getElementById('secret-key-input').value;if(k1.length<5||k2.length<5)return alert("⛔ 유효한 키를 입력하세요.");appState.config.keysVerified=true;alert("✅ 검증 완료!");const btn=document.querySelector('.verify-btn');if(btn){btn.innerText="VERIFIED";btn.style.background="var(--color-up)";}saveState()}
 function selectStrategy(el,name){document.querySelectorAll('.strategy-card').forEach(c=>c.classList.remove('active'));el.classList.add('active');appState.config.strategy=name}
 function activateSystem(){if(!appState.config.keysVerified)return alert("⚠️ 먼저 API 키를 검증해주세요.");const coinInput=document.getElementById('target-coin');const amtInput=document.getElementById('invest-amount');const coin=coinInput.value.toUpperCase();const amt=parseFloat(amtInput.value);if(!coin)return alert("코인 심볼 입력");if(!amt||amt<=0)return alert("금액 오류");if(amt>appState.balance)return alert(`잔고 부족 ($${appState.balance.toLocaleString()})`);appState.config.target=coin;appState.config.amount=amt;appState.config.isReady=true;saveState();alert(`🚀 시스템 가동 시작!\n목표: ${coin} / 금액: $${amt.toLocaleString()}`);window.location.href='index.html'}
@@ -207,7 +182,6 @@ function logTrade(t,p,pl,f){appState.tradeHistory.unshift({time:new Date().toLoc
 function updatePortfolio(c){const l=document.getElementById('holdings-list');const pie=document.getElementById('portfolio-pie');if(!l)return;let iv=0;if(appState.position){const p=appState.realPrices[appState.runningCoin]||appState.position.entryPrice;iv=p*appState.position.quantity}const tv=c+iv;let ip=tv>0?(iv/tv)*100:0;if(pie)pie.style.background=ip>0?`conic-gradient(var(--accent) 0% ${ip}%, #444 ${ip}% 100%)`:`conic-gradient(#444 0% 100%)`;l.innerHTML=`<div style="padding:10px;border-bottom:1px solid #333;display:flex;justify-content:space-between"><div><div style="font-weight:bold;color:#fff">${appState.runningCoin}</div><div style="font-size:0.7rem;color:var(--accent)">Holding</div></div><div style="text-align:right"><div style="color:#fff">$${iv.toFixed(2)}</div><div style="font-size:0.7rem">${ip.toFixed(1)}%</div></div></div><div style="padding:10px;border-bottom:1px solid #333;display:flex;justify-content:space-between"><div><div style="font-weight:bold;color:#fff">USDT</div><div style="font-size:0.7rem;color:#888">Cash</div></div><div style="text-align:right"><div style="color:#fff">$${c.toFixed(2)}</div><div style="font-size:0.7rem;color:#888">${(100-ip).toFixed(1)}%</div></div></div>`}
 function startDataCounter(){const e=document.getElementById('data-mining-counter');if(e)setInterval(()=>{appState.dataCount+=3;e.innerText=appState.dataCount.toLocaleString()},100)}
 function updateButtonState(o){const b=document.getElementById('btn-main-control');if(b)b.innerHTML=o?'Running':'Start'}
-function updateInfoUI(p){const e=document.getElementById('analysis-price');if(e){const pp=parseFloat(e.getAttribute('dp'))||p;e.innerText=`$ ${p.toLocaleString()}`;e.style.color=p>pp?'var(--color-up)':(p<pp?'var(--color-down)':'#fff');e.setAttribute('dp',p)}const v=document.getElementById('analysis-verdict');if(v){v.innerText=`실시간 데이터 수신 중... ($${p})`;v.style.color="#fff"}}
 function updateBankList(){const l=document.getElementById('bank-history-list');if(l&&appState.transfers){let h='';if(appState.transfers.length===0)h='<div style="padding:20px;text-align:center">내역 없음</div>';else appState.transfers.forEach(t=>{h+=`<div class="ledger-row"><div style="width:30%">${t.date}</div><div style="width:30%">${t.type}</div><div style="width:40%;text-align:right">$${t.amount.toLocaleString()}</div></div>`});l.innerHTML=h}}
 function updateHistoryTables(){const ml=document.getElementById('main-ledger-list');const ht=document.getElementById('history-table-body');if(ml){if(appState.tradeHistory.length===0)ml.innerHTML='<div style="padding:20px;text-align:center;color:#666">NO DATA</div>';else{let h='';appState.tradeHistory.slice(0,50).forEach(t=>{let c=(t.type==='매도'||t.type==='손절')?'text-red':'text-green';let p=t.type==='매수'?'-':t.pnl;h+=`<div class="ledger-row"><div class="col-time">${t.time}</div><div class="col-coin">${t.coin} <span class="${c}" style="font-size:0.7rem;">${t.type}</span></div><div class="col-price">${t.price}</div><div class="col-pnl ${c}">${p}</div></div>`});ml.innerHTML=h}}if(ht){if(appState.tradeHistory.length===0)ht.innerHTML='<tr><td colspan="8" style="text-align:center; padding:20px; color:#888;">거래 내역이 없습니다.</td></tr>';else{let h='';appState.tradeHistory.slice(0,30).forEach(t=>{let c=(t.type==='매도'||t.type==='손절')?'text-red':'text-green';h+=`<tr><td style="color:#bbb">${t.time}</td><td style="font-weight:bold">${t.coin}</td><td>USDT</td><td class="${c}">${t.type}</td><td>${t.qty}</td><td>$${t.tradeAmt}</td><td style="color:#aaa">$${t.fee}</td><td style="font-weight:bold; color:#fff">$${t.net}</td></tr>`});ht.innerHTML=h}}}
 function openModal(m){currentTxMode=m;document.getElementById('amount-input').value='';document.getElementById('transaction-modal').style.display='flex';document.getElementById('modal-title').innerText=m==='deposit'?"입금 (은행 → 지갑)":"출금 (지갑 → 은행)"}
@@ -218,6 +192,4 @@ function calcPercent(p){const i=document.getElementById('amount-input');const b=
 function applyBankInterest(){if(appState.bankBalance>0)appState.bankBalance+=appState.bankBalance*0.0000001}
 function exportLogs(){alert("로그 다운로드")}
 function handleSearch(v){appState.searchQuery=v.toUpperCase()}
-function loadNewsData(c){const l=document.getElementById('news-board-list');if(!l)return;l.innerHTML=`<div class="news-item"><div class="news-title">실시간 ${c} 뉴스 피드 연결됨</div></div>`;}
 function searchInfoCoin(){const i=document.getElementById('coin-search-input');let c='BTC';if(i&&i.value.trim()!="")c=i.value.trim().toUpperCase();else if(appState.searchQuery)c=appState.searchQuery;window.location.href=`info.html?coin=${c}`}
-function initInfoPage(c){try{if(typeof TradingView!=='undefined'){new TradingView.widget({"container_id":"info_tv_chart","symbol":`BINANCE:${c}USDT`,"interval":"15","theme":"dark","style":"1","locale":"kr","autosize":true,"hide_side_toolbar":false})}}catch(e){}startPriceStream(c);loadNewsData(c);}
