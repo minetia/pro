@@ -83,6 +83,16 @@
         <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
     </nav>
 
+    <div id="chart-modal" class="modal-overlay">
+        <div class="modal-box" style="width:95%; max-width:95%; height:70vh; padding:10px; background:#000;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:0 10px;">
+                <h3 id="chart-title" style="color:#fff;">MARKET CHART</h3>
+                <i class="fas fa-times" onclick="closeChartModal()" style="color:#fff; font-size:1.5rem; cursor:pointer;"></i>
+            </div>
+            <div id="modal_tv_chart" style="width:100%; height:90%;"></div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script src="pro-script.js"></script>
