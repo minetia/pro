@@ -6,7 +6,7 @@
     <title>WALLET</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="pro-style.css?v=250">
+    <link rel="stylesheet" href="pro-style.css?v=300">
 </head>
 <body>
     <header class="cyber-header">
@@ -30,10 +30,7 @@
 
         <div class="wallet-tabs">
             <button id="btn-holdings" class="wallet-tab-btn active" onclick="showTab('holdings')">보유자산</button>
-            <button id="btn-pnl" class="wallet-tab-btn" onclick="showTab('pnl')">투자손익</button>
-            <button id="btn-history" class="wallet-tab-btn" onclick="showTab('history')">거래내역</button>
-            <button id="btn-orders" class="wallet-tab-btn" onclick="showTab('orders')">미체결</button>
-        </div>
+            </div>
 
         <div id="tab-holdings" class="tab-content">
             <div class="cyber-panel" style="text-align:center;">
@@ -42,54 +39,15 @@
                 <div id="holdings-list" style="text-align:left;"></div>
             </div>
         </div>
-
-        <div id="tab-pnl" class="tab-content hidden">
-            <div class="cyber-panel" style="padding: 20px 15px;">
-                <div style="font-size:0.9rem; font-weight:bold; color:#fff; margin-bottom:15px;">기간 수익률 (7일)</div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-                    <div>
-                        <div style="font-size:0.75rem; color:#888;">기간 누적 손익</div>
-                        <div id="pnl-total-amount" class="hero-number" style="font-size:1.4rem; margin-top:5px;">$ 0.00</div>
-                        <div id="pnl-total-percent" style="font-size:1rem; font-weight:bold; margin-top:3px;">0.00%</div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="font-size:0.75rem; color:#888;">평균 투자금액</div>
-                        <div id="pnl-avg-invest" style="font-size:1.1rem; color:#fff; margin-top:5px;">$ 0.00</div>
-                    </div>
-                </div>
-                <div style="background:#1a1e24; border-radius:8px; padding:10px;">
-                    <div style="font-size:0.75rem; color:#888; margin-bottom:10px;">투자손익 그래프</div>
-                    <canvas id="pnlChart" width="300" height="200"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div id="tab-history" class="tab-content hidden">
-            <div class="history-container" style="background-color: #161a1e; border:1px solid var(--border-soft); border-radius:8px; padding:5px; overflow-x:auto;">
-                <table class="detail-table" style="background-color: #161a1e;">
-                    <thead>
-                        <tr><th>시간</th><th>코인</th><th>마켓</th><th>종류</th><th>수량</th><th>거래금액</th><th>수수료</th><th>정산금액</th></tr>
-                    </thead>
-                    <tbody id="history-table-body"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="tab-orders" class="tab-content hidden"><div class="cyber-panel" id="open-orders-list"></div></div>
     </div>
     
     <div id="transaction-modal" class="modal-overlay">
         <div class="modal-box">
-            <h3 id="modal-title" style="color:#fff; margin-bottom:15px;">입출금</h3>
+            <h3 id="modal-title" style="color:#fff; margin-bottom:15px;">자금 이체</h3>
             <input type="number" id="amount-input" class="modal-input" placeholder="금액 입력 ($)">
-            <div class="percent-group" style="display:flex; gap:5px; margin-bottom:15px;">
-                <button class="cyber-btn" onclick="calcPercent(10)" style="background:#333; padding:5px; font-size:0.7rem;">10%</button>
-                <button class="cyber-btn" onclick="calcPercent(50)" style="background:#333; padding:5px; font-size:0.7rem;">50%</button>
-                <button class="cyber-btn" onclick="calcPercent(100)" style="background:#333; padding:5px; font-size:0.7rem;">MAX</button>
-            </div>
             <div style="display:flex; gap:10px;">
                 <button class="cyber-btn" onclick="closeModal()" style="background:#333;">취소</button>
-                <button id="modal-confirm-btn" class="cyber-btn" onclick="processTx()" style="background:var(--accent); color:#000;">확인</button>
+                <button class="cyber-btn" onclick="processTx()" style="background:var(--accent); color:#000;">확인</button>
             </div>
         </div>
     </div>
@@ -101,6 +59,7 @@
         <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
     </nav>
 
-    <script src="pro-script.js?v=250"></script>
+    <script src="core.js?v=300"></script>
+    <script src="wallet.js?v=300"></script>
 </body>
 </html>
