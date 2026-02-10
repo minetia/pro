@@ -13,7 +13,7 @@
     </header>
 
     <div class="main-content">
-        <div class="cyber-panel bank-card-bg">
+        <div class="cyber-panel bank-card-bg" style="background: linear-gradient(135deg, #1f252e 0%, #13171c 100%); border:1px solid var(--border-soft);">
             <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
                 <div>
                     <div style="font-size:0.8rem; color:#fff; font-weight:bold;"><i class="fas fa-university"></i> PRIMARY ACCOUNT</div>
@@ -22,18 +22,21 @@
                 <div style="background:#1261c4; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px; height:fit-content;">VERIFIED</div>
             </div>
             <div style="text-align:right;">
-                <div style="font-size:0.7rem; color:#848e9c; margin-bottom:5px;">AVAILABLE CASH</div>
-                <div id="bank-balance-display" class="hero-number">$ 0.00</div>
+                <div style="font-size:0.7rem; color:#848e9c; margin-bottom:5px;">AVAILABLE CASH (BANK)</div>
+                <div id="bank-balance-display" class="hero-number" style="font-size:1.8rem;">Loading...</div>
             </div>
         </div>
 
-        <button class="cyber-btn" onclick="simulateExternalDeposit()" style="margin-bottom:15px; background:#2b3139; border:1px solid #444;">
-            <i class="fas fa-arrow-down"></i> RECEIVE FUNDS (Simulate)
-        </button>
+        <div style="margin-bottom: 20px;">
+            <p style="font-size:0.75rem; color:#666; margin-bottom:5px;">* 외부 은행에서 이 계좌로 돈을 가져옵니다.</p>
+            <button class="cyber-btn" onclick="simulateExternalDeposit()" style="background:#2b3139; border:1px solid #444; color:#fff;">
+                <i class="fas fa-arrow-down"></i> 현금 충전 (+$1,000)
+            </button>
+        </div>
 
         <div class="cyber-panel" style="padding:0; overflow:hidden;">
             <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:#fff; font-size:0.9rem;">
-                <i class="fas fa-exchange-alt"></i> HISTORY
+                <i class="fas fa-exchange-alt"></i> 은행 거래 내역
             </div>
             <div class="table-header-row">
                 <div style="width:30%">DATE</div>
@@ -45,36 +48,12 @@
     </div>
 
     <nav class="bottom-nav">
-        <a href="index.html" class="nav-item">
-            <i class="fas fa-chart-pie"></i><span>거래소</span>
-        </a>
-        <a href="wallet.html" class="nav-item">
-            <i class="fas fa-wallet"></i><span>투자내역</span>
-        </a>
-        <a href="ai-core.html" class="nav-item">
-            <i class="fas fa-brain"></i><span>AI설정</span>
-        </a>
-        <a href="transfers.html" class="nav-item active">
-            <i class="fas fa-university"></i><span>입출금</span>
-        </a>
+        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i><span>거래소</span></a>
+        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i><span>투자내역</span></a>
+        <a href="ai-core.html" class="nav-item"><i class="fas fa-brain"></i><span>AI설정</span></a>
+        <a href="transfers.html" class="nav-item active"><i class="fas fa-university"></i><span>입출금</span></a>
     </nav>
 
     <script src="pro-script.js"></script>
-    <script>
-        function simulateExternalDeposit() {
-            const amount = 1000;
-            if(typeof appState !== 'undefined') {
-                appState.bankBalance += amount;
-                appState.transfers.unshift({ 
-                    date: new Date().toISOString().slice(0, 10), 
-                    type: "WIRE IN", 
-                    amount: amount 
-                });
-                localStorage.setItem('neuroBotData_V40_KR', JSON.stringify(appState));
-                alert(`✅ $${amount.toLocaleString()} Received from External Bank!`);
-                window.location.reload();
-            }
-        }
-    </script>
 </body>
 </html>
