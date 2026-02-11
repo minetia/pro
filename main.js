@@ -1,22 +1,25 @@
-// [초기화] 페이지 로드 시 실행
+// [초기화] 페이지가 열리면 실행
 window.addEventListener('load', function() {
-    initChart();       // 차트 생성
-    connectBinance();  // 바이낸스 연결
+    // 1. 차트 박스 먼저 만들기 (검은색 배경 강제 적용)
+    createChartContainer();
     
-    // 주문창 화면 만들기
-    fixLayoutAndShowOrderUI();
-    updateOrderList();
+    // 2. 차트 프로그램(라이브러리) 다운로드 및 실행
+    loadChartLibrary();
+
+    // 3. 주문창(UI) 표시
+    if(typeof fixLayoutAndShowOrderUI === 'function') fixLayoutAndShowOrderUI();
+    else createOrderUI(); // 주문창 만드는 함수가 없으면 비상용 실행
     
-    // 내 평단가 선 그리기 (처음 로드시)
-    setTimeout(updateMyPriceLine, 1000); // 데이터 로딩 시간 고려
+    // 4. 미체결 내역 표시
+    if(typeof updateOrderList === 'function') updateOrderList();
 });
 
 // 전역 변수
 var ws = null;
-var currentPrice = 0;
 var chart = null;
 var candleSeries = null;
-var myPriceLine = null; 
+var currentPrice = 0;
+var myPriceLine = null;
 
 // 데이터 저장소
 if (!window.appState) window.appState = { 
@@ -26,98 +29,107 @@ if (!window.appState) window.appState = {
 };
 
 // ==========================================
-// 1. 차트 설정 (다크모드 적용!)
+// 1. 차트 박스 만들기 (무조건 검은색!)
 // ==========================================
-function initChart() {
-    var chartContainer = document.getElementById('chart-container');
+function createChartContainer() {
+    var container = document.getElementById('chart-container');
     
-    // 차트 박스 없으면 생성
-    if (!chartContainer) {
-        chartContainer = document.createElement('div');
-        chartContainer.id = 'chart-container';
-        chartContainer.style.width = '100%';
-        chartContainer.style.height = '350px';
-        chartContainer.style.backgroundColor = '#1e1e1e'; // 박스 자체도 검게
-        chartContainer.style.marginBottom = '20px';
+    // 박스가 없으면 새로 만듭니다.
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'chart-container';
+        // 스타일 강제 적용
+        container.style.width = '100%';
+        container.style.height = '350px';
+        container.style.backgroundColor = '#1e1e1e'; // 검은색 배경
+        container.style.borderBottom = '1px solid #333';
+        container.style.marginBottom = '20px';
+        container.style.position = 'relative'; // 로딩 문구 위치 잡기 위해
         
-        var header = document.querySelector('.header') || document.body.firstChild;
-        if(header && header.parentNode) header.parentNode.insertBefore(chartContainer, header.nextSibling);
-        else document.body.appendChild(chartContainer);
-    }
+        // "차트 로딩 중..." 문구 추가
+        container.innerHTML = '<div id="chart-loader" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:#888; font-size:14px;">📊 차트 불러오는 중...</div>';
 
-    // 라이브러리 로드 체크
-    if (!window.LightweightCharts) {
-        var script = document.createElement('script');
-        script.src = "https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js";
-        script.onload = function() { initChart(); };
-        document.head.appendChild(script);
+        // 헤더 밑에 붙이기
+        var header = document.querySelector('.header') || document.body.firstChild;
+        if(header && header.parentNode) {
+            header.parentNode.insertBefore(container, header.nextSibling);
+        } else {
+            document.body.prepend(container);
+        }
+    }
+}
+
+// ==========================================
+// 2. 라이브러리 로드 (안전하게 가져오기)
+// ==========================================
+function loadChartLibrary() {
+    // 이미 있으면 바로 실행
+    if (window.LightweightCharts) {
+        initChart();
         return;
     }
 
-    // ★ 차트 생성 (여기가 중요: 배경색 지정)
-    chart = LightweightCharts.createChart(chartContainer, {
-        width: chartContainer.clientWidth,
+    // 없으면 다운로드 (버전 4.0 고정)
+    var script = document.createElement('script');
+    script.src = "https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js";
+    script.onload = function() {
+        console.log("라이브러리 로드 완료!");
+        initChart(); // 다 받으면 차트 그리기 시작
+    };
+    script.onerror = function() {
+        document.getElementById('chart-container').innerHTML = '<div style="padding:20px; color:red; text-align:center;">⚠️ 차트 로딩 실패<br>인터넷 연결을 확인하세요.</div>';
+    };
+    document.head.appendChild(script);
+}
+
+// ==========================================
+// 3. 진짜 차트 그리기
+// ==========================================
+function initChart() {
+    var container = document.getElementById('chart-container');
+    // 로딩 문구 지우기
+    container.innerHTML = ''; 
+
+    // 차트 생성
+    chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth,
         height: 350,
         layout: {
-            background: { type: 'solid', color: '#1e1e1e' }, // ★ 배경을 어두운 색으로!
+            background: { type: 'solid', color: '#1e1e1e' }, // 검은색 배경
             textColor: '#d1d4dc',
         },
         grid: {
-            vertLines: { color: 'rgba(255, 255, 255, 0.1)' }, // 그리드 선도 연하게
+            vertLines: { color: 'rgba(255, 255, 255, 0.1)' },
             horzLines: { color: 'rgba(255, 255, 255, 0.1)' },
         },
-        priceScale: {
-            borderColor: 'rgba(197, 203, 206, 0.8)',
-        },
         timeScale: {
-            borderColor: 'rgba(197, 203, 206, 0.8)',
             timeVisible: true,
             secondsVisible: false,
+            borderColor: 'rgba(197, 203, 206, 0.8)',
         },
     });
 
-    // 캔들 시리즈 추가
+    // 캔들 설정
     candleSeries = chart.addCandlestickSeries({
-        upColor: '#0ecb81',        // 양봉 (초록)
-        downColor: '#f6465d',      // 음봉 (빨강)
-        borderDownColor: '#f6465d',
-        borderUpColor: '#0ecb81',
-        wickDownColor: '#f6465d',
-        wickUpColor: '#0ecb81',
+        upColor: '#0ecb81', downColor: '#f6465d',
+        borderDownColor: '#f6465d', borderUpColor: '#0ecb81',
+        wickDownColor: '#f6465d', wickUpColor: '#0ecb81',
     });
+
+    // 바이낸스 데이터 연결
+    connectBinance();
 
     // 반응형 크기 조절
     window.addEventListener('resize', () => {
-        chart.resize(chartContainer.clientWidth, 350);
+        chart.resize(container.clientWidth, 350);
     });
+    
+    // 내 평단가 선 그리기 시도
+    updateMyPriceLine();
 }
 
 // ==========================================
-// 2. 평단가 선 그리기
-// ==========================================
-function updateMyPriceLine() {
-    if (!candleSeries) return;
-
-    if (myPriceLine) {
-        candleSeries.removePriceLine(myPriceLine);
-        myPriceLine = null;
-    }
-
-    var pos = window.appState.position;
-    if (pos && pos.amount > 0 && pos.entryPrice > 0) {
-        myPriceLine = candleSeries.createPriceLine({
-            price: pos.entryPrice,
-            color: '#F0B90B', 
-            lineWidth: 2,
-            lineStyle: LightweightCharts.LineStyle.Dotted,
-            axisLabelVisible: true,
-            title: '내 평단가',
-        });
-    }
-}
-
-// ==========================================
-// 3. 바이낸스 연결
+// 4. 바이낸스 실시간 데이터
 // ==========================================
 function connectBinance() {
     if (ws) ws.close();
@@ -136,65 +148,63 @@ function connectBinance() {
         currentPrice = pl.close;
         
         // 가격 표시 업데이트
-        var el = document.getElementById('price-display');
-        if (el) {
-            el.innerText = '$ ' + currentPrice.toLocaleString(undefined, {minimumFractionDigits:2});
-            el.style.color = (window.lastP && currentPrice > window.lastP) ? '#0ecb81' : '#f6465d';
-        }
-        window.lastP = currentPrice;
+        updatePriceDisplay(currentPrice);
 
+        // 지정가 주문 감시
         checkOrders(currentPrice);
     };
 }
 
+function updatePriceDisplay(price) {
+    var el = document.getElementById('price-display') || document.querySelector('.hero-number') || document.querySelector('h1');
+    if (el) {
+        el.innerText = '$ ' + price.toLocaleString(undefined, {minimumFractionDigits:2});
+        el.style.color = (window.lastP && price > window.lastP) ? '#0ecb81' : '#f6465d';
+    }
+    window.lastP = price;
+}
+
 // ==========================================
-// 4. 주문창 UI (어두운 테마 유지)
+// 5. 주문창 UI (비상용 포함)
 // ==========================================
-function fixLayoutAndShowOrderUI() {
+function createOrderUI() {
     var target = document.querySelector('.control-box') || document.querySelector('.card');
-    
-    if (!target) {
+    if (!target) { // 없으면 만들기
         target = document.createElement('div');
+        target.className = 'control-box';
         var chartBox = document.getElementById('chart-container');
         if(chartBox) chartBox.parentNode.insertBefore(target, chartBox.nextSibling);
         else document.body.appendChild(target);
     }
-
-    target.style.position = 'static';
-    target.style.margin = '20px 10px';
-    target.style.display = 'block';
-
+    
+    // UI 내용 (어두운 테마)
     target.innerHTML = `
-        <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+        <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 15px; margin: 20px 10px;">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:10px;">
-                <span style="color:#F0B90B; font-weight:bold; font-size:15px;">⚡ 트레이딩 패널</span>
-                <span style="color:#888; font-size:12px;">보유금: $ ${window.appState.balance.toLocaleString()}</span>
+                <span style="color:#F0B90B; font-weight:bold;">⚡ 트레이딩 패널</span>
+                <span style="color:#888; font-size:12px;">잔고: $ ${window.appState.balance.toLocaleString()}</span>
             </div>
-
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <div style="flex:1;">
-                    <label style="font-size:11px; color:#aaa; display:block; margin-bottom:5px;">가격 (시장가는 비워두세요)</label>
-                    <input type="number" id="inp-price" placeholder="시장가 (Market)" 
-                        style="width:90%; padding:10px; background:#2a2a2a; border:1px solid #444; border-radius:6px; color:#fff; font-size:14px;">
+                    <label style="font-size:11px; color:#aaa;">가격 (시장가는 빈칸)</label>
+                    <input type="number" id="inp-price" placeholder="Market" style="width:90%; padding:10px; background:#2a2a2a; border:1px solid #444; color:#fff; border-radius:6px;">
                 </div>
                 <div style="flex:1;">
-                    <label style="font-size:11px; color:#aaa; display:block; margin-bottom:5px;">수량</label>
-                    <input type="number" id="inp-amount" placeholder="0.1" 
-                        style="width:90%; padding:10px; background:#2a2a2a; border:1px solid #444; border-radius:6px; color:#fff; font-size:14px;">
+                    <label style="font-size:11px; color:#aaa;">수량</label>
+                    <input type="number" id="inp-amount" placeholder="0.1" style="width:90%; padding:10px; background:#2a2a2a; border:1px solid #444; color:#fff; border-radius:6px;">
                 </div>
             </div>
-
             <div style="display:flex; gap:10px;">
-                <button onclick="order('buy')" style="flex:1; padding:12px; background:#0ecb81; border:none; border-radius:6px; color:#fff; font-weight:bold;">매수 (Long)</button>
-                <button onclick="order('sell')" style="flex:1; padding:12px; background:#f6465d; border:none; border-radius:6px; color:#fff; font-weight:bold;">매도 (Short)</button>
+                <button onclick="order('buy')" style="flex:1; padding:12px; background:#0ecb81; border:none; border-radius:6px; color:#fff; font-weight:bold;">매수</button>
+                <button onclick="order('sell')" style="flex:1; padding:12px; background:#f6465d; border:none; border-radius:6px; color:#fff; font-weight:bold;">매도</button>
             </div>
         </div>
-        <div id="order-list-area" style="margin-top:20px;"></div>
+        <div id="order-list-area" style="margin: 0 10px;"></div>
     `;
 }
 
 // ==========================================
-// 5. 주문 로직
+// 6. 주문 로직 (평단가 선 포함)
 // ==========================================
 window.order = function(side) {
     var pVal = document.getElementById('inp-price').value;
@@ -206,9 +216,8 @@ window.order = function(side) {
     if (!pVal || pVal === "") {
         executeTrade(side, amount, currentPrice); 
     } else {
-        var price = parseFloat(pVal);
         window.appState.pendingOrders.push({
-            id: Date.now(), side: side, price: price, amount: amount, time: new Date().toLocaleTimeString()
+            id: Date.now(), side: side, price: parseFloat(pVal), amount: amount, time: new Date().toLocaleTimeString()
         });
         alert("✅ 지정가 주문 등록!");
         updateOrderList();
@@ -224,13 +233,11 @@ function executeTrade(side, amount, price) {
         window.appState.position.amount += amount;
         window.appState.position.entryPrice = newEntry;
         window.appState.position.side = 'long';
-
-        alert(`💎 매수 체결!\n${amount}개 @ $${price}\n(새 평단가: $${newEntry.toFixed(2)})`);
+        alert(`💎 체결 완료! 평단: $${newEntry.toFixed(2)}`);
     } else {
-        if(window.appState.position.amount < amount) return alert("보유 코인이 부족합니다.");
+        if(window.appState.position.amount < amount) return alert("코인 부족");
         window.appState.position.amount -= amount;
-        if(window.appState.position.amount <= 0) window.appState.position.entryPrice = 0;
-        alert(`💰 매도 체결!\n${amount}개 @ $${price}`);
+        alert(`💰 판매 완료!`);
     }
     updateMyPriceLine();
 }
@@ -261,10 +268,20 @@ function updateOrderList() {
             var color = o.side === 'buy' ? '#0ecb81' : '#f6465d';
             html += `<div style="display:flex; justify-content:space-between; padding:10px; background:#222; border-left:3px solid ${color}; border-radius:4px; margin-bottom:5px; font-size:13px;">
                 <span style="color:${color}; font-weight:bold;">${o.side==='buy'?'매수':'매도'}</span>
-                <span style="color:#fff;">$${o.price}</span>
-                <span style="color:#ccc;">${o.amount}개</span>
+                <span>$${o.price}</span>
             </div>`;
         });
     }
     area.innerHTML = html;
+}
+
+function updateMyPriceLine() {
+    if (!candleSeries) return;
+    if (myPriceLine) { candleSeries.removePriceLine(myPriceLine); myPriceLine = null; }
+    var pos = window.appState.position;
+    if (pos && pos.amount > 0) {
+        myPriceLine = candleSeries.createPriceLine({
+            price: pos.entryPrice, color: '#F0B90B', lineWidth: 2, lineStyle: 2, title: '내 평단가'
+        });
+    }
 }
