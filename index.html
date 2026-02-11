@@ -7,8 +7,9 @@
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     
     <style>
+        /* [기본 스타일] */
         body { background-color: #000; color: #fff; margin: 0; padding-bottom: 80px; font-family: -apple-system, sans-serif; }
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; } /* 테두리 포함 크기 계산 (깨짐 방지 핵심) */
 
         /* 헤더 고정 */
         .header { 
@@ -19,6 +20,20 @@
         .header h2 { margin: 0; font-size: 18px; }
         .header span { color: #F0B90B; }
         .badge { font-size: 11px; color: #0ecb81; border: 1px solid #0ecb81; padding: 2px 6px; border-radius: 4px; }
+
+        /* 입력창 스타일 (깨짐 방지) */
+        .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
+        .input-field { 
+            flex: 1; 
+            width: 100%; /* 부모 크기에 맞춤 */
+            min-width: 0; /* 플렉스 박스 튀어남 방지 */
+            padding: 12px; 
+            background: #2a2a2a; 
+            border: 1px solid #444; 
+            color: #fff; 
+            border-radius: 6px; 
+            font-size: 14px;
+        }
 
         /* 탭 메뉴 */
         .tab-menu { display: flex; background: #1e1e1e; margin-top: 10px; border-bottom: 1px solid #333; }
@@ -34,26 +49,36 @@
         .text-buy { color: #0ecb81; } .text-sell { color: #f6465d; } 
         .text-white { color: #fff; } .text-gray { color: #888; }
 
-        /* 하단 메뉴 */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #121212; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 999; }
-        .nav-item { text-decoration: none; color: #666; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
+        /* 하단 메뉴 (5개 아이콘 균등 배치) */
+        .bottom-nav { 
+            position: fixed; bottom: 0; width: 100%; 
+            background: #121212; border-top: 1px solid #333; z-index: 999; 
+            display: grid; grid-template-columns: repeat(5, 1fr); /* 5칸 나누기 */
+            padding: 10px 0;
+        }
+        .nav-item { text-decoration: none; color: #666; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item span { font-size: 18px; margin-bottom: 4px; }
         .nav-item.active { color: #F0B90B; }
     </style>
 </head>
 <body>
+
     <div class="header">
         <h2>NEURAL <span>NODE</span></h2>
         <span class="badge">LIVE</span>
     </div>
 
     <div id="app-container">
-        <div style="height:80vh; display:flex; justify-content:center; align-items:center; color:#555;">로딩 중...</div>
+        <div style="height:300px; display:flex; justify-content:center; align-items:center; color:#555;">
+            데이터 로딩 중...
+        </div>
     </div>
 
     <div class="bottom-nav">
         <a href="index.html" class="nav-item active"><span>📊</span>거래소</a>
-        <a href="wallet.html" class="nav-item"><span>💼</span>투자내역</a>
-        <a href="info.html" class="nav-item"><span>🧠</span>AI설정</a>
+        <a href="wallet.html" class="nav-item"><span>💼</span>내역</a>
+        <a href="ai-core.html" class="nav-item"><span>⚙️</span>AI설정</a>
+        <a href="info.html" class="nav-item"><span>ℹ️</span>정보</a>
         <a href="transfer.html" class="nav-item"><span>🏦</span>입출금</a>
     </div>
 
