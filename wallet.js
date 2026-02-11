@@ -1,16 +1,18 @@
-// [초기화] 페이지 로드 시 실행
+// [초기화] 페이지가 열리면 실행
 window.addEventListener('load', function() {
     updateWalletUI(); 
-    showTab('holdings'); // 기본 탭: 보유자산
+    showTab('holdings'); // 기본 탭 열기
     
-    // 그래프 그리기 (데이터가 없으면 가짜 데이터로 예시 보여줌)
+    // 그래프 그리기
     setTimeout(drawPortfolio, 500);
     setTimeout(drawPnLGraph, 500);
+    
+    // 은행 내역도 업데이트
+    updateBankHistory();
 });
 
 // [1] 탭 전환 기능 (메뉴 클릭 해결)
 function showTab(t) {
-    // 모든 탭 숨김 및 스타일 초기화
     document.querySelectorAll('.tab-content').forEach(function(c) {
         c.style.display = 'none';
         c.classList.add('hidden');
@@ -19,9 +21,8 @@ function showTab(t) {
         b.classList.remove('active');
     });
 
-    // 선택한 탭 활성화
     var target = document.getElementById('tab-' + t);
-    var btn = document.getElementById('btn-' + t); // 버튼 ID가 있다면
+    var btn = document.getElementById('btn-' + t);
     
     if (target) {
         target.style.display = 'block';
@@ -29,48 +30,43 @@ function showTab(t) {
     }
     if (btn) btn.classList.add('active');
 
-    // 탭별 그래프 다시 그리기 (화면 갱신)
     if (t === 'holdings') setTimeout(drawPortfolio, 100);
     if (t === 'pnl') setTimeout(drawPnLGraph, 100);
 }
 
 // [2] 화면 데이터 갱신 (숫자 & 그래프)
 function updateWalletUI() {
-    // 1. 숫자 업데이트
     var elBank = document.getElementById('bank-balance-display');
     var elWallet = document.getElementById('wallet-display');
-    var elCash = document.getElementById('avail-cash'); // 주문가능 금액
-    var elTotal = document.getElementById('total-asset-display'); // 총 보유자산
+    var elCash = document.getElementById('avail-cash'); 
+    var elTotal = document.getElementById('total-asset-display');
 
     if (elBank) elBank.innerText = '$ ' + formatMoney(appState.bankBalance);
     if (elWallet) elWallet.innerText = '$ ' + formatMoney(appState.balance);
     if (elCash) elCash.innerText = '$ ' + formatMoney(appState.balance);
     
-    // 총 자산 (현금 + 투자금) - 투자금은 임의로 계산
+    // 총 자산 계산
     var invested = appState.investedAmount || 0; 
     var total = appState.balance + invested;
     if (elTotal) elTotal.innerText = '$ ' + formatMoney(total);
 
-    // 2. 그래프 업데이트
     drawPortfolio();
-    drawPnLGraph();
+    updateBankHistory(); // 은행 내역 갱신
 }
 
-// [3] 포트폴리오 도넛 차트 그리기 (CSS 활용)
+// [3] 포트폴리오 도넛 차트 (보유자산 탭)
 function drawPortfolio() {
-    var pie = document.getElementById('portfolio-pie'); // HTML에 이 ID가 있어야 함
+    var pie = document.getElementById('portfolio-pie');
     if (!pie) return;
 
-    // 자산 비율 계산 (현금 vs 투자금)
     var cash = appState.balance;
     var invest = appState.investedAmount || 0;
     var total = cash + invest;
     
-    if (total === 0) return; // 자산 0이면 패스
+    if (total === 0) return;
 
     var cashPct = (cash / total) * 100;
     
-    // 도넛 차트 스타일 적용 (노랑: 현금, 회색: 투자)
     pie.style.background = `conic-gradient(
         #F0B90B 0% ${cashPct}%, 
         #333333 ${cashPct}% 100%
@@ -78,7 +74,7 @@ function drawPortfolio() {
     pie.style.borderRadius = '50%';
 }
 
-// [4] 수익률 꺾은선 그래프 그리기 (Canvas API 활용)
+// [4] 수익률 꺾은선 그래프 (투자손익 탭)
 function drawPnLGraph() {
     var canvas = document.getElementById('pnlChart');
     if (!canvas) return;
@@ -87,47 +83,35 @@ function drawPnLGraph() {
     var width = canvas.width;
     var height = canvas.height;
 
-    // 캔버스 초기화
     ctx.clearRect(0, 0, width, height);
 
-    // 가짜 데이터 생성 (최근 7일 수익률 예시)
-    // 실제 데이터가 쌓이면 appState.history를 쓰면 됩니다.
-    var dataPoints = [0, -5, 10, -2, 15, 5, 20]; // 예시 데이터 (%)
+    // 예시 데이터 (실제로는 appState.history 사용 가능)
+    var dataPoints = [0, -5, 10, -2, 15, 5, 20]; 
     
-    // 그래프 스타일 설정
     ctx.beginPath();
-    ctx.strokeStyle = '#3498db'; // 파란색 선
+    ctx.strokeStyle = '#3498db'; 
     ctx.lineWidth = 3;
 
-    // 선 그리기
     var stepX = width / (dataPoints.length - 1);
-    var maxVal = 30; // Y축 최대값
-    var minVal = -30; // Y축 최소값
+    var maxVal = 30; 
+    var minVal = -30; 
     var range = maxVal - minVal;
 
     dataPoints.forEach((val, index) => {
         var x = index * stepX;
-        // Y값 좌표 변환 (높을수록 위로)
         var y = height - ((val - minVal) / range) * height;
-        
         if (index === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
     });
     ctx.stroke();
-
-    // 그라데이션 채우기 (선 아래쪽)
-    ctx.lineTo(width, height);
-    ctx.lineTo(0, height);
-    ctx.fillStyle = 'rgba(52, 152, 219, 0.2)';
-    ctx.fill();
 }
 
-// [5] 금액 콤마 찍기 헬퍼 함수
+// [5] 헬퍼 함수: 금액 콤마 찍기
 function formatMoney(num) {
     return num.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 
-// [6] 거래내역 리스트 출력
+// [6] 거래내역(매매) 리스트 출력 - 1초마다 갱신
 setInterval(function() {
     var tbody = document.getElementById('history-table-body');
     if (!tbody) return;
@@ -145,11 +129,36 @@ setInterval(function() {
         });
         tbody.innerHTML = html;
     } else {
-        tbody.innerHTML = '<tr><td colspan="4" style="color:#666; padding:20px;">거래 내역 없음</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="color:#666; padding:20px;">매매 내역이 없습니다.</td></tr>';
     }
 }, 1000);
 
-// [7] 모달(입출금) 기능
+// [7] 은행 입출금 내역 출력 (마지막 사진 해결!)
+function updateBankHistory() {
+    var list = document.querySelector('.bank-history-list') || document.getElementById('bank-history-list');
+    // 화면에 리스트 넣을 곳이 없으면 중단
+    if (!list) return; 
+
+    var html = "";
+    // appState.transfers 배열이 없으면 빈 배열로 생성
+    if (!appState.transfers) appState.transfers = [];
+
+    if (appState.transfers.length > 0) {
+        appState.transfers.forEach(function(t) {
+            var typeColor = t.type === '입금' ? 'text-green' : 'text-red';
+            html += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;">
+                <span style="color:#888; font-size:12px;">${t.date}</span>
+                <span class="${typeColor}">${t.type}</span>
+                <span style="font-weight:bold;">$ ${t.amount}</span>
+            </div>`;
+        });
+        list.innerHTML = html;
+    } else {
+        list.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">은행 거래 내역이 없습니다.</div>';
+    }
+}
+
+// [8] 모달(입출금) 기능 및 데이터 저장
 function openModal(mode) {
     window.currentMode = mode;
     document.getElementById('transaction-modal').style.display = 'flex';
@@ -161,17 +170,29 @@ function processTx() {
     var amt = parseFloat(document.getElementById('amount-input').value);
     if (!amt || amt <= 0) return alert("금액을 확인해주세요.");
 
+    var type = "";
     if (window.currentMode === 'deposit') {
         if (appState.bankBalance < amt) return alert("은행 잔고 부족");
         appState.bankBalance -= amt;
         appState.balance += amt;
+        type = "입금";
     } else {
         if (appState.balance < amt) return alert("지갑 잔고 부족");
         appState.balance -= amt;
         appState.bankBalance += amt;
+        type = "출금";
     }
+
+    // 은행 내역에 기록 추가 (중요!)
+    if (!appState.transfers) appState.transfers = [];
+    appState.transfers.unshift({
+        date: new Date().toLocaleTimeString(),
+        type: type,
+        amount: amt
+    });
+
     saveState();
     updateWalletUI();
     closeModal();
-    alert("완료되었습니다.");
+    alert("처리되었습니다.");
 }
