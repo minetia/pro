@@ -3,102 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEURAL EXCHANGE</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="pro-style.css?v=300">
+    <title>Neural Node Exchange</title>
+    <style>
+        /* [공통 스타일] */
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            padding-bottom: 70px; /* 하단 메뉴 가림 방지 */
+        }
+        
+        /* 상단 헤더 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: #1e1e1e;
+            border-bottom: 1px solid #333;
+        }
+        .header h2 { margin: 0; font-size: 18px; color: #fff; }
+        .header span { color: #F0B90B; font-weight: bold; }
+        .status-badge {
+            font-size: 12px;
+            color: #0ecb81;
+            border: 1px solid #0ecb81;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* 메인 컨테이너 (여기에 JS가 내용을 그립니다) */
+        .card {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+
+        /* 하단 네비게이션 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #1e1e1e;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #333;
+            z-index: 100;
+        }
+        .nav-item {
+            text-decoration: none;
+            color: #666;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .nav-item.active { color: #F0B90B; }
+        .nav-icon { font-size: 20px; margin-bottom: 4px; }
+    </style>
 </head>
 <body>
-    <header class="cyber-header">
-        <div class="brand-logo">NEURAL <span>NODE</span></div>
-        <div class="status-badge"><span class="blink-dot"></span>ONLINE</div>
-    </header>
 
-    <div class="main-content">
-        <div class="cyber-panel main-dashboard">
-            <div style="text-align:center; padding:10px 0;">
-                <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:5px;">총 보유 자산</div>
-                <div id="total-val" class="hero-number" style="font-size:2.2rem; margin-bottom:10px;">$ 0.00</div>
-                <div style="font-size:0.9rem; color:#888;">
-                    24H 수익 <span id="real-profit" style="font-weight:bold; color:#fff;">---</span>
-                </div>
-            </div>
+    <div class="header">
+        <h2>NEURAL <span>NODE</span></h2>
+        <span class="status-badge">ONLINE</span>
+    </div>
 
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button id="btn-main-control" class="cyber-btn btn-start" onclick="startTradingSystem()">
-                    <i class="fas fa-play"></i> START
-                </button>
-                <button class="cyber-btn btn-stop" onclick="stopTradingSystem()">
-                    <i class="fas fa-stop"></i> STOP
-                </button>
-            </div>
-        </div>
-
-        <div class="cyber-panel" style="padding:15px;">
-            <div style="display:flex; gap:8px;">
-                <div style="flex:1; position:relative;">
-                    <i class="fas fa-search" style="position:absolute; left:12px; top:14px; color:#666;"></i>
-                    <input type="text" id="coin-search-input" class="modal-input" placeholder="코인 검색 (예: BTC)" style="margin-bottom:0; padding-left:35px;">
-                </div>
-                <button class="save-tag" onclick="searchInfoCoin()" style="width:80px; height:46px; font-size:0.9rem; background:var(--accent); color:#000; font-weight:bold; border:none;">
-                    정보
-                </button>
-            </div>
-        </div>
-
-        <div class="cyber-panel" style="padding:0; overflow:hidden;">
-            <div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid #333; align-items:center;">
-                <div style="font-weight:bold; color:#fff; font-size:1rem;"><i class="fas fa-list-ul"></i> 실시간 체결</div>
-                <div style="font-size:0.7rem; color:#666;">Live Feed</div>
-            </div>
-            <div class="table-header-row" style="background:#111;">
-                <div style="width:25%">시간</div>
-                <div style="width:25%">코인</div>
-                <div style="width:25%; text-align:right;">포지션</div>
-                <div style="width:25%; text-align:right;">손익</div>
-            </div>
-            <div id="main-ledger-list" style="min-height:200px; max-height:400px; overflow-y:auto;">
-                <div style="padding:40px; text-align:center; color:#444;">시스템 대기중...</div>
-            </div>
+    <div class="card">
+        <div style="text-align:center; padding:50px; color:#555;">
+            시스템 초기화 중...
         </div>
     </div>
 
-    <nav class="bottom-nav">
-        <a href="index.html" class="nav-item active"><i class="fas fa-chart-pie"></i><span>거래소</span></a>
-        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i><span>투자내역</span></a>
-        <a href="ai-core.html" class="nav-item"><i class="fas fa-brain"></i><span>AI설정</span></a>
-        <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
-    </nav>
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item active">
+            <span class="nav-icon">📊</span>거래소
+        </a>
+        <a href="wallet.html" class="nav-item">
+            <span class="nav-icon">💼</span>투자내역
+        </a>
+        <a href="info.html" class="nav-item">
+            <span class="nav-icon">🧠</span>AI설정
+        </a>
+        <a href="transfer.html" class="nav-item">
+            <span class="nav-icon">🏦</span>입출금
+        </a>
+    </div>
 
-    <script src="core.js?v=300"></script>
-<script src="main.js?v=300"></script> <script>
-    // 1. 마이닝(숫자 올리기) 기능
-    setInterval(function() {
-        var el = document.getElementById('data-mining-counter';
-        if(el) {
-            appState.dataCount += Math.floor(Math.random() * 10);
-            el.innerText = appState.dataCount.toLocaleString();
-        }
-    }, 100);
-
-    // 2. 다운로드 기능
-    function exportLogs() {
-        var csv = "Time,Coin,Type,PnL\n";
-        appState.tradeHistory.forEach(function(t) {
-            csv += t.time + "," + t.coin + "," + t.type + "," + t.pnl + "\n";
-        });
-        var blob = new Blob([csv], {type:'text/csv'});
-        var a = document.body.appendChild(document.createElement("a"));
-        a.href = URL.createObjectURL(blob);
-        a.download = "trade_log.csv";
-        a.click();
-        alert("다운로드 시작");
-    }
-</script>
-<div class="cyber-panel" style="text-align:center; margin-top:20px;">
-    <div style="font-size:0.8rem; color:#888;">DATA MINING</div>
-    <div id="data-mining-counter" style="font-size:1.5rem; color:var(--accent); font-weight:bold;">0</div>
-</div>
-<button onclick="exportLogs()" class="save-tag" style="width:auto; padding:0 10px;">CSV 다운로드</button>
+    <script src="appData.js"></script>
+    
+    <script src="tradingEngine.js"></script>
 
 </body>
 </html>
