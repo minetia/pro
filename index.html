@@ -6,10 +6,10 @@
     <title>Neural Node Pro</title>
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <style>
-        body { background: #000; color: #fff; margin: 0; padding-bottom: 80px; font-family: sans-serif; }
+        body { background: #000; color: #fff; margin: 0; padding-bottom: 80px; font-family: sans-serif; overflow-x: hidden; }
         * { box-sizing: border-box; }
 
-        /* 헤더 고정 */
+        /* 헤더 */
         .header { position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; padding: 12px; background: #121212; border-bottom: 1px solid #333; }
         .header h2 { margin: 0; font-size: 16px; }
         .header span { color: #F0B90B; }
@@ -17,30 +17,36 @@
         .asset-val { font-size: 14px; font-weight: bold; display: block; }
         .pnl-val { font-size: 11px; color: #888; }
         
-        /* 차트 영역 */
+        /* 차트 */
         #chart-box { width: 100%; height: 380px; background: #000; }
 
         /* 주문창 */
         .order-panel { padding: 15px; background: #1e1e1e; border-top: 1px solid #333; }
         .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
-        .input-row input { flex: 1; padding: 12px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 14px; min-width: 0; }
+        .input-row input { flex: 1; padding: 12px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 14px; min-width: 0; outline: none; }
         .btn-group { display: flex; gap: 10px; }
         .btn-group button { flex: 1; padding: 14px; border: none; border-radius: 8px; color: #fff; font-weight: bold; font-size: 16px; }
 
-        /* [복구] 탭 메뉴 스타일 */
+        /* [신규] AI PRO 섹션 디자인 */
+        .ai-panel { margin-top: 15px; padding: 15px; background: #1a1a1a; border: 1px solid #F0B90B; border-radius: 12px; box-shadow: 0 0 10px rgba(240, 185, 11, 0.2); }
+        .ai-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .ai-title { color: #F0B90B; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+        #ai-status-tag { font-size: 10px; color: #666; border: 1px solid #444; padding: 2px 6px; border-radius: 4px; }
+        .ai-btn-start { flex: 1; padding: 12px; background: #F0B90B; border: none; border-radius: 8px; color: #000; font-weight: bold; cursor: pointer; }
+        .ai-btn-stop { flex: 1; padding: 12px; background: #333; border: none; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer; display: none; }
+
+        /* 탭 메뉴 */
         .tab-menu { display: flex; background: #1e1e1e; border-top: 1px solid #333; border-bottom: 1px solid #333; }
         .tab-item { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: #888; cursor: pointer; }
         .tab-item.active { color: #F0B90B; border-bottom: 2px solid #F0B90B; font-weight: bold; background: #252525; }
         
-        /* [복구] 리스트 스타일 */
+        /* 리스트 */
         .list-header { display: flex; padding: 10px; background: #222; color: #888; font-size: 11px; }
         .list-row { display: flex; padding: 12px 10px; border-bottom: 1px solid #222; font-size: 12px; align-items: center; }
-        .col-1 { width: 25%; color: #888; } 
-        .col-2 { width: 15%; text-align: center; } 
-        .col-3 { width: 30%; text-align: right; color: #fff; } 
-        .col-4 { width: 30%; text-align: right; color: #fff; }
+        .col-1 { width: 25%; color: #888; } .col-2 { width: 15%; text-align: center; } 
+        .col-3 { width: 30%; text-align: right; color: #fff; } .col-4 { width: 30%; text-align: right; color: #fff; }
 
-        /* 하단 메뉴 고정 */
+        /* 하단 메뉴 */
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: #121212; display: grid; grid-template-columns: repeat(5, 1fr); padding: 10px 0; border-top: 1px solid #333; z-index: 1000; }
         .nav-item { text-decoration: none; color: #666; font-size: 10px; text-align: center; }
         .nav-item.active { color: #F0B90B; }
@@ -67,6 +73,22 @@
             <button onclick="trade('buy')" style="background:#0ecb81">매수</button>
             <button onclick="trade('sell')" style="background:#f6465d">매도</button>
         </div>
+
+        <div class="ai-panel">
+            <div class="ai-header">
+                <span class="ai-title">🤖 AI PRO 자동매매</span>
+                <div id="ai-status-tag">중지됨</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="ai-start-btn" class="ai-btn-start" onclick="toggleAI(true)">START</button>
+                <button id="ai-stop-btn" class="ai-btn-stop" onclick="toggleAI(false)">STOP</button>
+            </div>
+            <div id="ai-msg" style="margin-top: 10px; font-size: 11px; color: #888; text-align: center;">AI 엔진이 대기 중입니다.</div>
+        </div>
+        
+        <div style="text-align:center; margin-top:10px;">
+            <span onclick="resetApp()" style="font-size:10px; color:#444; text-decoration:underline; cursor:pointer;">데이터 초기화</span>
+        </div>
     </div>
 
     <div class="tab-menu">
@@ -76,10 +98,7 @@
     </div>
     
     <div class="list-header" id="list-header-div">
-        <span class="col-1">시간</span>
-        <span class="col-2">구분</span>
-        <span class="col-3">가격</span>
-        <span class="col-4">수량</span>
+        <span class="col-1">시간</span><span class="col-2">구분</span><span class="col-3">가격</span><span class="col-4">수량</span>
     </div>
     <div id="list-content" style="min-height:200px; background:#121212;"></div>
 
