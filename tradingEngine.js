@@ -1,4 +1,4 @@
-// [tradingEngine.js] 정적 HTML 연결 버전
+// [tradingEngine.js] 정적 HTML 연결 버전 (가장 안정적)
 
 var chart = null;
 var candleSeries = null;
@@ -7,12 +7,12 @@ var myPriceLine = null;
 var ws = null;
 var activeTab = 'history';
 
-// 1. 데이터 로드
+// 1. 데이터 로드 및 시드머니 복구
 var savedData = localStorage.getItem('neuralNodeData');
 if (savedData) {
     window.appState = JSON.parse(savedData);
     if (!window.appState.balance || window.appState.balance <= 0) {
-        window.appState.balance = 100000;
+        window.appState.balance = 100000; // 0원이면 10만불 충전
         window.saveState();
     }
 } else {
@@ -26,27 +26,27 @@ window.saveState = function() {
     localStorage.setItem('neuralNodeData', JSON.stringify(window.appState));
 };
 
-// 2. 실행 (HTML에 차트 박스가 이미 있으므로 바로 실행)
+// 2. 실행 (HTML이 이미 있으므로 즉시 실행)
 window.addEventListener('load', function() {
-    initChart();       // 차트 생성
+    initChart();       // 차트 그리기
     connectBinance();  // 시세 연결
-    updateAll();       // 데이터 표시
+    updateAll();       // 자산 표시
     switchTab('history', document.querySelector('.tab-item')); // 탭 초기화
 });
 
 // 3. 차트 생성
 function initChart() {
     var container = document.getElementById('chart-area');
-    // 컨테이너가 없으면 중단 (오류 방지)
-    if (!container) return console.error("차트 영역을 찾을 수 없습니다.");
+    // 안전장치: 혹시라도 박스가 없으면 멈춤
+    if (!container) return console.log("차트 영역 없음");
 
     chart = LightweightCharts.createChart(container, {
         width: container.clientWidth,
-        height: 400, // CSS 높이와 일치
+        height: 400, // CSS 높이와 일치시킴
         layout: { background: { color: '#000' }, textColor: '#888' },
         grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
         timeScale: { borderColor: '#333', timeVisible: true },
-        crosshair: { mode: 0 } // 자석 모드
+        crosshair: { mode: 0 }
     });
 
     candleSeries = chart.addCandlestickSeries({
@@ -54,7 +54,7 @@ function initChart() {
         borderVisible: false, wickUpColor: '#0ecb81', wickDownColor: '#f6465d'
     });
 
-    // 반응형 리사이즈
+    // 리사이즈 대응
     window.addEventListener('resize', () => {
         chart.resize(container.clientWidth, 400);
     });
@@ -88,7 +88,7 @@ function connectBinance() {
     };
 }
 
-// 5. 화면 업데이트 (헤더 등)
+// 5. 화면 업데이트 (헤더 자산 갱신)
 function updateAll() {
     var state = window.appState;
     var pos = state.position;
@@ -100,7 +100,7 @@ function updateAll() {
         pnlPct = (pnl / (pos.entryPrice * pos.amount)) * 100;
     }
 
-    // 헤더 업데이트
+    // 헤더에 있는 요소 찾기
     var hBal = document.getElementById('header-balance');
     var hPnl = document.getElementById('header-pnl');
     
@@ -112,7 +112,7 @@ function updateAll() {
     }
 }
 
-// 6. 주문 함수
+// 6. 주문 로직
 window.order = function(side) {
     var pInput = document.getElementById('inp-price').value;
     var amtInput = parseFloat(document.getElementById('inp-amount').value);
@@ -153,7 +153,7 @@ function executeTrade(side, amount, price) {
     alert("체결 완료!");
 }
 
-// 7. 유틸리티 (평단가, 리스트, 시간)
+// 7. 유틸리티
 function drawAvgLine() {
     if(!candleSeries) return;
     if(myPriceLine) { candleSeries.removePriceLine(myPriceLine); myPriceLine = null; }
