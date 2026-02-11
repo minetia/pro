@@ -1,19 +1,19 @@
-// [tradingEngine.js] 최종 통합 버전
+// [tradingEngine.js] 연결 안전장치 포함 버전
 
 var chart = null;
 var candleSeries = null;
-var currentPrice = 0;
+var currentPrice = 65000; // 초기값 설정 (0원 방지)
 var myPriceLine = null;
 var ws = null;
 var activeTab = 'history';
+var isOfflineMode = false; // 오프라인 모드 플래그
 
-// 1. 데이터 복구 및 로드
+// 1. 데이터 로드 & 복구
 var savedData = localStorage.getItem('neuralNodeData');
 if (savedData) {
     window.appState = JSON.parse(savedData);
-    // 잔고가 없거나 0 이하면 강제 복구
     if (!window.appState.balance || window.appState.balance <= 0) {
-        window.appState.balance = 100000;
+        window.appState.balance = 100000; // 강제 복구
         window.saveState();
     }
 } else {
@@ -27,22 +27,22 @@ window.saveState = function() {
     localStorage.setItem('neuralNodeData', JSON.stringify(window.appState));
 };
 
-// 2. 실행 (HTML이 준비되면 즉시 시작)
+// 2. 실행
 window.addEventListener('load', function() {
     initChart();       // 차트 그리기
-    connectBinance();  // 시세 연결
+    tryConnect();      // 연결 시도
     updateAll();       // 자산 표시
-    switchTab('history', document.querySelector('.tab-item')); // 탭 초기화
+    switchTab('history', document.querySelector('.tab-item'));
 });
 
-// 3. 차트 생성 함수
+// 3. 차트 생성
 function initChart() {
     var container = document.getElementById('chart-area');
-    if (!container) return; // 박스 없으면 중단
+    if (!container) return;
 
     chart = LightweightCharts.createChart(container, {
         width: container.clientWidth,
-        height: 420, // CSS 높이와 맞춤
+        height: 400,
         layout: { background: { color: '#000' }, textColor: '#888' },
         grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
         timeScale: { borderColor: '#333', timeVisible: true },
@@ -54,27 +54,39 @@ function initChart() {
         borderVisible: false, wickUpColor: '#0ecb81', wickDownColor: '#f6465d'
     });
 
-    // 창 크기 조절 대응
-    window.addEventListener('resize', () => {
-        chart.resize(container.clientWidth, 420);
-    });
+    window.addEventListener('resize', () => { chart.resize(container.clientWidth, 400); });
+}
 
-    // 과거 데이터 로드
+// 4. 연결 시도 (안전장치 핵심)
+function tryConnect() {
+    document.getElementById('conn-status').className = 'status-dot'; // 회색(대기)
+
+    // 바이낸스 API 시도
     fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100')
         .then(res => res.json())
         .then(data => {
+            // 성공 시
             var candles = data.map(d => ({
                 time: d[0]/1000, open: parseFloat(d[1]), high: parseFloat(d[2]), low: parseFloat(d[3]), close: parseFloat(d[4])
             }));
             candleSeries.setData(candles);
             currentPrice = candles[candles.length-1].close;
-            updateAll();
+            connectWebSocket(); // 소켓 연결
+            document.getElementById('conn-status').className = 'status-dot online'; // 초록불
             drawAvgLine();
+            updateAll();
+        })
+        .catch(err => {
+            // ★ 실패 시 (오프라인 모드 발동)
+            console.warn("연결 실패! 모의 데이터 모드로 전환합니다.");
+            isOfflineMode = true;
+            document.getElementById('conn-status').className = 'status-dot offline'; // 빨간불
+            generateFakeData(); // 가짜 데이터 생성 시작
+            setInterval(generateFakeData, 1000); // 1초마다 갱신
         });
 }
 
-// 4. 실시간 연결
-function connectBinance() {
+function connectWebSocket() {
     if(ws) ws.close();
     ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@kline_1m");
     ws.onmessage = function(e) {
@@ -88,7 +100,32 @@ function connectBinance() {
     };
 }
 
-// 5. 헤더 및 데이터 업데이트
+// ★ 연결 안될 때 쓸 가짜 데이터 생성기
+function generateFakeData() {
+    var now = Date.now() / 1000;
+    // 이전 가격 기준으로 랜덤 등락
+    var volatility = currentPrice * 0.001; // 0.1% 변동
+    var change = (Math.random() - 0.5) * volatility;
+    
+    var open = currentPrice;
+    var close = currentPrice + change;
+    var high = Math.max(open, close) + Math.random() * volatility * 0.5;
+    var low = Math.min(open, close) - Math.random() * volatility * 0.5;
+    
+    currentPrice = close;
+    
+    // 차트 업데이트
+    if(candleSeries) {
+        candleSeries.update({
+            time: now, open: open, high: high, low: low, close: close
+        });
+    }
+    updateAll();
+    checkPending();
+}
+
+
+// 5. 화면 업데이트
 function updateAll() {
     var state = window.appState;
     var pos = state.position;
@@ -100,7 +137,6 @@ function updateAll() {
         pnlPct = (pnl / (pos.entryPrice * pos.amount)) * 100;
     }
 
-    // 헤더 값 갱신
     var hBal = document.getElementById('header-balance');
     var hPnl = document.getElementById('header-pnl');
     
@@ -150,10 +186,10 @@ function executeTrade(side, amount, price) {
     updateAll();
     drawAvgLine();
     renderList();
-    alert("체결 완료!");
+    alert(isOfflineMode ? "체결 (모의)" : "체결 완료!");
 }
 
-// 7. 유틸리티 (평단가, 리스트)
+// 7. 유틸리티
 function drawAvgLine() {
     if(!candleSeries) return;
     if(myPriceLine) { candleSeries.removePriceLine(myPriceLine); myPriceLine = null; }
