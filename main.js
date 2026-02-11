@@ -1,247 +1,273 @@
-/* main.js - V320.0 (Mining & Download Fix) */
-let socket = null;
-let autoTradeInterval = null;
-let miningInterval = null; // 마이닝 타이머
-
-window.addEventListener('load', () => {
-    // 1. UI 초기화
-    renderMainUI();
+// [초기화] 페이지 로드 시 실행
+window.addEventListener('load', function() {
+    initChart();       // 차트 생성
+    connectBinance();  // 바이낸스 연결
     
-    // 2. [필수] 데이터 마이닝 시작
-    startDataMining();
+    // 주문창 화면 만들기
+    fixLayoutAndShowOrderUI();
+    updateOrderList();
     
-    // 3. 검색창 엔터키 연결
-    const searchInput = document.getElementById('coin-search-input');
-    if(searchInput) {
-        searchInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') location.href = `info.html?coin=${e.target.value}`;
-        });
-    }
-
-    // 4. 시스템 재가동 체크
-    if (appState.isRunning && appState.config.keysVerified) {
-        startTradingSystem(true);
-    } else {
-        stopTradingSystem(true);
-    }
-    
-    // 5. 화면 갱신
-    setInterval(renderMainUI, 500);
+    // 내 평단가 선 그리기 (처음 로드시)
+    updateMyPriceLine();
 });
 
-/* --- [복구] 데이터 마이닝 (숫자 올라가는 효과) --- */
-function startDataMining() {
-    const el = document.getElementById('data-mining-counter');
-    if (!el) return;
-    
-    if (miningInterval) clearInterval(miningInterval);
-    
-    miningInterval = setInterval(() => {
-        // 숫자가 멈추지 않고 계속 올라감
-        appState.dataCount += Math.floor(Math.random() * 15) + 5;
-        el.innerText = appState.dataCount.toLocaleString();
-    }, 100);
-}
+// 전역 변수
+var ws = null;
+var currentPrice = 0;
+var chart = null;
+var candleSeries = null;
+var myPriceLine = null; // 내 평단가 선을 저장할 변수
 
-/* --- [복구] CSV 다운로드 --- */
-function exportLogs() {
-    if (!appState.tradeHistory || appState.tradeHistory.length === 0) {
-        return alert("다운로드할 거래 내역이 없습니다.");
+// 데이터 저장소 (없으면 기본값 생성)
+if (!window.appState) window.appState = { 
+    balance: 100000, 
+    pendingOrders: [], 
+    position: { amount: 0, entryPrice: 0, side: 'none' } // 포지션 정보
+};
+
+// ==========================================
+// 1. 차트 설정 (TradingView)
+// ==========================================
+function initChart() {
+    var chartContainer = document.getElementById('chart-container');
+    
+    // 차트 박스가 없으면 강제로 만듦
+    if (!chartContainer) {
+        chartContainer = document.createElement('div');
+        chartContainer.id = 'chart-container';
+        chartContainer.style.width = '100%';
+        chartContainer.style.height = '350px';
+        chartContainer.style.backgroundColor = '#1e1e1e';
+        chartContainer.style.marginBottom = '20px';
+        
+        // 헤더 밑에 끼워넣기
+        var header = document.querySelector('.header') || document.body.firstChild;
+        if(header && header.parentNode) header.parentNode.insertBefore(chartContainer, header.nextSibling);
+        else document.body.appendChild(chartContainer);
     }
-    
-    let csvContent = "Time,Coin,Type,Price,PnL\n";
-    appState.tradeHistory.forEach(t => {
-        csvContent += `${t.time},${t.coin},${t.type},${t.price},${t.pnl}\n`;
-    });
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `trade_logs_${new Date().toISOString().slice(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
 
-/* --- 트레이딩 로직 (기존 유지) --- */
-function startTradingSystem(isResume = false) {
-    if (!appState.config.keysVerified) return alert("키 검증 필요");
-    if (appState.balance < 10) {
-        if (!isResume) alert("잔고 부족");
-        appState.isRunning = false;
-        saveState();
+    // 라이브러리 로드 체크
+    if (!window.LightweightCharts) {
+        var script = document.createElement('script');
+        script.src = "https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js";
+        script.onload = function() { initChart(); };
+        document.head.appendChild(script);
         return;
     }
-    appState.isRunning = true;
-    appState.runningCoin = appState.config.target;
-    if (appState.balance < appState.config.amount) appState.investedAmount = appState.balance;
-    else appState.investedAmount = appState.config.amount;
-    if (appState.startBalance === 0) appState.startBalance = appState.balance;
-    connectWebSocket(appState.runningCoin);
-    if (autoTradeInterval) clearInterval(autoTradeInterval);
-    autoTradeInterval = setInterval(executeTradeLogic, 1500);
-    updateButton(true);
-    saveState();
+
+    // 차트 생성
+    chart = LightweightCharts.createChart(chartContainer, {
+        width: chartContainer.clientWidth,
+        height: 350,
+        layout: { backgroundColor: '#1e1e1e', textColor: '#d1d4dc' },
+        grid: { vertLines: { color: 'rgba(42, 46, 57, 0.5)' }, horzLines: { color: 'rgba(42, 46, 57, 0.5)' } },
+        priceScale: { borderColor: 'rgba(197, 203, 206, 0.8)' },
+        timeScale: { borderColor: 'rgba(197, 203, 206, 0.8)', timeVisible: true, secondsVisible: false },
+    });
+
+    // 캔들 시리즈 추가
+    candleSeries = chart.addCandlestickSeries({
+        upColor: '#0ecb81', downColor: '#f6465d',
+        borderDownColor: '#f6465d', borderUpColor: '#0ecb81',
+        wickDownColor: '#f6465d', wickUpColor: '#0ecb81',
+    });
+
+    // 반응형 크기 조절
+    window.addEventListener('resize', () => {
+        chart.resize(chartContainer.clientWidth, 350);
+    });
 }
 
-function stopTradingSystem(isResume = false) {
-    appState.isRunning = false;
-    appState.investedAmount = 0;
-    if (socket) socket.close();
-    if (autoTradeInterval) clearInterval(autoTradeInterval);
-    updateButton(false);
-    saveState();
-    renderMainUI();
-}
+// ==========================================
+// 2. 평단가 선 그리기 (핵심 기능!)
+// ==========================================
+function updateMyPriceLine() {
+    if (!candleSeries) return;
 
-function executeTradeLogic() {
-    if (!appState.isRunning) return;
-    const chance = Math.random();
-    let type = '';
-    let pnl = 0;
-    if (chance > 0.95) { type = '익절'; pnl = appState.investedAmount * 0.005; } 
-    else if (chance < 0.02) { type = '손절'; pnl = -appState.investedAmount * 0.003; }
-    if (type) {
-        appState.balance += pnl;
-        appState.tradeHistory.unshift({
-            time: new Date().toLocaleTimeString(),
-            coin: appState.runningCoin,
-            type: type,
-            price: "MARKET",
-            pnl: pnl.toFixed(2)
+    // 1. 기존 선이 있으면 지우기 (갱신을 위해)
+    if (myPriceLine) {
+        candleSeries.removePriceLine(myPriceLine);
+        myPriceLine = null;
+    }
+
+    // 2. 포지션(가진 코인)이 있을 때만 새로 그리기
+    var pos = window.appState.position;
+    if (pos && pos.amount > 0 && pos.entryPrice > 0) {
+        
+        myPriceLine = candleSeries.createPriceLine({
+            price: pos.entryPrice,
+            color: '#F0B90B', // 노란색 (눈에 잘 띔)
+            lineWidth: 2,
+            lineStyle: LightweightCharts.LineStyle.Dotted, // 점선
+            axisLabelVisible: true,
+            title: '내 평단가', // 라벨 이름
         });
-        if(appState.tradeHistory.length > 30) appState.tradeHistory.pop();
-        saveState();
     }
 }
 
-function renderMainUI() {
-    const elTotal = document.getElementById('total-val');
-    const elProfit = document.getElementById('real-profit');
-    if (elTotal) {
-        elTotal.innerText = `$ ${formatMoney(appState.balance)}`;
-        if (elProfit) {
-            const profit = appState.balance - appState.startBalance;
-            const pct = appState.startBalance > 0 ? (profit / appState.startBalance) * 100 : 0;
-            const color = profit >= 0 ? 'text-green' : 'text-red';
-            elProfit.innerHTML = `<span class="${color}">${pct.toFixed(2)}% ($${profit.toFixed(2)})</span>`;
+// ==========================================
+// 3. 바이낸스 연결
+// ==========================================
+function connectBinance() {
+    if (ws) ws.close();
+    ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@kline_1m");
+
+    ws.onmessage = function(event) {
+        var msg = JSON.parse(event.data);
+        var kline = msg.k;
+        var pl = {
+            time: kline.t / 1000,
+            open: parseFloat(kline.o), high: parseFloat(kline.h),
+            low: parseFloat(kline.l), close: parseFloat(kline.c)
+        };
+
+        if (candleSeries) candleSeries.update(pl);
+        currentPrice = pl.close;
+        
+        // 가격 표시 업데이트
+        var el = document.getElementById('price-display');
+        if (el) {
+            el.innerText = '$ ' + currentPrice.toLocaleString(undefined, {minimumFractionDigits:2});
+            el.style.color = (window.lastP && currentPrice > window.lastP) ? '#0ecb81' : '#f6465d';
         }
+        window.lastP = currentPrice;
+
+        // 지정가 주문 감시
+        checkOrders(currentPrice);
+    };
+}
+
+// ==========================================
+// 4. 주문창 UI (겹침 방지 버전)
+// ==========================================
+function fixLayoutAndShowOrderUI() {
+    var target = document.querySelector('.control-box') || document.querySelector('.card');
+    
+    // 못 찾으면 강제 생성
+    if (!target) {
+        target = document.createElement('div');
+        var chartBox = document.getElementById('chart-container');
+        if(chartBox) chartBox.parentNode.insertBefore(target, chartBox.nextSibling);
+        else document.body.appendChild(target);
     }
-    const list = document.getElementById('main-ledger-list');
-    if (list) {
-        let html = '';
-        appState.tradeHistory.slice(0, 10).forEach(t => {
-            const c = parseFloat(t.pnl) >= 0 ? 'text-green' : 'text-red';
-            html += `<div class="ledger-row"><div style="width:25%">${t.time}</div><div style="width:25%">${t.coin}</div><div style="width:25%; text-align:right">${t.type}</div><div style="width:25%; text-align:right" class="${c}">${t.pnl}</div></div>`;
+
+    target.style.position = 'static';
+    target.style.margin = '20px 10px';
+    target.style.display = 'block';
+
+    target.innerHTML = `
+        <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:10px;">
+                <span style="color:#F0B90B; font-weight:bold; font-size:15px;">⚡ 트레이딩 패널</span>
+                <span style="color:#888; font-size:12px;">보유금: $ ${window.appState.balance.toLocaleString()}</span>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <div style="flex:1;">
+                    <label style="font-size:11px; color:#aaa; display:block; margin-bottom:5px;">가격 (시장가는 비워두세요)</label>
+                    <input type="number" id="inp-price" placeholder="시장가 (Market)" 
+                        style="width:90%; padding:10px; background:#2a2a2a; border:1px solid #444; border-radius:6px; color:#fff; font-size:14px;">
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:11px; color:#aaa; display:block; margin-bottom:5px;">수량</label>
+                    <input type="number" id="inp-amount" placeholder="0.1" 
+                        style="width:90%; padding:10px; background:#2a2a2a; border:1px solid #444; border-radius:6px; color:#fff; font-size:14px;">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="order('buy')" style="flex:1; padding:12px; background:#0ecb81; border:none; border-radius:6px; color:#fff; font-weight:bold;">매수 (Long)</button>
+                <button onclick="order('sell')" style="flex:1; padding:12px; background:#f6465d; border:none; border-radius:6px; color:#fff; font-weight:bold;">매도 (Short)</button>
+            </div>
+        </div>
+        <div id="order-list-area" style="margin-top:20px;"></div>
+    `;
+}
+
+// ==========================================
+// 5. 주문 로직 (평단가 표시 기능 추가)
+// ==========================================
+window.order = function(side) {
+    var pVal = document.getElementById('inp-price').value;
+    var aVal = document.getElementById('inp-amount').value;
+    var amount = parseFloat(aVal);
+
+    if (!amount) return alert("수량을 입력해주세요.");
+    
+    // 가격이 비어있으면 -> 시장가(즉시 체결)로 간주
+    if (!pVal || pVal === "") {
+        executeTrade(side, amount, currentPrice); // 즉시 체결
+    } else {
+        // 가격이 있으면 -> 지정가(예약) 주문
+        var price = parseFloat(pVal);
+        window.appState.pendingOrders.push({
+            id: Date.now(), side: side, price: price, amount: amount, time: new Date().toLocaleTimeString()
         });
-        list.innerHTML = html || '<div style="text-align:center; padding:20px; color:#666;">거래 대기 중...</div>';
+        alert("✅ 지정가 주문 등록!");
+        updateOrderList();
     }
-}
-
-function updateButton(isRunning) {
-    const btn = document.getElementById('btn-main-control');
-    if (btn) {
-        if (isRunning) {
-            btn.innerHTML = 'RUNNING';
-            btn.style.background = '#333';
-            btn.onclick = () => stopTradingSystem();
-        } else {
-            btn.innerHTML = 'START';
-            btn.style.background = '#c84a31';
-            btn.onclick = () => startTradingSystem();
-        }
-    }
-}
-
-function connectWebSocket(coin) {
-    if (socket) socket.close();
-    try { socket = new WebSocket(`wss://stream.binance.com:9443/ws/${coin.toLowerCase()}usdt@trade`); } catch(e){}
-}
-
-function searchInfoCoin() {
-    const v = document.getElementById('coin-search-input').value;
-    if(v) location.href = `info.html?coin=${v.toUpperCase()}`;
-}
-// ===============================================
-// [긴급 패치] 가짜 돈 삭제하고 진짜 바이낸스 연결하기
-// 기존 코드는 두고, 이 코드를 파일 맨 밑에 붙여넣으세요.
-// ===============================================
-
-// 1. 혹시 돌아가고 있을 가짜 가격 생성기를 멈춥니다.
-var highestIntervalId = setInterval(";");
-for (var i = 0; i < highestIntervalId; i++) {
-    clearInterval(i);
-}
-
-// 2. 바이낸스(Binance) 실시간 서버에 접속합니다.
-var wsUrl = "wss://stream.binance.com:9443/ws/btcusdt@trade";
-var ws = new WebSocket(wsUrl);
-
-ws.onopen = function() {
-    console.log("★ 바이낸스 실제 시세 연결 성공!");
-    var priceDisplay = document.getElementById('price-display');
-    if(priceDisplay) priceDisplay.style.color = '#F0B90B'; // 연결되면 노란색 깜빡
 };
 
-ws.onmessage = function(event) {
-    var data = JSON.parse(event.data);
-    var realPrice = parseFloat(data.p); // 이게 진짜 비트코인 가격입니다.
-    
-    // 화면에 가격 표시 (소수점 2자리)
-    var el = document.getElementById('price-display');
-    if (el) {
-        el.innerText = '$ ' + realPrice.toLocaleString(undefined, {
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2
-        });
+// 실제 체결 함수 (시장가 or 지정가 도달 시)
+function executeTrade(side, amount, price) {
+    if(side === 'buy') {
+        // 매수: 평단가 계산 (물타기)
+        var oldAmt = window.appState.position.amount;
+        var oldEntry = window.appState.position.entryPrice;
         
-        // 가격 등락 색상 (이전 가격보다 높으면 초록, 낮으면 빨강)
-        if (window.lastPrice && realPrice > window.lastPrice) {
-            el.style.color = '#0ECB81'; // 상승
-        } else if (window.lastPrice && realPrice < window.lastPrice) {
-            el.style.color = '#F6465D'; // 하락
-        }
-        window.lastPrice = realPrice;
-    }
-
-    // 전역 변수에 진짜 가격 저장 (매수/매도할 때 이 가격 사용)
-    if (typeof appState !== 'undefined') {
-        appState.currentPrice = realPrice;
+        // 새 평단가 = (기존금액 + 새금액) / 전체수량
+        var newEntry = ((oldAmt * oldEntry) + (amount * price)) / (oldAmt + amount);
         
-        // 수익률 실시간 계산 (포지션 잡았을 때만)
-        if (appState.position && appState.position.amount > 0) {
-            updateRealProfit(realPrice);
+        window.appState.position.amount += amount;
+        window.appState.position.entryPrice = newEntry;
+        window.appState.position.side = 'long';
+
+        alert(`💎 매수 체결!\n${amount}개 @ $${price}\n(새 평단가: $${newEntry.toFixed(2)})`);
+    } else {
+        // 매도: 수량 감소
+        if(window.appState.position.amount < amount) return alert("보유 코인이 부족합니다.");
+        window.appState.position.amount -= amount;
+        if(window.appState.position.amount <= 0) {
+            window.appState.position.entryPrice = 0; // 다 팔면 평단가 초기화
         }
+        alert(`💰 매도 체결!\n${amount}개 @ $${price}`);
     }
-};
 
-// 3. 진짜 수익률 계산 함수 (기존 가짜 계산 로직 덮어쓰기)
-function updateRealProfit(currentPrice) {
-    var entry = appState.position.entryPrice;
-    var leverage = appState.position.leverage || 1;
-    var margin = appState.position.margin;
-    
-    // 수익률 공식: ((현재가 - 진입가) / 진입가) * 100 * 레버리지
-    var pnlRate = ((currentPrice - entry) / entry) * 100 * leverage;
-    
-    // 숏(Short)이면 수익률 반대로
-    if (appState.position.side === 'short') pnlRate *= -1;
-    
-    // 수익금 계산
-    var pnlValue = (margin * pnlRate) / 100;
+    // ★ 중요: 체결되었으니 차트에 평단가 선 다시 그리기
+    updateMyPriceLine();
+}
 
-    // 화면 업데이트
-    var elPnl = document.getElementById('pnl-display');
-    var elRoe = document.getElementById('roe-display');
-    
-    if (elPnl) {
-        elPnl.innerText = '$ ' + pnlValue.toFixed(2);
-        elPnl.className = pnlValue >= 0 ? 'text-green' : 'text-red';
-    }
-    if (elRoe) {
-        elRoe.innerText = pnlRate.toFixed(2) + '%';
-        elRoe.className = pnlRate >= 0 ? 'text-green' : 'text-red';
+// 지정가 감시
+function checkOrders(nowPrice) {
+    var orders = window.appState.pendingOrders;
+    for (var i = orders.length - 1; i >= 0; i--) {
+        var o = orders[i];
+        var executed = false;
+        if (o.side === 'buy' && nowPrice <= o.price) executed = true;
+        if (o.side === 'sell' && nowPrice >= o.price) executed = true;
+
+        if (executed) {
+            orders.splice(i, 1);
+            executeTrade(o.side, o.amount, o.price); // 체결 실행
+            updateOrderList();
+        }
     }
 }
 
+function updateOrderList() {
+    var area = document.getElementById('order-list-area');
+    if (!area) return;
+    var html = '<div style="font-size:12px; color:#888; margin-bottom:5px;">📋 미체결 주문</div>';
+    if (window.appState.pendingOrders.length === 0) html += '<div style="padding:10px; background:#222; color:#555; border-radius:6px; font-size:12px; text-align:center;">없음</div>';
+    else {
+        window.appState.pendingOrders.forEach(o => {
+            var color = o.side === 'buy' ? '#0ecb81' : '#f6465d';
+            html += `<div style="display:flex; justify-content:space-between; padding:10px; background:#222; border-left:3px solid ${color}; border-radius:4px; margin-bottom:5px; font-size:13px;">
+                <span style="color:${color}; font-weight:bold;">${o.side==='buy'?'매수':'매도'}</span>
+                <span style="color:#fff;">$${o.price}</span>
+                <span style="color:#ccc;">${o.amount}개</span>
+            </div>`;
+        });
+    }
+    area.innerHTML = html;
+}
