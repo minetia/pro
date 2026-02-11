@@ -1,16 +1,12 @@
-// [초기화] 페이지가 열리면 실행
+// [초기화] 페이지 로드 시 실행
 window.addEventListener('load', function() {
-    // 1. 차트 박스 먼저 만들기 (검은색 배경 강제 적용)
-    createChartContainer();
+    createChartContainer(); // 박스 만들기
+    loadChartLibrary();     // 라이브러리 로드 -> 차트 생성 -> 데이터 수신 순으로 실행
     
-    // 2. 차트 프로그램(라이브러리) 다운로드 및 실행
-    loadChartLibrary();
-
-    // 3. 주문창(UI) 표시
+    // UI 초기화
     if(typeof fixLayoutAndShowOrderUI === 'function') fixLayoutAndShowOrderUI();
-    else createOrderUI(); // 주문창 만드는 함수가 없으면 비상용 실행
+    else createOrderUI();
     
-    // 4. 미체결 내역 표시
     if(typeof updateOrderList === 'function') updateOrderList();
 });
 
@@ -29,107 +25,99 @@ if (!window.appState) window.appState = {
 };
 
 // ==========================================
-// 1. 차트 박스 만들기 (무조건 검은색!)
+// 1. 차트 UI 준비
 // ==========================================
 function createChartContainer() {
     var container = document.getElementById('chart-container');
-    
-    // 박스가 없으면 새로 만듭니다.
     if (!container) {
         container = document.createElement('div');
         container.id = 'chart-container';
-        // 스타일 강제 적용
         container.style.width = '100%';
         container.style.height = '350px';
-        container.style.backgroundColor = '#1e1e1e'; // 검은색 배경
-        container.style.borderBottom = '1px solid #333';
+        container.style.backgroundColor = '#1e1e1e';
         container.style.marginBottom = '20px';
-        container.style.position = 'relative'; // 로딩 문구 위치 잡기 위해
+        container.style.position = 'relative';
         
-        // "차트 로딩 중..." 문구 추가
-        container.innerHTML = '<div id="chart-loader" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:#888; font-size:14px;">📊 차트 불러오는 중...</div>';
+        // 로딩 메시지
+        container.innerHTML = '<div id="chart-loader" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:#888;">📊 차트 데이터 불러오는 중...</div>';
 
-        // 헤더 밑에 붙이기
         var header = document.querySelector('.header') || document.body.firstChild;
-        if(header && header.parentNode) {
-            header.parentNode.insertBefore(container, header.nextSibling);
-        } else {
-            document.body.prepend(container);
-        }
+        if(header && header.parentNode) header.parentNode.insertBefore(container, header.nextSibling);
+        else document.body.prepend(container);
     }
 }
 
 // ==========================================
-// 2. 라이브러리 로드 (안전하게 가져오기)
+// 2. 라이브러리 로드
 // ==========================================
 function loadChartLibrary() {
-    // 이미 있으면 바로 실행
     if (window.LightweightCharts) {
         initChart();
         return;
     }
-
-    // 없으면 다운로드 (버전 4.0 고정)
     var script = document.createElement('script');
     script.src = "https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js";
-    script.onload = function() {
-        console.log("라이브러리 로드 완료!");
-        initChart(); // 다 받으면 차트 그리기 시작
-    };
-    script.onerror = function() {
-        document.getElementById('chart-container').innerHTML = '<div style="padding:20px; color:red; text-align:center;">⚠️ 차트 로딩 실패<br>인터넷 연결을 확인하세요.</div>';
-    };
+    script.onload = function() { initChart(); };
     document.head.appendChild(script);
 }
 
 // ==========================================
-// 3. 진짜 차트 그리기
+// 3. 차트 생성 및 과거 데이터 가져오기 (핵심!)
 // ==========================================
 function initChart() {
     var container = document.getElementById('chart-container');
-    // 로딩 문구 지우기
-    container.innerHTML = ''; 
+    container.innerHTML = ''; // 로딩 문구 삭제
 
-    // 차트 생성
     chart = LightweightCharts.createChart(container, {
         width: container.clientWidth,
         height: 350,
-        layout: {
-            background: { type: 'solid', color: '#1e1e1e' }, // 검은색 배경
-            textColor: '#d1d4dc',
-        },
-        grid: {
-            vertLines: { color: 'rgba(255, 255, 255, 0.1)' },
-            horzLines: { color: 'rgba(255, 255, 255, 0.1)' },
-        },
-        timeScale: {
-            timeVisible: true,
-            secondsVisible: false,
-            borderColor: 'rgba(197, 203, 206, 0.8)',
-        },
+        layout: { background: { type: 'solid', color: '#1e1e1e' }, textColor: '#d1d4dc' },
+        grid: { vertLines: { color: 'rgba(255, 255, 255, 0.1)' }, horzLines: { color: 'rgba(255, 255, 255, 0.1)' } },
+        timeScale: { timeVisible: true, secondsVisible: false, borderColor: '#444' },
+        rightPriceScale: { borderColor: '#444' },
     });
 
-    // 캔들 설정
     candleSeries = chart.addCandlestickSeries({
         upColor: '#0ecb81', downColor: '#f6465d',
         borderDownColor: '#f6465d', borderUpColor: '#0ecb81',
         wickDownColor: '#f6465d', wickUpColor: '#0ecb81',
     });
 
-    // 바이낸스 데이터 연결
-    connectBinance();
+    // ★ 1. 과거 데이터 먼저 가져오기 (REST API)
+    fetchHistoricalData();
 
-    // 반응형 크기 조절
-    window.addEventListener('resize', () => {
-        chart.resize(container.clientWidth, 350);
-    });
-    
-    // 내 평단가 선 그리기 시도
-    updateMyPriceLine();
+    // 반응형 리사이즈
+    window.addEventListener('resize', () => { chart.resize(container.clientWidth, 350); });
+}
+
+function fetchHistoricalData() {
+    // 바이낸스 API로 최근 100개 캔들 가져오기
+    fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100')
+        .then(res => res.json())
+        .then(data => {
+            var candles = data.map(d => ({
+                time: d[0] / 1000,
+                open: parseFloat(d[1]),
+                high: parseFloat(d[2]),
+                low: parseFloat(d[3]),
+                close: parseFloat(d[4])
+            }));
+            
+            // 차트에 과거 데이터 채우기
+            candleSeries.setData(candles);
+            
+            // 마지막 가격 업데이트
+            currentPrice = candles[candles.length - 1].close;
+            updatePriceDisplay(currentPrice);
+
+            // ★ 2. 이제부터 실시간 연결 (WebSocket)
+            connectBinance(); 
+        })
+        .catch(err => console.error("데이터 로딩 실패:", err));
 }
 
 // ==========================================
-// 4. 바이낸스 실시간 데이터
+// 4. 실시간 연결 (WebSocket)
 // ==========================================
 function connectBinance() {
     if (ws) ws.close();
@@ -144,13 +132,11 @@ function connectBinance() {
             low: parseFloat(kline.l), close: parseFloat(kline.c)
         };
 
-        if (candleSeries) candleSeries.update(pl);
+        // 실시간 업데이트
+        if(candleSeries) candleSeries.update(pl);
         currentPrice = pl.close;
         
-        // 가격 표시 업데이트
         updatePriceDisplay(currentPrice);
-
-        // 지정가 주문 감시
         checkOrders(currentPrice);
     };
 }
@@ -165,19 +151,17 @@ function updatePriceDisplay(price) {
 }
 
 // ==========================================
-// 5. 주문창 UI (비상용 포함)
+// 5. 주문창 UI (어두운 테마)
 // ==========================================
 function createOrderUI() {
     var target = document.querySelector('.control-box') || document.querySelector('.card');
-    if (!target) { // 없으면 만들기
+    if (!target) { 
         target = document.createElement('div');
-        target.className = 'control-box';
         var chartBox = document.getElementById('chart-container');
         if(chartBox) chartBox.parentNode.insertBefore(target, chartBox.nextSibling);
         else document.body.appendChild(target);
     }
     
-    // UI 내용 (어두운 테마)
     target.innerHTML = `
         <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 15px; margin: 20px 10px;">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:10px;">
@@ -204,7 +188,7 @@ function createOrderUI() {
 }
 
 // ==========================================
-// 6. 주문 로직 (평단가 선 포함)
+// 6. 매매 로직
 // ==========================================
 window.order = function(side) {
     var pVal = document.getElementById('inp-price').value;
@@ -229,7 +213,6 @@ function executeTrade(side, amount, price) {
         var oldAmt = window.appState.position.amount;
         var oldEntry = window.appState.position.entryPrice;
         var newEntry = ((oldAmt * oldEntry) + (amount * price)) / (oldAmt + amount);
-        
         window.appState.position.amount += amount;
         window.appState.position.entryPrice = newEntry;
         window.appState.position.side = 'long';
@@ -249,7 +232,6 @@ function checkOrders(nowPrice) {
         var executed = false;
         if (o.side === 'buy' && nowPrice <= o.price) executed = true;
         if (o.side === 'sell' && nowPrice >= o.price) executed = true;
-
         if (executed) {
             orders.splice(i, 1);
             executeTrade(o.side, o.amount, o.price); 
