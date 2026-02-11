@@ -7,60 +7,54 @@
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     
     <style>
-        /* 기본 스타일 */
         body { background-color: #000; color: #fff; margin: 0; padding-bottom: 80px; font-family: -apple-system, sans-serif; }
         * { box-sizing: border-box; }
 
-        /* [핵심] 헤더 스타일 (자산 정보 통합) */
+        /* 헤더 */
         .header { 
             position: sticky; top: 0; z-index: 100; 
             display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 15px; 
-            background: #121212; border-bottom: 1px solid #333; 
+            padding: 12px 15px; background: #121212; border-bottom: 1px solid #333; 
         }
-        .header-left h2 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.5px; } 
+        .header-left h2 { margin: 0; font-size: 16px; font-weight: 800; }
         .header-left span { color: #F0B90B; }
-        
-        /* 우측 자산 정보 영역 */
-        .header-right { display: flex; align-items: center; gap: 12px; text-align: right; }
-        .asset-box { line-height: 1.2; }
+        .header-right { text-align: right; }
         .asset-balance { font-size: 14px; font-weight: bold; color: #fff; display: block; }
-        .asset-pnl { font-size: 11px; color: #888; font-weight: 500; }
-        
-        .badge { font-size: 10px; color: #0ecb81; border: 1px solid #0ecb81; padding: 3px 6px; border-radius: 4px; font-weight: bold; }
+        .asset-pnl { font-size: 11px; color: #888; }
+        .badge { font-size: 10px; color: #0ecb81; border: 1px solid #0ecb81; padding: 2px 4px; border-radius: 3px; margin-left: 5px; vertical-align: text-bottom;}
 
-        /* 입력창 스타일 */
+        /* 차트 영역 (높이 고정) */
+        #chart-area { width: 100%; height: 400px; background: #000; }
+
+        /* 주문창 */
+        .control-panel { padding: 15px; background: #1e1e1e; border-top: 1px solid #333; }
         .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
         .input-field { 
-            flex: 1; width: 100%; min-width: 0; padding: 12px; 
-            background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 14px; outline: none;
+            flex: 1; padding: 12px; background: #2a2a2a; border: 1px solid #444; 
+            color: #fff; border-radius: 6px; font-size: 14px; width: 100%;
         }
-        .input-field:focus { border-color: #F0B90B; }
 
         /* 탭 메뉴 */
-        .tab-menu { display: flex; background: #1e1e1e; margin-top: 0; border-bottom: 1px solid #333; }
-        .tab-item { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: #888; cursor: pointer; transition: 0.2s; }
+        .tab-menu { display: flex; background: #1e1e1e; border-bottom: 1px solid #333; }
+        .tab-item { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: #888; cursor: pointer; }
         .tab-item.active { color: #F0B90B; border-bottom: 2px solid #F0B90B; font-weight: bold; background: #252525; }
         
-        /* 리스트 스타일 */
-        .list-header { display: flex; padding: 10px; background: #222; color: #888; font-size: 11px; }
+        /* 리스트 */
         .list-row { display: flex; padding: 12px 10px; border-bottom: 1px solid #222; font-size: 12px; align-items: center; }
-        .col-1 { width: 25%; } .col-2 { width: 15%; text-align: center; } 
-        .col-3 { width: 30%; text-align: right; } .col-4 { width: 30%; text-align: right; }
+        .col-1 { width: 25%; color:#888; } .col-2 { width: 15%; text-align:center; } 
+        .col-3 { width: 30%; text-align:right; color:#fff; } .col-4 { width: 30%; text-align:right; color:#fff; }
         
-        .text-buy { color: #0ecb81; } .text-sell { color: #f6465d; } 
-        .text-white { color: #fff; } .text-gray { color: #888; }
+        .text-buy { color: #0ecb81; } .text-sell { color: #f6465d; }
 
         /* 하단 메뉴 */
         .bottom-nav { 
             position: fixed; bottom: 0; width: 100%; 
             background: #121212; border-top: 1px solid #333; z-index: 999; 
-            display: grid; grid-template-columns: repeat(5, 1fr); 
-            padding: 10px 0;
+            display: grid; grid-template-columns: repeat(5, 1fr); padding: 10px 0;
         }
         .nav-item { text-decoration: none; color: #666; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
-        .nav-item span { font-size: 18px; margin-bottom: 4px; }
         .nav-item.active { color: #F0B90B; }
+        .nav-item span { font-size: 18px; margin-bottom: 4px; }
     </style>
 </head>
 <body>
@@ -70,19 +64,34 @@
             <h2>NEURAL <span>NODE</span></h2>
         </div>
         <div class="header-right">
-            <div class="asset-box">
-                <span id="header-balance" class="asset-balance">$ --</span>
-                <span id="header-pnl" class="asset-pnl">0.00%</span>
-            </div>
+            <span id="header-balance" class="asset-balance">$ --</span>
+            <span id="header-pnl" class="asset-pnl">0.00%</span>
             <span class="badge">LIVE</span>
         </div>
     </div>
 
-    <div id="app-container">
-        <div style="height:400px; display:flex; justify-content:center; align-items:center; background:#000; color:#555; font-size:13px;">
-            📊 차트 데이터 연결 중...
+    <div id="chart-area"></div>
+
+    <div class="control-panel">
+        <div class="input-group">
+            <input type="number" id="inp-price" class="input-field" placeholder="지정가 (빈칸=시장가)">
+            <input type="number" id="inp-amount" class="input-field" placeholder="수량 (BTC)">
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button onclick="order('buy')" style="flex:1; padding:12px; background:#0ecb81; border:none; border-radius:6px; color:#fff; font-weight:bold;">매수</button>
+            <button onclick="order('sell')" style="flex:1; padding:12px; background:#f6465d; border:none; border-radius:6px; color:#fff; font-weight:bold;">매도</button>
+        </div>
+        <div style="text-align:center; margin-top:10px;" onclick="resetData()">
+            <span style="font-size:11px; color:#666; text-decoration:underline;">데이터 초기화</span>
         </div>
     </div>
+
+    <div class="tab-menu">
+        <div class="tab-item active" onclick="switchTab('history', this)">체결 내역</div>
+        <div class="tab-item" onclick="switchTab('open', this)">미체결</div>
+        <div class="tab-item" onclick="switchTab('pnl', this)">실현 손익</div>
+    </div>
+    <div id="list-content" style="min-height:300px; background:#121212; padding-bottom:20px;"></div>
 
     <div class="bottom-nav">
         <a href="index.html" class="nav-item active"><span>📊</span>거래소</a>
