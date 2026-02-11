@@ -2,84 +2,175 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MARKET INSIGHT</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-    <link rel="stylesheet" href="pro-style.css?v=310">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Insight</title>
+    <style>
+        /* [스타일] 어두운 테마 디자인 */
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            padding-bottom: 70px; /* 하단 메뉴 공간 */
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background-color: #1e1e1e;
+            border-bottom: 1px solid #333;
+        }
+        .header h2 { margin: 0; font-size: 18px; color: #fff; }
+        .header span { color: #F0B90B; margin-left: 5px; font-weight: bold; }
+        
+        /* 검색창 */
+        .search-box {
+            display: flex;
+            padding: 15px;
+            gap: 10px;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #2a2a2a;
+            color: #fff;
+            outline: none;
+        }
+        button {
+            padding: 0 20px;
+            border-radius: 8px;
+            border: none;
+            background: #F0B90B;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* 차트 컨테이너 */
+        .chart-card {
+            margin: 0 15px;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 12px;
+            height: 300px; /* 차트 높이 고정 */
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* JS가 여기다가 그림을 그립니다 */
+        #chart-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* AI 분석 결과 카드 */
+        .ai-card {
+            margin: 15px;
+            padding: 20px;
+            background: #1e1e1e;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .badge {
+            display: inline-block;
+            background: #F0B90B;
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .price-display {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #fff;
+        }
+        .sub-text {
+            color: #888;
+            font-size: 14px;
+        }
+        .score-box {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+        }
+
+        /* 하단 메뉴바 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #1e1e1e;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-top: 1px solid #333;
+        }
+        .nav-item {
+            color: #666;
+            text-decoration: none;
+            font-size: 12px;
+            text-align: center;
+        }
+        .nav-item.active { color: #F0B90B; }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+    </style>
 </head>
 <body>
-    <header class="cyber-header" style="justify-content:flex-start; gap:10px;">
-        <a href="index.html" style="color:#fff;"><i class="fas fa-arrow-left"></i></a>
-        <div class="brand-logo">MARKET <span>INSIGHT</span></div>
-        <div style="margin-left:auto; background:#2b3139; padding:4px 8px; border-radius:4px; font-size:0.7rem; color:var(--accent);">LIVE</div>
-    </header>
 
-    <div class="main-content">
-        <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <input type="text" id="info-page-search" class="modal-input" placeholder="종목 변경 (예: ETH)" style="margin-bottom:0;">
-            <button class="save-tag" onclick="searchInfoCoin()" style="width:60px; background:var(--accent); color:#000;">이동</button>
-        </div>
+    <div class="header">
+        <h2>MARKET <span>INSIGHT</span></h2>
+    </div>
 
-        <div id="info_tv_chart" style="width:100%; height:350px; background:#000; border-radius:10px; overflow:hidden; border:1px solid var(--border-soft);"></div>
+    <div class="search-box">
+        <input type="text" id="coin-input" placeholder="종목 코드 (예: ETH)">
+        <button id="search-btn">이동</button>
+    </div>
 
-        <div class="cyber-panel ai-analysis-card" style="margin-top:15px; position:relative; overflow:hidden;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <div class="ai-badge" style="background:var(--accent); color:#000; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold;"><i class="fas fa-robot"></i> AI 분석 완료</div>
-                <div style="font-size:0.8rem; color:#888;">신뢰도 <span id="ai-score-val" style="color:#6e00ff; font-weight:bold; font-size:1.1rem;">--</span> / 100</div>
-            </div>
-            
-            <div style="text-align:center; margin:20px 0;">
-                <div id="analysis-price" class="hero-number" style="font-size:2.2rem;">$ ---</div>
-                <div id="analysis-verdict" style="font-size:1rem; color:#ccc; margin-top:5px;">데이터 분석 중...</div>
-            </div>
+    <div class="chart-card">
+        <div id="chart-container"></div>
+    </div>
 
-            <div class="analysis-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px;">
-                <div class="grid-item" style="background:#222; padding:10px; border-radius:5px; text-align:center;">
-                    <div class="grid-label" style="font-size:0.7rem; color:#888;">단기 지지</div>
-                    <div id="val-support" class="grid-val" style="font-weight:bold; color:#5e81f4;">---</div>
-                </div>
-                <div class="grid-item" style="background:#222; padding:10px; border-radius:5px; text-align:center;">
-                    <div class="grid-label" style="font-size:0.7rem; color:#888;">단기 저항</div>
-                    <div id="val-resistance" class="grid-val" style="font-weight:bold; color:#c84a31;">---</div>
-                </div>
-                <div class="grid-item" style="background:#222; padding:10px; border-radius:5px; text-align:center;">
-                    <div class="grid-label" style="font-size:0.7rem; color:#888;">손절가</div>
-                    <div id="val-stoploss" class="grid-val" style="font-weight:bold; color:#fff;">---</div>
-                </div>
-                <div class="grid-item" style="background:#222; padding:10px; border-radius:5px; text-align:center;">
-                    <div class="grid-label" style="font-size:0.7rem; color:#888;">목표가</div>
-                    <div id="val-target" class="grid-val" style="font-weight:bold; color:#fff;">---</div>
-                </div>
-            </div>
-        </div>
+    <div class="ai-card">
+        <div class="badge">🤖 AI 실시간 분석</div>
+        
+        <div class="price-display" id="insight-price">Loading...</div>
+        
+        <div class="sub-text" id="analysis-text">데이터 수신 대기 중...</div>
 
-        <div class="cyber-panel">
-            <div style="font-size:0.9rem; font-weight:bold; color:#fff; margin-bottom:10px; border-left:3px solid var(--accent); padding-left:10px;">
-                📄 심층 분석 보고서
-            </div>
-            <div id="deep-report-text" style="font-size:0.85rem; color:#bbb; line-height:1.6;">
-                AI가 시장 데이터를 수집하고 있습니다. 잠시만 기다려주세요...
-            </div>
-        </div>
-
-        <div class="cyber-panel" style="padding:0;">
-            <div style="padding:15px; border-bottom:1px solid var(--border-soft); font-weight:bold; color:#fff;">
-                <i class="fas fa-globe"></i> 실시간 글로벌 뉴스
-            </div>
-            <div id="news-board-list" style="padding:15px;"></div>
+        <div class="score-box">
+            <span>신뢰도 점수</span>
+            <span id="ai-score" style="color:#F0B90B; font-weight:bold;">-- / 100</span>
         </div>
     </div>
 
-    <nav class="bottom-nav">
-        <a href="index.html" class="nav-item"><i class="fas fa-chart-pie"></i><span>거래소</span></a>
-        <a href="wallet.html" class="nav-item"><i class="fas fa-wallet"></i><span>투자내역</span></a>
-        <a href="ai-core.html" class="nav-item"><i class="fas fa-brain"></i><span>AI설정</span></a>
-        <a href="transfers.html" class="nav-item"><i class="fas fa-university"></i><span>입출금</span></a>
-    </nav>
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <span class="nav-icon">📊</span>거래소
+        </a>
+        <a href="wallet.html" class="nav-item">
+            <span class="nav-icon">💼</span>투자내역
+        </a>
+        <a href="info.html" class="nav-item active">
+            <span class="nav-icon">🧠</span>AI설정
+        </a>
+        <a href="transfer.html" class="nav-item">
+            <span class="nav-icon">🏦</span>입출금
+        </a>
+    </div>
 
-    <script src="core.js?v=310"></script>
-    <script src="ai.js?v=310"></script>
-    <script src="info.js"></script> 
+    <script src="core.js"></script>
+    <script src="info.js"></script>
+
 </body>
 </html>
