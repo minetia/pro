@@ -7,48 +7,32 @@
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     
     <style>
-        /* [기본 스타일] */
         body { background-color: #000; color: #fff; margin: 0; padding-bottom: 80px; font-family: -apple-system, sans-serif; }
         * { box-sizing: border-box; }
 
-        /* [수정] 헤더 고정 (Sticky) */
+        /* 헤더 고정 */
         .header { 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000; 
-            display: flex; 
-            justify-content: space-between; 
-            padding: 15px; 
-            background: #121212; 
-            border-bottom: 1px solid #333; 
+            position: sticky; top: 0; z-index: 100; 
+            display: flex; justify-content: space-between; padding: 15px; 
+            background: #121212; border-bottom: 1px solid #333; 
         }
         .header h2 { margin: 0; font-size: 18px; }
         .header span { color: #F0B90B; }
         .badge { font-size: 11px; color: #0ecb81; border: 1px solid #0ecb81; padding: 2px 6px; border-radius: 4px; }
 
-        /* 메인 컨테이너 */
-        .card { width: 100%; }
-
-        /* 탭 메뉴 스타일 */
-        .tab-menu { display: flex; border-bottom: 1px solid #333; background: #1e1e1e; margin-top: 10px; }
-        .tab-item { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: #888; cursor: pointer; transition: 0.2s; }
+        /* 탭 메뉴 */
+        .tab-menu { display: flex; background: #1e1e1e; margin-top: 10px; border-bottom: 1px solid #333; }
+        .tab-item { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: #888; cursor: pointer; }
         .tab-item.active { color: #F0B90B; border-bottom: 2px solid #F0B90B; font-weight: bold; background: #252525; }
         
-        /* [수정] 테이블 깨짐 방지 (Flexbox) */
-        .list-header { display: flex; padding: 10px; background: #222; color: #888; font-size: 11px; border-top: 1px solid #333; }
+        /* 리스트 스타일 */
+        .list-header { display: flex; padding: 10px; background: #222; color: #888; font-size: 11px; }
         .list-row { display: flex; padding: 12px 10px; border-bottom: 1px solid #222; font-size: 12px; align-items: center; }
+        .col-1 { width: 25%; } .col-2 { width: 15%; text-align: center; } 
+        .col-3 { width: 30%; text-align: right; } .col-4 { width: 30%; text-align: right; }
         
-        /* 컬럼 넓이 고정 */
-        .col-1 { width: 25%; } /* 시간 */
-        .col-2 { width: 15%; text-align: center; } /* 종류 */
-        .col-3 { width: 30%; text-align: right; } /* 가격 */
-        .col-4 { width: 30%; text-align: right; } /* 수량/손익 */
-
-        /* 색상 유틸리티 */
-        .text-buy { color: #0ecb81; }
-        .text-sell { color: #f6465d; }
-        .text-white { color: #fff; }
-        .text-gray { color: #888; }
+        .text-buy { color: #0ecb81; } .text-sell { color: #f6465d; } 
+        .text-white { color: #fff; } .text-gray { color: #888; }
 
         /* 하단 메뉴 */
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #121212; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 999; }
@@ -57,16 +41,13 @@
     </style>
 </head>
 <body>
-
     <div class="header">
         <h2>NEURAL <span>NODE</span></h2>
         <span class="badge">LIVE</span>
     </div>
 
-    <div id="app-container" class="card">
-        <div style="height: 80vh; display:flex; justify-content:center; align-items:center; color:#555;">
-            시스템 로딩 중...
-        </div>
+    <div id="app-container">
+        <div style="height:80vh; display:flex; justify-content:center; align-items:center; color:#555;">로딩 중...</div>
     </div>
 
     <div class="bottom-nav">
@@ -77,6 +58,5 @@
     </div>
 
     <script src="tradingEngine.js"></script>
-
 </body>
 </html>
