@@ -1,12 +1,11 @@
-// [tradingEngine.js] 무조건 차트 띄우는 버전
+// [tradingEngine.js] 3중 안전장치 연결 버전
 
 var chart = null;
 var candleSeries = null;
-var currentPrice = 65000; // 기본값
+var currentPrice = 65000; // 초기 안전값
 var myPriceLine = null;
 var ws = null;
 var activeTab = 'history';
-var isFakeMode = false; // 가짜 데이터 모드인지 확인
 
 // 1. 데이터 로드
 var savedData = localStorage.getItem('neuralNodeData');
@@ -27,40 +26,36 @@ window.saveState = function() {
     localStorage.setItem('neuralNodeData', JSON.stringify(window.appState));
 };
 
-// 2. 실행 (라이브러리 로딩 대기)
+// 2. 실행 (즉시 업데이트 실행)
 window.addEventListener('load', function() {
-    // 0.1초마다 라이브러리 확인 (최대 5초)
-    var checkLib = setInterval(function() {
-        if (window.LightweightCharts) {
-            clearInterval(checkLib);
-            startApp(); // 앱 시작!
-        }
-    }, 100);
-
-    // 5초 지나도 안 되면 경고
-    setTimeout(function() {
-        if(!window.LightweightCharts) {
-            alert("차트 도구 로딩 실패! 인터넷 연결을 확인하세요.");
-        }
-    }, 5000);
+    updateAll(); // ★ 중요: 앱 켜자마자 잔고부터 표시
+    
+    // 차트 라이브러리 체크 후 실행
+    if (window.LightweightCharts) {
+        startEngine();
+    } else {
+        // 혹시 늦게 로딩될까봐 0.5초 기다려줌
+        setTimeout(() => { 
+            if(window.LightweightCharts) startEngine(); 
+            else alert("인터넷 연결을 확인해주세요 (차트 도구 로딩 실패)");
+        }, 500);
+    }
 });
 
-function startApp() {
-    initChart();       // 차트 틀 생성
-    tryConnectData();  // ★ 데이터 연결 시도 (3초 타임아웃 적용)
-    updateAll();
+function startEngine() {
+    initChart();       
+    connectData();     // ★ 3중 연결 시스템 가동
     switchTab('history', document.querySelector('.tab-item'));
 }
 
-// 3. 차트 틀 만들기
+// 3. 차트 생성
 function initChart() {
     var container = document.getElementById('chart-area');
     if (!container) return;
-    container.innerHTML = ''; // "로딩중" 글씨 삭제
+    container.innerHTML = ''; 
 
     chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth,
-        height: 400,
+        width: container.clientWidth, height: 400,
         layout: { background: { color: '#000' }, textColor: '#888' },
         grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
         timeScale: { borderColor: '#333', timeVisible: true },
@@ -75,18 +70,11 @@ function initChart() {
     window.addEventListener('resize', () => { chart.resize(container.clientWidth, 400); });
 }
 
-// 4. ★ 데이터 연결 (3초 타임아웃 기능 추가)
-function tryConnectData() {
-    // 3초 안에 데이터 안 오면 강제로 에러 발생시킴
-    var timeout = new Promise((resolve, reject) => {
-        setTimeout(() => reject(new Error("시간 초과")), 3000);
-    });
-
-    var fetchData = fetch('https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100')
-        .then(res => res.json());
-
-    // 둘 중 먼저 끝나는 것 실행 (데이터 vs 3초)
-    Promise.race([fetchData, timeout])
+// 4. ★ 데이터 연결 (Binance -> CoinGecko -> Fake 순서)
+function connectData() {
+    // [시도 1] 바이낸스 공식 데이터 API (CORS 허용됨)
+    fetch('https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100')
+        .then(res => res.json())
         .then(data => {
             // 성공 시
             var candles = data.map(d => ({
@@ -94,14 +82,26 @@ function tryConnectData() {
             }));
             candleSeries.setData(candles);
             currentPrice = candles[candles.length-1].close;
-            connectWebSocket(); // 소켓 연결
-            updateAll();
-            drawAvgLine();
+            connectWebSocket(); // 실시간 소켓 연결
+            updateStatus('LIVE', '#0ecb81');
         })
         .catch(err => {
-            // ★ 3초 지났거나 에러 나면 -> 무조건 가짜 데이터 실행
-            console.log("연결 실패/지연 -> 자체 엔진 가동");
-            runFakeEngine();
+            console.log("바이낸스 연결 실패, 코인게코 시도...");
+            // [시도 2] 코인게코 API (단순 가격 조회용)
+            fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
+                .then(res => res.json())
+                .then(data => {
+                    currentPrice = data.bitcoin.usd;
+                    updateAll();
+                    updateStatus('GECKO', '#F0B90B'); // 노란불 (코인게코 모드)
+                    runFakeChart(currentPrice); // 차트는 가짜로 생성
+                })
+                .catch(err2 => {
+                    console.log("코인게코 실패, 자체 엔진 가동");
+                    // [시도 3] 완전 오프라인 모드
+                    updateStatus('OFFLINE', '#f6465d'); // 빨간불
+                    runFakeChart(65000);
+                });
         });
 }
 
@@ -117,52 +117,31 @@ function connectWebSocket() {
         updateAll();
         checkPending();
     };
-    ws.onerror = function() { runFakeEngine(); }; // 소켓 에러나도 가짜 실행
 }
 
-// ★ 자체 엔진 (가짜 데이터 생성기)
-function runFakeEngine() {
-    if(isFakeMode) return; // 이미 실행 중이면 패스
-    isFakeMode = true;
-    
-    // 헤더에 빨간 점 표시 (오프라인)
-    var badge = document.querySelector('.badge');
-    if(badge) { badge.innerText = "OFFLINE"; badge.style.borderColor = "#f6465d"; badge.style.color = "#f6465d"; }
-
-    // 1. 초기 데이터 만들기 (최근 100분)
+// 자체 차트 엔진 (데이터 안 올 때 화면 멈춤 방지)
+function runFakeChart(startPrice) {
     var now = Math.floor(Date.now() / 1000);
-    var price = 65000; 
+    var price = startPrice;
     var data = [];
+    // 과거 100개 생성
     for(var i=100; i>0; i--) {
         var time = now - (i * 60);
-        var change = (Math.random() - 0.5) * 100;
-        var open = price;
+        var change = (Math.random() - 0.5) * (price * 0.002);
         var close = price + change;
-        var high = Math.max(open, close) + Math.random() * 20;
-        var low = Math.min(open, close) - Math.random() * 20;
-        data.push({ time: time, open: open, high: high, low: low, close: close });
+        data.push({ time: time, open: price, high: Math.max(price, close)+5, low: Math.min(price, close)-5, close: close });
         price = close;
     }
-    candleSeries.setData(data);
-    currentPrice = price;
-    updateAll();
-    drawAvgLine();
-
-    // 2. 1초마다 움직이기
-    setInterval(function() {
+    if(candleSeries) candleSeries.setData(data);
+    
+    // 1초마다 움직임 생성
+    setInterval(() => {
         var time = Math.floor(Date.now() / 1000);
-        var change = (Math.random() - 0.5) * 30; // 랜덤 등락
-        var close = currentPrice + change;
-        var open = currentPrice;
-        
-        candleSeries.update({
-            time: time,
-            open: open,
-            high: Math.max(open, close) + 5,
-            low: Math.min(open, close) - 5,
-            close: close
+        var change = (Math.random() - 0.5) * (currentPrice * 0.0005);
+        currentPrice += change;
+        if(candleSeries) candleSeries.update({
+            time: time, open: currentPrice, high: currentPrice+2, low: currentPrice-2, close: currentPrice
         });
-        currentPrice = close;
         updateAll();
         checkPending();
     }, 1000);
@@ -189,9 +168,15 @@ function updateAll() {
         hPnl.innerText = `${sign}$${pnl.toFixed(2)} (${pnlPct.toFixed(2)}%)`;
         hPnl.style.color = pnl >= 0 ? '#0ecb81' : '#f6465d';
     }
+    drawAvgLine();
 }
 
-// 6. 평단가 표시
+function updateStatus(text, color) {
+    var badge = document.getElementById('status-badge');
+    if(badge) { badge.innerText = text; badge.style.color = color; badge.style.borderColor = color; }
+}
+
+// 6. 주문 및 기타
 function drawAvgLine() {
     if(!candleSeries) return;
     if(myPriceLine) { candleSeries.removePriceLine(myPriceLine); myPriceLine = null; }
@@ -202,7 +187,6 @@ function drawAvgLine() {
     }
 }
 
-// 7. 주문 로직
 window.order = function(side) {
     var pInput = document.getElementById('inp-price').value;
     var amtInput = parseFloat(document.getElementById('inp-amount').value);
