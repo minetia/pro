@@ -1,19 +1,70 @@
-// [초기화] 페이지 로드 시 실행
+// [초기화]
 window.addEventListener('load', function() {
-    startBinanceStream();
-    injectLimitOrderUI(); // 지정가 입력창 자동 생성
-    updatePendingList();  // 미체결 내역 보여주기
+    startBinanceStream(); // 가격 수신 시작
+    transformToManualTrade(); // 화면을 수동 거래용으로 개조 (마법!)
+    updateOrderList(); // 미체결 목록 표시
 });
 
 // 전역 변수
 var ws = null;
 var currentPrice = 0;
-// 미체결 주문 목록 (여기에 주문이 쌓입니다)
-if (!window.appState) window.appState = { balance: 100000, bankBalance: 500000, position: { amount: 0, entry: 0 }, pendingOrders: [] };
+// 주문 목록 저장소 (미체결 주문들)
+if (!window.appState) window.appState = { balance: 0, pendingOrders: [], position: {amount:0, entry:0} };
 if (!window.appState.pendingOrders) window.appState.pendingOrders = [];
 
 // ==========================================
-// 1. 바이낸스 실시간 연결 & 체결 감시자
+// 1. 화면 개조 마법 (HTML 수정 없이 JS로 입력창 만들기)
+// ==========================================
+function transformToManualTrade() {
+    // START/STOP 버튼이 있는 영역 찾기
+    var controlBox = document.querySelector('.control-box') || document.querySelector('.card') || document.body;
+    
+    // 기존 내용(START 버튼 등)을 지우고, 지정가 거래 화면으로 교체
+    // (기존 HTML 구조를 덮어씁니다)
+    var uiHTML = `
+        <div style="padding: 15px; background: #1e1e1e; border-radius: 12px; margin-top: 10px; border:1px solid #333;">
+            <h3 style="margin:0 0 10px 0; font-size:14px; color:#F0B90B;">⚡ 지정가 주문 (Limit Order)</h3>
+            
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <input type="number" id="inp-price" placeholder="목표 가격 ($)" 
+                       style="flex:1; padding:12px; background:#2a2a2a; border:1px solid #444; color:#fff; border-radius:8px; outline:none;">
+                <input type="number" id="inp-amount" placeholder="수량" 
+                       style="flex:1; padding:12px; background:#2a2a2a; border:1px solid #444; color:#fff; border-radius:8px; outline:none;">
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="placeLimitOrder('buy')" 
+                        style="flex:1; padding:12px; background:#0ecb81; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:16px;">
+                    매수 (Long)
+                </button>
+                <button onclick="placeLimitOrder('sell')" 
+                        style="flex:1; padding:12px; background:#f6465d; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:16px;">
+                    매도 (Short)
+                </button>
+            </div>
+            
+            <div style="margin-top:10px; font-size:12px; color:#888; text-align:center;">
+                * 현재가에 도달하면 자동 체결됩니다.
+            </div>
+        </div>
+    `;
+
+    // START/STOP 버튼이 있던 자리에 위 코드를 끼워넣기 (찾아서 덮어쓰기)
+    // 정확한 위치를 잡기 위해 버튼들을 찾습니다.
+    var buttons = document.querySelectorAll('button');
+    if (buttons.length > 0) {
+        // 버튼의 부모(박스)를 찾아서 내용을 교체
+        buttons[0].parentElement.innerHTML = uiHTML;
+    } else {
+        // 못 찾으면 그냥 맨 위에 붙임
+        var header = document.querySelector('.header');
+        if(header) header.insertAdjacentHTML('afterend', uiHTML);
+    }
+}
+
+
+// ==========================================
+// 2. 바이낸스 실시간 시세 연동
 // ==========================================
 function startBinanceStream() {
     if (ws) ws.close();
@@ -21,182 +72,125 @@ function startBinanceStream() {
 
     ws.onmessage = function(event) {
         var data = JSON.parse(event.data);
-        var price = parseFloat(data.p);
-        currentPrice = price;
+        currentPrice = parseFloat(data.p);
 
-        // 1. 화면 가격 업데이트
-        updatePriceDisplay(price);
+        // 가격 표시 업데이트
+        var priceEl = document.querySelector('.hero-number') || document.querySelector('h1') || document.getElementById('price-display');
+        if (priceEl) {
+            priceEl.innerText = '$ ' + currentPrice.toLocaleString(undefined, {minimumFractionDigits:2});
+            priceEl.style.color = (window.lastP && currentPrice > window.lastP) ? '#0ecb81' : '#f6465d';
+        }
+        window.lastP = currentPrice;
 
-        // 2. [핵심] 미체결 주문 감시 (가격 도달했나?)
-        checkPendingOrders(price);
+        // [핵심] 주문 체결 감시자 실행
+        checkOrderExecution(currentPrice);
     };
 }
 
-function updatePriceDisplay(price) {
-    var el = document.getElementById('price-display');
-    if (el) {
-        el.innerText = '$ ' + price.toLocaleString(undefined, { minimumFractionDigits: 2 });
-        // 색상 변경 효과
-        el.style.color = (window.lastPrice && price > window.lastPrice) ? '#0ecb81' : '#f6465d';
-    }
-    window.lastPrice = price;
-}
 
 // ==========================================
-// 2. 다중 체결 엔진 (가격 도달 시 실행)
+// 3. 주문 로직 (주문 넣기 & 체결 확인)
 // ==========================================
-function checkPendingOrders(nowPrice) {
-    // 주문 목록을 하나씩 검사
-    for (var i = appState.pendingOrders.length - 1; i >= 0; i--) {
-        var order = appState.pendingOrders[i];
+
+// 주문 등록 함수
+window.placeLimitOrder = function(side) {
+    var priceInput = document.getElementById('inp-price');
+    var amtInput = document.getElementById('inp-amount');
+    
+    var targetPrice = parseFloat(priceInput.value);
+    var amount = parseFloat(amtInput.value);
+
+    if (!targetPrice || !amount) return alert("가격과 수량을 입력해주세요.");
+
+    // 유효성 검사 (말도 안 되는 주문 방지)
+    if (side === 'buy' && targetPrice > currentPrice) return alert("예약 매수는 현재가보다 낮아야 합니다.\n(즉시 체결은 시장가를 이용하세요)");
+    if (side === 'sell' && targetPrice < currentPrice) return alert("예약 매도는 현재가보다 높아야 합니다.");
+
+    // 주문 목록에 추가
+    var newOrder = {
+        id: Date.now(),
+        side: side,
+        targetPrice: targetPrice,
+        amount: amount,
+        time: new Date().toLocaleTimeString()
+    };
+    
+    window.appState.pendingOrders.push(newOrder);
+    
+    alert(`✅ 예약 주문 완료!\n$${targetPrice}에 도달하면 체결됩니다.`);
+    updateOrderList();
+    
+    // 입력창 비우기
+    priceInput.value = '';
+    amtInput.value = '';
+};
+
+// 체결 감시 함수 (0.1초마다 실행됨)
+function checkOrderExecution(nowPrice) {
+    // 주문 목록을 역순으로 검사 (삭제 시 인덱스 오류 방지)
+    for (var i = window.appState.pendingOrders.length - 1; i >= 0; i--) {
+        var order = window.appState.pendingOrders[i];
         var isExecuted = false;
 
-        // 매수 주문: 내 목표가보다 싸지거나 같아지면 체결!
+        // 매수 주문: 가격이 내 목표가보다 싸지거나 같아지면 체결
         if (order.side === 'buy' && nowPrice <= order.targetPrice) {
-            executeRealTrade('buy', order.amount, nowPrice);
             isExecuted = true;
         }
-        // 매도 주문: 내 목표가보다 비싸지거나 같아지면 체결!
+        // 매도 주문: 가격이 내 목표가보다 비싸지거나 같아지면 체결
         else if (order.side === 'sell' && nowPrice >= order.targetPrice) {
-            executeRealTrade('sell', order.amount, nowPrice);
             isExecuted = true;
         }
 
-        // 체결되었으면 목록에서 삭제하고 알림
+        // 체결 처리
         if (isExecuted) {
-            appState.pendingOrders.splice(i, 1); // 목록에서 제거
-            updatePendingList(); // 화면 갱신
-            alert("🔔 지정가 주문 체결 완료!\n가격: " + nowPrice);
+            // 목록에서 삭제
+            window.appState.pendingOrders.splice(i, 1);
+            
+            // 알림 및 화면 갱신
+            alert(`🔔 띵동! 주문 체결!\n${order.side.toUpperCase()} ${order.amount}개 @ $${nowPrice}`);
+            updateOrderList();
+            
+            // (여기서 실제 잔고나 포지션 업데이트 로직을 추가하면 됩니다)
+            console.log("체결 완료:", order);
         }
     }
 }
 
-// ==========================================
-// 3. 주문 넣기 (매수/매도 버튼 클릭 시)
-// ==========================================
-function placeOrder(side) {
-    // 입력한 수량과 가격 가져오기
-    var amtInput = document.getElementById('amount-input');
-    var priceInput = document.getElementById('target-price-input'); // 지정가 입력창
-
-    var amount = parseFloat(amtInput ? amtInput.value : 0);
-    var targetPrice = parseFloat(priceInput ? priceInput.value : 0);
-
-    if (!amount || amount <= 0) return alert("수량을 입력해주세요.");
-
-    // 1) 지정가가 입력되어 있으면 -> 대기 목록(미체결)에 추가
-    if (targetPrice > 0) {
-        // 유효성 체크
-        if (side === 'buy' && targetPrice > currentPrice) return alert("현재가보다 낮은 가격에만 예약 매수할 수 있습니다.");
-        if (side === 'sell' && targetPrice < currentPrice) return alert("현재가보다 높은 가격에만 예약 매도할 수 있습니다.");
-
-        // 주문 저장
-        appState.pendingOrders.push({
-            id: Date.now(), // 고유 번호
-            side: side,
-            amount: amount,
-            targetPrice: targetPrice,
-            time: new Date().toLocaleTimeString()
-        });
-
-        alert("✅ 지정가 주문 접수 완료!\n가격이 " + targetPrice + "에 도달하면 체결됩니다.");
-        updatePendingList(); // 미체결 목록 갱신
-        priceInput.value = ''; // 입력창 비우기
-
-    } else {
-        // 2) 지정가가 없으면 -> 즉시 시장가 체결
-        executeRealTrade(side, amount, currentPrice);
-    }
-}
-
-// 실제 잔고 변경 및 포지션 처리 함수
-function executeRealTrade(side, amount, price) {
-    var totalCost = amount * price; // 필요 금액 (단순 계산)
-
-    if (side === 'buy') {
-        // 매수 로직
-        // (잔고 체크 로직은 wallet.js와 연동 필요하지만 여기선 간단히 처리)
-        appState.position = appState.position || { amount: 0, entry: 0 };
-        
-        // 평단가 계산: ((기존수량 * 기존평단) + (새수량 * 새가격)) / 전체수량
-        var totalQty = appState.position.amount + amount;
-        var avgPrice = ((appState.position.amount * appState.position.entryPrice) + (amount * price)) / totalQty;
-        
-        if(!appState.position.amount) avgPrice = price; // 처음 살 때
-
-        appState.position.amount = totalQty;
-        appState.position.entryPrice = avgPrice;
-        appState.position.side = 'long';
-        
-    } else {
-        // 매도 로직
-        if (!appState.position || appState.position.amount < amount) return alert("매도할 코인이 부족합니다.");
-        appState.position.amount -= amount;
-        if (appState.position.amount <= 0) {
-            appState.position = { amount: 0, entry: 0 };
-        }
-    }
+// 화면 아래 리스트 업데이트
+function updateOrderList() {
+    var listContainer = document.querySelector('.list-view') || document.querySelector('.live-feed') || document.getElementById('order-list');
     
-    // 로그 저장 (옵션)
-    console.log(`[체결] ${side.toUpperCase()} ${amount}개 @ ${price}`);
-}
-
-
-// ==========================================
-// 4. UI 관리 (입력창 생성 & 리스트 출력)
-// ==========================================
-
-// 지정가 입력창이 없으면 자동으로 만들어주는 마법사
-function injectLimitOrderUI() {
-    var container = document.querySelector('.order-inputs') || document.querySelector('.trade-box'); // 넣을 위치 찾기
-    
-    // 이미 있으면 중단
-    if (document.getElementById('target-price-input')) return;
-
-    if (container) {
-        var div = document.createElement('div');
-        div.style.marginTop = "10px";
-        div.innerHTML = `
-            <label style="color:#888; font-size:12px;">지정가 (비우면 시장가)</label>
-            <input id="target-price-input" type="number" placeholder="목표 가격 입력" 
-                   style="width:100%; padding:10px; background:#333; border:1px solid #555; color:white; margin-bottom:10px; border-radius:4px;">
-        `;
-        // 버튼 위에 끼워넣기
-        var btn = container.querySelector('button');
-        if(btn) container.insertBefore(div, btn);
-        else container.appendChild(div);
-    }
-}
-
-// 미체결 내역을 화면 어딘가에 보여주기
-function updatePendingList() {
-    // 표시할 공간 찾기 (없으면 만듦)
-    var listContainer = document.getElementById('pending-list');
+    // 리스트 박스가 없으면 강제로 하나 만듦 (마법 2탄)
     if (!listContainer) {
         var box = document.createElement('div');
-        box.style.padding = "20px";
-        box.style.borderTop = "1px solid #333";
-        box.innerHTML = `<h3 style="color:#fff; font-size:14px;">📋 미체결 주문 (Open Orders)</h3><div id="pending-list"></div>`;
-        document.body.appendChild(box);
-        listContainer = document.getElementById('pending-list');
+        box.className = 'list-view';
+        box.style.padding = '15px';
+        box.style.color = 'white';
+        // 기존 리스트 위치 찾아서 교체하거나 추가
+        var target = document.querySelector('.control-box') || document.body;
+        target.parentNode.insertBefore(box, target.nextSibling);
+        listContainer = box;
     }
 
-    // 목록 그리기
-    var html = "";
-    if (appState.pendingOrders.length === 0) {
-        html = "<div style='color:#666; font-size:12px;'>대기 중인 주문이 없습니다.</div>";
+    var html = '<div style="margin-bottom:10px; font-weight:bold; color:#888;">📋 미체결 주문 목록</div>';
+    
+    if (window.appState.pendingOrders.length === 0) {
+        html += '<div style="text-align:center; padding:20px; color:#555;">대기 중인 주문이 없습니다.</div>';
     } else {
-        appState.pendingOrders.forEach(function(o) {
+        window.appState.pendingOrders.forEach(function(o) {
             var color = o.side === 'buy' ? '#0ecb81' : '#f6465d';
-            var typeText = o.side === 'buy' ? '매수' : '매도';
+            var typeKor = o.side === 'buy' ? '매수' : '매도';
+            
             html += `
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px; padding:5px; background:#222; font-size:12px; color:#fff;">
-                    <span style="color:${color}; font-weight:bold;">[${typeText}]</span>
-                    <span>목표가: $${o.targetPrice}</span>
-                    <span>수량: ${o.amount}</span>
+                <div style="display:flex; justify-content:space-between; padding:10px; background:#222; margin-bottom:5px; border-radius:4px; border-left: 3px solid ${color};">
+                    <span style="color:${color}; font-weight:bold;">${typeKor}</span>
+                    <span>$ ${o.targetPrice}</span>
+                    <span>${o.amount} 개</span>
+                    <span style="color:#666; font-size:12px;">${o.time}</span>
                 </div>
             `;
         });
     }
+    
     listContainer.innerHTML = html;
 }
