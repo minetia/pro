@@ -1,4 +1,4 @@
-// [tradingEngine.js] 최종 수정본 (안전장치 포함)
+// [tradingEngine.js] 강력 복구 버전
 
 var chart = null;
 var candleSeries = null;
@@ -7,13 +7,14 @@ var myPriceLine = null;
 var ws = null;
 var activeTab = 'history';
 
-// 1. 데이터 로드 (시드머니 0원 방지 로직)
-var savedData = localStorage.getItem('neuralNodeData');
-if (savedData) {
-    window.appState = JSON.parse(savedData);
-    // 만약 잔고가 비정상(NaN)이거나 0원인데 거래내역도 없다면 초기화
-    if (!window.appState.balance || (window.appState.balance === 0 && window.appState.tradeHistory.length === 0)) {
+// [1] 데이터 로드 및 복구 (0원 문제 해결)
+var saved = localStorage.getItem('neuralNodeData');
+if (saved) {
+    window.appState = JSON.parse(saved);
+    // ★ 데이터가 깨졌거나 0원이면 강제로 10만불로 초기화
+    if (!window.appState.balance || window.appState.balance <= 0) {
         window.appState.balance = 100000;
+        window.saveState();
     }
 } else {
     window.appState = {
@@ -29,18 +30,22 @@ window.saveState = function() {
     localStorage.setItem('neuralNodeData', JSON.stringify(window.appState));
 };
 
-// 페이지 로드 시 실행
+// [2] 실행 (차트 안전 로딩)
 window.addEventListener('load', function() {
-    renderUI();           
-    // 차트가 그려질 div가 생성된 후 실행 (매우 중요)
-    setTimeout(() => {
-        initChart();      
-        connectBinance(); 
-        updateAll();
+    renderUI();
+    
+    // 차트 라이브러리가 로드될 때까지 0.1초씩 기다림 (무한 대기 방지)
+    var checkChartLib = setInterval(function() {
+        if (window.LightweightCharts) {
+            clearInterval(checkChartLib);
+            initChart();      // 차트 생성
+            connectBinance(); // 시세 연결
+            updateAll();      // 화면 갱신
+        }
     }, 100);
 });
 
-// 2. UI 그리기 (입력창 깨짐 수정)
+// [3] UI 그리기
 function renderUI() {
     var app = document.getElementById('app-container');
     if (!app) return;
@@ -55,15 +60,15 @@ function renderUI() {
         <div id="chart-area" style="width:100%; height:350px; background:#000;"></div>
 
         <div style="padding:15px; background:#1e1e1e; border-top:1px solid #333;">
-            <div class="input-group">
-                <input type="number" id="inp-price" class="input-field" placeholder="지정가 (빈칸=시장가)">
-                <input type="number" id="inp-amount" class="input-field" placeholder="수량 (BTC)">
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <input type="number" id="inp-price" placeholder="지정가 (빈칸=시장가)" style="flex:1; padding:12px; background:#2a2a2a; border:1px solid #444; color:#fff; border-radius:6px;">
+                <input type="number" id="inp-amount" placeholder="수량 (BTC)" style="flex:1; padding:12px; background:#2a2a2a; border:1px solid #444; color:#fff; border-radius:6px;">
             </div>
             <div style="display:flex; gap:10px;">
                 <button onclick="order('buy')" style="flex:1; padding:12px; background:#0ecb81; border:none; border-radius:6px; color:#fff; font-weight:bold;">매수</button>
                 <button onclick="order('sell')" style="flex:1; padding:12px; background:#f6465d; border:none; border-radius:6px; color:#fff; font-weight:bold;">매도</button>
             </div>
-            <div style="text-align:center; margin-top:15px;" onclick="resetData()">
+            <div style="text-align:center; margin-top:15px; cursor:pointer;" onclick="resetData()">
                 <span style="font-size:11px; color:#666; text-decoration:underline;">데이터 초기화 (Reset)</span>
             </div>
         </div>
@@ -82,10 +87,10 @@ function renderUI() {
     switchTab('history', document.querySelector('.tab-item'));
 }
 
-// 3. 차트 생성
+// [4] 차트 생성
 function initChart() {
     var container = document.getElementById('chart-area');
-    if(!container) return; 
+    if(!container) return;
     container.innerHTML = '';
 
     chart = LightweightCharts.createChart(container, {
@@ -99,7 +104,6 @@ function initChart() {
         upColor: '#0ecb81', downColor: '#f6465d', borderVisible: false, wickUpColor: '#0ecb81', wickDownColor: '#f6465d'
     });
 
-    // 과거 데이터 로드
     fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100')
         .then(res => res.json())
         .then(data => {
@@ -113,7 +117,7 @@ function initChart() {
         });
 }
 
-// 4. 바이낸스 연결
+// [5] 바이낸스 연결
 function connectBinance() {
     if(ws) ws.close();
     ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@kline_1m");
@@ -128,12 +132,12 @@ function connectBinance() {
     };
 }
 
-// 5. 주문 로직
+// [6] 주문 로직
 window.order = function(side) {
     var pInput = document.getElementById('inp-price').value;
     var amtInput = parseFloat(document.getElementById('inp-amount').value);
     
-    if(!amtInput || isNaN(amtInput)) return alert("수량을 정확히 입력하세요.");
+    if(!amtInput || isNaN(amtInput)) return alert("수량을 입력하세요.");
 
     if(pInput) { // 지정가
         window.appState.pendingOrders.push({
@@ -141,7 +145,7 @@ window.order = function(side) {
         });
         saveState();
         if(activeTab === 'open') renderList();
-        return alert("주문 접수 완료");
+        return alert("주문 접수");
     }
 
     executeTrade(side, amtInput, currentPrice); // 시장가
@@ -174,14 +178,11 @@ function executeTrade(side, amount, price) {
     alert("체결 완료!");
 }
 
-// 6. 업데이트 및 유틸
+// [7] 업데이트 및 탭
 function updateAll() {
     var state = window.appState;
     var pos = state.position;
-    // NaN 방지 처리
-    var balance = parseFloat(state.balance) || 0;
-    var currentVal = (pos.amount * currentPrice) || 0;
-    var total = balance + currentVal;
+    var total = state.balance + (pos.amount * currentPrice);
 
     var pnl = 0, pnlPct = 0;
     if(pos.amount > 0) {
