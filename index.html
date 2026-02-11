@@ -10,7 +10,6 @@
         body { background-color: #000; color: #fff; margin: 0; padding-bottom: 80px; font-family: -apple-system, sans-serif; }
         * { box-sizing: border-box; }
 
-        /* [헤더] 자산 정보 통합 */
         .header { 
             position: sticky; top: 0; z-index: 100; 
             display: flex; justify-content: space-between; align-items: center;
@@ -22,15 +21,10 @@
         .header-right { text-align: right; line-height: 1.2; }
         .asset-balance { font-size: 14px; font-weight: bold; color: #fff; display: block; }
         .asset-pnl { font-size: 11px; color: #888; font-weight: 500; }
-        /* 연결 상태 표시등 */
-        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #555; margin-left: 8px; }
-        .status-dot.online { background: #0ecb81; box-shadow: 0 0 5px #0ecb81; }
-        .status-dot.offline { background: #f6465d; }
+        .badge { font-size: 10px; color: #0ecb81; border: 1px solid #0ecb81; padding: 2px 4px; border-radius: 3px; margin-left: 6px; vertical-align: text-bottom; }
 
-        /* [차트] 높이 확보 */
         #chart-area { width: 100%; height: 400px; background: #000; }
 
-        /* [주문창] */
         .control-panel { padding: 15px; background: #1e1e1e; border-top: 1px solid #333; }
         .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
         .input-field { 
@@ -38,21 +32,15 @@
             color: #fff; border-radius: 6px; font-size: 14px; width: 100%; min-width: 0; outline: none;
         }
 
-        /* [탭 & 리스트] 테이블 깨짐 방지 */
         .tab-menu { display: flex; background: #1e1e1e; border-bottom: 1px solid #333; }
         .tab-item { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: #888; cursor: pointer; }
         .tab-item.active { color: #F0B90B; border-bottom: 2px solid #F0B90B; font-weight: bold; background: #252525; }
         
         .list-row { display: flex; padding: 12px 10px; border-bottom: 1px solid #222; font-size: 12px; align-items: center; }
-        /* 글씨가 넘쳐도 줄바꿈 안 되게 설정 (white-space: nowrap) */
-        .col-1 { width: 25%; color:#888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } 
-        .col-2 { width: 15%; text-align:center; white-space: nowrap; } 
-        .col-3 { width: 30%; text-align:right; color:#fff; white-space: nowrap; } 
-        .col-4 { width: 30%; text-align:right; color:#fff; white-space: nowrap; }
-        
+        .col-1 { width: 25%; color:#888; } .col-2 { width: 15%; text-align:center; } 
+        .col-3 { width: 30%; text-align:right; color:#fff; } .col-4 { width: 30%; text-align:right; color:#fff; }
         .text-buy { color: #0ecb81; } .text-sell { color: #f6465d; }
 
-        /* [하단 메뉴] */
         .bottom-nav { 
             position: fixed; bottom: 0; width: 100%; 
             background: #121212; border-top: 1px solid #333; z-index: 999; 
@@ -70,11 +58,12 @@
             <h2>NEURAL <span>NODE</span></h2>
         </div>
         <div class="header-right">
-            <div style="display:inline-block; text-align:right; vertical-align: middle;">
-                <span id="header-balance" class="asset-balance">$ --</span>
+            <div style="display:inline-block; text-align:right;">
+                <span id="header-balance" class="asset-balance">$ 100,000</span>
                 <span id="header-pnl" class="asset-pnl">0.00%</span>
             </div>
-            <span id="conn-status" class="status-dot"></span> </div>
+            <span id="status-badge" class="badge">LIVE</span>
+        </div>
     </div>
 
     <div id="chart-area"></div>
