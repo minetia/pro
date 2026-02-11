@@ -8,7 +8,7 @@ window.addEventListener('load', function() {
     updateOrderList();
     
     // 내 평단가 선 그리기 (처음 로드시)
-    updateMyPriceLine();
+    setTimeout(updateMyPriceLine, 1000); // 데이터 로딩 시간 고려
 });
 
 // 전역 변수
@@ -16,31 +16,30 @@ var ws = null;
 var currentPrice = 0;
 var chart = null;
 var candleSeries = null;
-var myPriceLine = null; // 내 평단가 선을 저장할 변수
+var myPriceLine = null; 
 
-// 데이터 저장소 (없으면 기본값 생성)
+// 데이터 저장소
 if (!window.appState) window.appState = { 
     balance: 100000, 
     pendingOrders: [], 
-    position: { amount: 0, entryPrice: 0, side: 'none' } // 포지션 정보
+    position: { amount: 0, entryPrice: 0, side: 'none' } 
 };
 
 // ==========================================
-// 1. 차트 설정 (TradingView)
+// 1. 차트 설정 (다크모드 적용!)
 // ==========================================
 function initChart() {
     var chartContainer = document.getElementById('chart-container');
     
-    // 차트 박스가 없으면 강제로 만듦
+    // 차트 박스 없으면 생성
     if (!chartContainer) {
         chartContainer = document.createElement('div');
         chartContainer.id = 'chart-container';
         chartContainer.style.width = '100%';
         chartContainer.style.height = '350px';
-        chartContainer.style.backgroundColor = '#1e1e1e';
+        chartContainer.style.backgroundColor = '#1e1e1e'; // 박스 자체도 검게
         chartContainer.style.marginBottom = '20px';
         
-        // 헤더 밑에 끼워넣기
         var header = document.querySelector('.header') || document.body.firstChild;
         if(header && header.parentNode) header.parentNode.insertBefore(chartContainer, header.nextSibling);
         else document.body.appendChild(chartContainer);
@@ -55,21 +54,36 @@ function initChart() {
         return;
     }
 
-    // 차트 생성
+    // ★ 차트 생성 (여기가 중요: 배경색 지정)
     chart = LightweightCharts.createChart(chartContainer, {
         width: chartContainer.clientWidth,
         height: 350,
-        layout: { backgroundColor: '#1e1e1e', textColor: '#d1d4dc' },
-        grid: { vertLines: { color: 'rgba(42, 46, 57, 0.5)' }, horzLines: { color: 'rgba(42, 46, 57, 0.5)' } },
-        priceScale: { borderColor: 'rgba(197, 203, 206, 0.8)' },
-        timeScale: { borderColor: 'rgba(197, 203, 206, 0.8)', timeVisible: true, secondsVisible: false },
+        layout: {
+            background: { type: 'solid', color: '#1e1e1e' }, // ★ 배경을 어두운 색으로!
+            textColor: '#d1d4dc',
+        },
+        grid: {
+            vertLines: { color: 'rgba(255, 255, 255, 0.1)' }, // 그리드 선도 연하게
+            horzLines: { color: 'rgba(255, 255, 255, 0.1)' },
+        },
+        priceScale: {
+            borderColor: 'rgba(197, 203, 206, 0.8)',
+        },
+        timeScale: {
+            borderColor: 'rgba(197, 203, 206, 0.8)',
+            timeVisible: true,
+            secondsVisible: false,
+        },
     });
 
     // 캔들 시리즈 추가
     candleSeries = chart.addCandlestickSeries({
-        upColor: '#0ecb81', downColor: '#f6465d',
-        borderDownColor: '#f6465d', borderUpColor: '#0ecb81',
-        wickDownColor: '#f6465d', wickUpColor: '#0ecb81',
+        upColor: '#0ecb81',        // 양봉 (초록)
+        downColor: '#f6465d',      // 음봉 (빨강)
+        borderDownColor: '#f6465d',
+        borderUpColor: '#0ecb81',
+        wickDownColor: '#f6465d',
+        wickUpColor: '#0ecb81',
     });
 
     // 반응형 크기 조절
@@ -79,28 +93,25 @@ function initChart() {
 }
 
 // ==========================================
-// 2. 평단가 선 그리기 (핵심 기능!)
+// 2. 평단가 선 그리기
 // ==========================================
 function updateMyPriceLine() {
     if (!candleSeries) return;
 
-    // 1. 기존 선이 있으면 지우기 (갱신을 위해)
     if (myPriceLine) {
         candleSeries.removePriceLine(myPriceLine);
         myPriceLine = null;
     }
 
-    // 2. 포지션(가진 코인)이 있을 때만 새로 그리기
     var pos = window.appState.position;
     if (pos && pos.amount > 0 && pos.entryPrice > 0) {
-        
         myPriceLine = candleSeries.createPriceLine({
             price: pos.entryPrice,
-            color: '#F0B90B', // 노란색 (눈에 잘 띔)
+            color: '#F0B90B', 
             lineWidth: 2,
-            lineStyle: LightweightCharts.LineStyle.Dotted, // 점선
+            lineStyle: LightweightCharts.LineStyle.Dotted,
             axisLabelVisible: true,
-            title: '내 평단가', // 라벨 이름
+            title: '내 평단가',
         });
     }
 }
@@ -132,18 +143,16 @@ function connectBinance() {
         }
         window.lastP = currentPrice;
 
-        // 지정가 주문 감시
         checkOrders(currentPrice);
     };
 }
 
 // ==========================================
-// 4. 주문창 UI (겹침 방지 버전)
+// 4. 주문창 UI (어두운 테마 유지)
 // ==========================================
 function fixLayoutAndShowOrderUI() {
     var target = document.querySelector('.control-box') || document.querySelector('.card');
     
-    // 못 찾으면 강제 생성
     if (!target) {
         target = document.createElement('div');
         var chartBox = document.getElementById('chart-container');
@@ -185,7 +194,7 @@ function fixLayoutAndShowOrderUI() {
 }
 
 // ==========================================
-// 5. 주문 로직 (평단가 표시 기능 추가)
+// 5. 주문 로직
 // ==========================================
 window.order = function(side) {
     var pVal = document.getElementById('inp-price').value;
@@ -194,11 +203,9 @@ window.order = function(side) {
 
     if (!amount) return alert("수량을 입력해주세요.");
     
-    // 가격이 비어있으면 -> 시장가(즉시 체결)로 간주
     if (!pVal || pVal === "") {
-        executeTrade(side, amount, currentPrice); // 즉시 체결
+        executeTrade(side, amount, currentPrice); 
     } else {
-        // 가격이 있으면 -> 지정가(예약) 주문
         var price = parseFloat(pVal);
         window.appState.pendingOrders.push({
             id: Date.now(), side: side, price: price, amount: amount, time: new Date().toLocaleTimeString()
@@ -208,14 +215,10 @@ window.order = function(side) {
     }
 };
 
-// 실제 체결 함수 (시장가 or 지정가 도달 시)
 function executeTrade(side, amount, price) {
     if(side === 'buy') {
-        // 매수: 평단가 계산 (물타기)
         var oldAmt = window.appState.position.amount;
         var oldEntry = window.appState.position.entryPrice;
-        
-        // 새 평단가 = (기존금액 + 새금액) / 전체수량
         var newEntry = ((oldAmt * oldEntry) + (amount * price)) / (oldAmt + amount);
         
         window.appState.position.amount += amount;
@@ -224,20 +227,14 @@ function executeTrade(side, amount, price) {
 
         alert(`💎 매수 체결!\n${amount}개 @ $${price}\n(새 평단가: $${newEntry.toFixed(2)})`);
     } else {
-        // 매도: 수량 감소
         if(window.appState.position.amount < amount) return alert("보유 코인이 부족합니다.");
         window.appState.position.amount -= amount;
-        if(window.appState.position.amount <= 0) {
-            window.appState.position.entryPrice = 0; // 다 팔면 평단가 초기화
-        }
+        if(window.appState.position.amount <= 0) window.appState.position.entryPrice = 0;
         alert(`💰 매도 체결!\n${amount}개 @ $${price}`);
     }
-
-    // ★ 중요: 체결되었으니 차트에 평단가 선 다시 그리기
     updateMyPriceLine();
 }
 
-// 지정가 감시
 function checkOrders(nowPrice) {
     var orders = window.appState.pendingOrders;
     for (var i = orders.length - 1; i >= 0; i--) {
@@ -248,7 +245,7 @@ function checkOrders(nowPrice) {
 
         if (executed) {
             orders.splice(i, 1);
-            executeTrade(o.side, o.amount, o.price); // 체결 실행
+            executeTrade(o.side, o.amount, o.price); 
             updateOrderList();
         }
     }
