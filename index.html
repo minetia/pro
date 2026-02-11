@@ -4,33 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Neural Node Pro</title>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    
     <style>
         /* [기본 스타일] */
         body { background-color: #000; color: #fff; margin: 0; padding-bottom: 80px; font-family: -apple-system, sans-serif; }
         * { box-sizing: border-box; }
 
-        /* 헤더 */
-        .header { display: flex; justify-content: space-between; padding: 15px; background: #121212; border-bottom: 1px solid #333; }
+        /* [수정] 헤더 고정 (Sticky) */
+        .header { 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 15px; 
+            background: #121212; 
+            border-bottom: 1px solid #333; 
+        }
         .header h2 { margin: 0; font-size: 18px; }
         .header span { color: #F0B90B; }
         .badge { font-size: 11px; color: #0ecb81; border: 1px solid #0ecb81; padding: 2px 6px; border-radius: 4px; }
 
-        /* 메인 카드 */
-        .card { width: 100%; overflow: hidden; }
+        /* 메인 컨테이너 */
+        .card { width: 100%; }
 
-        /* 테이블 스타일 (깨짐 방지) */
-        .tab-menu { display: flex; border-bottom: 1px solid #333; background: #1e1e1e; }
-        .tab-item { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: #888; cursor: pointer; }
-        .tab-item.active { color: #F0B90B; border-bottom: 2px solid #F0B90B; font-weight: bold; }
+        /* 탭 메뉴 스타일 */
+        .tab-menu { display: flex; border-bottom: 1px solid #333; background: #1e1e1e; margin-top: 10px; }
+        .tab-item { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: #888; cursor: pointer; transition: 0.2s; }
+        .tab-item.active { color: #F0B90B; border-bottom: 2px solid #F0B90B; font-weight: bold; background: #252525; }
         
-        .list-header { display: flex; padding: 10px; background: #222; color: #888; font-size: 11px; }
+        /* [수정] 테이블 깨짐 방지 (Flexbox) */
+        .list-header { display: flex; padding: 10px; background: #222; color: #888; font-size: 11px; border-top: 1px solid #333; }
         .list-row { display: flex; padding: 12px 10px; border-bottom: 1px solid #222; font-size: 12px; align-items: center; }
-        .col-1 { width: 20%; } /* 시간 */
-        .col-2 { width: 20%; text-align: center; } /* 종류 */
+        
+        /* 컬럼 넓이 고정 */
+        .col-1 { width: 25%; } /* 시간 */
+        .col-2 { width: 15%; text-align: center; } /* 종류 */
         .col-3 { width: 30%; text-align: right; } /* 가격 */
         .col-4 { width: 30%; text-align: right; } /* 수량/손익 */
 
-        /* 텍스트 컬러 */
+        /* 색상 유틸리티 */
         .text-buy { color: #0ecb81; }
         .text-sell { color: #f6465d; }
         .text-white { color: #fff; }
@@ -50,8 +64,8 @@
     </div>
 
     <div id="app-container" class="card">
-        <div style="padding:50px; text-align:center; color:#555;">
-            로딩 중...
+        <div style="height: 80vh; display:flex; justify-content:center; align-items:center; color:#555;">
+            시스템 로딩 중...
         </div>
     </div>
 
