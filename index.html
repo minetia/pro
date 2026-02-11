@@ -11,17 +11,25 @@
         body { background-color: #000; color: #fff; margin: 0; padding-bottom: 80px; font-family: -apple-system, sans-serif; }
         * { box-sizing: border-box; }
 
-        /* 헤더 고정 */
+        /* [수정] 헤더 스타일 (자산 정보 포함) */
         .header { 
             position: sticky; top: 0; z-index: 100; 
-            display: flex; justify-content: space-between; padding: 15px; 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 15px; /* 높이 약간 줄임 */
             background: #121212; border-bottom: 1px solid #333; 
         }
-        .header h2 { margin: 0; font-size: 18px; }
-        .header span { color: #F0B90B; }
-        .badge { font-size: 11px; color: #0ecb81; border: 1px solid #0ecb81; padding: 2px 6px; border-radius: 4px; }
+        .header-left h2 { margin: 0; font-size: 16px; } /* 로고 크기 조정 */
+        .header-left span { color: #F0B90B; }
+        
+        /* [신규] 헤더 우측 (자산+배지) */
+        .header-right { display: flex; align-items: center; gap: 10px; text-align: right; }
+        .asset-info { line-height: 1.2; }
+        .asset-balance { font-size: 14px; font-weight: bold; color: #fff; }
+        .asset-pnl { font-size: 11px; color: #888; }
+        
+        .badge { font-size: 10px; color: #0ecb81; border: 1px solid #0ecb81; padding: 2px 5px; border-radius: 3px; height: fit-content; }
 
-        /* 입력창 스타일 (깨짐 방지) */
+        /* 입력창 스타일 */
         .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
         .input-field { 
             flex: 1; width: 100%; min-width: 0; padding: 12px; 
@@ -29,7 +37,7 @@
         }
 
         /* 탭 메뉴 */
-        .tab-menu { display: flex; background: #1e1e1e; margin-top: 10px; border-bottom: 1px solid #333; }
+        .tab-menu { display: flex; background: #1e1e1e; margin-top: 0; border-bottom: 1px solid #333; }
         .tab-item { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: #888; cursor: pointer; }
         .tab-item.active { color: #F0B90B; border-bottom: 2px solid #F0B90B; font-weight: bold; background: #252525; }
         
@@ -57,13 +65,21 @@
 <body>
 
     <div class="header">
-        <h2>NEURAL <span>NODE</span></h2>
-        <span class="badge">LIVE</span>
+        <div class="header-left">
+            <h2>NEURAL <span>NODE</span></h2>
+        </div>
+        <div class="header-right">
+            <div class="asset-info">
+                <div id="header-balance" class="asset-balance">$ --</div>
+                <div id="header-pnl" class="asset-pnl">0.00%</div>
+            </div>
+            <span class="badge">LIVE</span>
+        </div>
     </div>
 
     <div id="app-container">
-        <div style="height:350px; display:flex; justify-content:center; align-items:center; background:#000; color:#555;">
-            📊 차트 데이터 연결 중...
+        <div style="height:400px; display:flex; justify-content:center; align-items:center; background:#000; color:#555;">
+            📊 차트 연결 중...
         </div>
     </div>
 
