@@ -1,13 +1,13 @@
-// [tradingEngine.js] 3중 안전장치 연결 버전
+// [tradingEngine.js] 차트 즉시 생성 + 안정적 연결 버전
 
 var chart = null;
 var candleSeries = null;
-var currentPrice = 65000; // 초기 안전값
+var currentPrice = 65000;
 var myPriceLine = null;
 var ws = null;
 var activeTab = 'history';
 
-// 1. 데이터 로드
+// 1. 데이터 초기화
 var savedData = localStorage.getItem('neuralNodeData');
 if (savedData) {
     window.appState = JSON.parse(savedData);
@@ -26,36 +26,31 @@ window.saveState = function() {
     localStorage.setItem('neuralNodeData', JSON.stringify(window.appState));
 };
 
-// 2. 실행 (즉시 업데이트 실행)
+// 2. 실행 (앱 켜지자마자 실행)
 window.addEventListener('load', function() {
-    updateAll(); // ★ 중요: 앱 켜자마자 잔고부터 표시
+    updateAll(); // 잔고 즉시 표시
     
-    // 차트 라이브러리 체크 후 실행
-    if (window.LightweightCharts) {
-        startEngine();
-    } else {
-        // 혹시 늦게 로딩될까봐 0.5초 기다려줌
-        setTimeout(() => { 
-            if(window.LightweightCharts) startEngine(); 
-            else alert("인터넷 연결을 확인해주세요 (차트 도구 로딩 실패)");
-        }, 500);
-    }
+    // 차트 도구 로딩 체크
+    var checkLib = setInterval(function() {
+        if (window.LightweightCharts) {
+            clearInterval(checkLib);
+            // ★ 중요: 차트부터 먼저 그림!
+            initChart(); 
+            // 그 다음 데이터 연결 시도
+            connectData();
+        }
+    }, 100);
 });
 
-function startEngine() {
-    initChart();       
-    connectData();     // ★ 3중 연결 시스템 가동
-    switchTab('history', document.querySelector('.tab-item'));
-}
-
-// 3. 차트 생성
+// 3. 차트 만들기
 function initChart() {
     var container = document.getElementById('chart-area');
     if (!container) return;
-    container.innerHTML = ''; 
+    container.innerHTML = ''; // 기존 내용 삭제
 
     chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth, height: 400,
+        width: container.clientWidth,
+        height: 400,
         layout: { background: { color: '#000' }, textColor: '#888' },
         grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
         timeScale: { borderColor: '#333', timeVisible: true },
@@ -68,40 +63,34 @@ function initChart() {
     });
 
     window.addEventListener('resize', () => { chart.resize(container.clientWidth, 400); });
+    
+    // 탭 초기화
+    switchTab('history', document.querySelector('.tab-item'));
 }
 
-// 4. ★ 데이터 연결 (Binance -> CoinGecko -> Fake 순서)
+// 4. 데이터 연결 (공식 API -> 비전 API)
 function connectData() {
-    // [시도 1] 바이낸스 공식 데이터 API (CORS 허용됨)
+    // 가장 안정적인 바이낸스 비전 API 사용
     fetch('https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100')
         .then(res => res.json())
         .then(data => {
-            // 성공 시
             var candles = data.map(d => ({
                 time: d[0]/1000, open: parseFloat(d[1]), high: parseFloat(d[2]), low: parseFloat(d[3]), close: parseFloat(d[4])
             }));
             candleSeries.setData(candles);
             currentPrice = candles[candles.length-1].close;
-            connectWebSocket(); // 실시간 소켓 연결
-            updateStatus('LIVE', '#0ecb81');
+            
+            // 소켓 연결
+            connectWebSocket();
+            updateAll();
+            drawAvgLine();
+            updateStatus("LIVE", "#0ecb81");
         })
         .catch(err => {
-            console.log("바이낸스 연결 실패, 코인게코 시도...");
-            // [시도 2] 코인게코 API (단순 가격 조회용)
-            fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
-                .then(res => res.json())
-                .then(data => {
-                    currentPrice = data.bitcoin.usd;
-                    updateAll();
-                    updateStatus('GECKO', '#F0B90B'); // 노란불 (코인게코 모드)
-                    runFakeChart(currentPrice); // 차트는 가짜로 생성
-                })
-                .catch(err2 => {
-                    console.log("코인게코 실패, 자체 엔진 가동");
-                    // [시도 3] 완전 오프라인 모드
-                    updateStatus('OFFLINE', '#f6465d'); // 빨간불
-                    runFakeChart(65000);
-                });
+            console.log("데이터 연결 실패: ", err);
+            updateStatus("OFFLINE", "#f6465d");
+            // 실패해도 빈 화면 안 나오게 가짜 차트라도 그림
+            runFakeChart(65000);
         });
 }
 
@@ -119,35 +108,21 @@ function connectWebSocket() {
     };
 }
 
-// 자체 차트 엔진 (데이터 안 올 때 화면 멈춤 방지)
-function runFakeChart(startPrice) {
+// 비상용 가짜 차트
+function runFakeChart(price) {
     var now = Math.floor(Date.now() / 1000);
-    var price = startPrice;
     var data = [];
-    // 과거 100개 생성
     for(var i=100; i>0; i--) {
-        var time = now - (i * 60);
-        var change = (Math.random() - 0.5) * (price * 0.002);
-        var close = price + change;
-        data.push({ time: time, open: price, high: Math.max(price, close)+5, low: Math.min(price, close)-5, close: close });
+        var close = price + (Math.random()-0.5)*50;
+        data.push({ time: now - i*60, open: price, high: close+5, low: close-5, close: close });
         price = close;
     }
-    if(candleSeries) candleSeries.setData(data);
-    
-    // 1초마다 움직임 생성
-    setInterval(() => {
-        var time = Math.floor(Date.now() / 1000);
-        var change = (Math.random() - 0.5) * (currentPrice * 0.0005);
-        currentPrice += change;
-        if(candleSeries) candleSeries.update({
-            time: time, open: currentPrice, high: currentPrice+2, low: currentPrice-2, close: currentPrice
-        });
-        updateAll();
-        checkPending();
-    }, 1000);
+    candleSeries.setData(data);
+    currentPrice = price;
+    updateAll();
 }
 
-// 5. 화면 업데이트
+// 5. 화면 갱신
 function updateAll() {
     var state = window.appState;
     var pos = state.position;
@@ -168,7 +143,6 @@ function updateAll() {
         hPnl.innerText = `${sign}$${pnl.toFixed(2)} (${pnlPct.toFixed(2)}%)`;
         hPnl.style.color = pnl >= 0 ? '#0ecb81' : '#f6465d';
     }
-    drawAvgLine();
 }
 
 function updateStatus(text, color) {
@@ -176,7 +150,7 @@ function updateStatus(text, color) {
     if(badge) { badge.innerText = text; badge.style.color = color; badge.style.borderColor = color; }
 }
 
-// 6. 주문 및 기타
+// 6. 주문 및 유틸
 function drawAvgLine() {
     if(!candleSeries) return;
     if(myPriceLine) { candleSeries.removePriceLine(myPriceLine); myPriceLine = null; }
