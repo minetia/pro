@@ -10,7 +10,7 @@
         body { background-color: #000; color: #fff; margin: 0; padding-bottom: 80px; font-family: -apple-system, sans-serif; }
         * { box-sizing: border-box; }
 
-        /* 헤더 */
+        /* [헤더] 자산 정보 포함 */
         .header { 
             position: sticky; top: 0; z-index: 100; 
             display: flex; justify-content: space-between; align-items: center;
@@ -18,35 +18,37 @@
         }
         .header-left h2 { margin: 0; font-size: 16px; font-weight: 800; }
         .header-left span { color: #F0B90B; }
-        .header-right { text-align: right; }
+        
+        .header-right { text-align: right; line-height: 1.2; }
         .asset-balance { font-size: 14px; font-weight: bold; color: #fff; display: block; }
         .asset-pnl { font-size: 11px; color: #888; }
         .badge { font-size: 10px; color: #0ecb81; border: 1px solid #0ecb81; padding: 2px 4px; border-radius: 3px; margin-left: 5px; vertical-align: text-bottom;}
 
-        /* 차트 영역 (높이 고정) */
+        /* [차트] 높이 고정 (중요!) */
         #chart-area { width: 100%; height: 400px; background: #000; }
 
-        /* 주문창 */
+        /* [주문창] */
         .control-panel { padding: 15px; background: #1e1e1e; border-top: 1px solid #333; }
         .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
         .input-field { 
             flex: 1; padding: 12px; background: #2a2a2a; border: 1px solid #444; 
-            color: #fff; border-radius: 6px; font-size: 14px; width: 100%;
+            color: #fff; border-radius: 6px; font-size: 14px; width: 100%; min-width: 0;
         }
 
-        /* 탭 메뉴 */
+        /* [탭 & 리스트] */
         .tab-menu { display: flex; background: #1e1e1e; border-bottom: 1px solid #333; }
         .tab-item { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: #888; cursor: pointer; }
         .tab-item.active { color: #F0B90B; border-bottom: 2px solid #F0B90B; font-weight: bold; background: #252525; }
         
-        /* 리스트 */
         .list-row { display: flex; padding: 12px 10px; border-bottom: 1px solid #222; font-size: 12px; align-items: center; }
-        .col-1 { width: 25%; color:#888; } .col-2 { width: 15%; text-align:center; } 
-        .col-3 { width: 30%; text-align:right; color:#fff; } .col-4 { width: 30%; text-align:right; color:#fff; }
+        .col-1 { width: 25%; color:#888; } 
+        .col-2 { width: 15%; text-align:center; } 
+        .col-3 { width: 30%; text-align:right; color:#fff; } 
+        .col-4 { width: 30%; text-align:right; color:#fff; }
         
         .text-buy { color: #0ecb81; } .text-sell { color: #f6465d; }
 
-        /* 하단 메뉴 */
+        /* [하단 메뉴] */
         .bottom-nav { 
             position: fixed; bottom: 0; width: 100%; 
             background: #121212; border-top: 1px solid #333; z-index: 999; 
@@ -82,7 +84,7 @@
             <button onclick="order('sell')" style="flex:1; padding:12px; background:#f6465d; border:none; border-radius:6px; color:#fff; font-weight:bold;">매도</button>
         </div>
         <div style="text-align:center; margin-top:10px;" onclick="resetData()">
-            <span style="font-size:11px; color:#666; text-decoration:underline;">데이터 초기화</span>
+            <span style="font-size:11px; color:#666; text-decoration:underline; cursor:pointer;">데이터 초기화</span>
         </div>
     </div>
 
