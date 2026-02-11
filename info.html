@@ -2,74 +2,77 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Market Insight</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Market Insight</title>
     <style>
-        /* [스타일] 어두운 테마 디자인 */
+        /* [디자인] 어두운 테마 설정 */
         body {
             background-color: #121212;
             color: #ffffff;
-            font-family: 'Roboto', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
             padding: 0;
-            padding-bottom: 70px; /* 하단 메뉴 공간 */
+            padding-bottom: 80px; /* 하단 메뉴 가림 방지 */
         }
+        
+        /* 상단 헤더 */
         .header {
-            display: flex;
-            align-items: center;
-            padding: 15px;
+            padding: 15px 20px;
             background-color: #1e1e1e;
             border-bottom: 1px solid #333;
-        }
-        .header h2 { margin: 0; font-size: 18px; color: #fff; }
-        .header span { color: #F0B90B; margin-left: 5px; font-weight: bold; }
-        
-        /* 검색창 */
-        .search-box {
+            font-size: 18px;
+            font-weight: bold;
             display: flex;
+            align-items: center;
+        }
+        .header span { color: #F0B90B; margin-left: 5px; }
+
+        /* 검색창 영역 */
+        .search-container {
             padding: 15px;
+            display: flex;
             gap: 10px;
         }
-        input {
+        .search-input {
             flex: 1;
             padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #333;
             background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
             color: #fff;
+            font-size: 16px;
             outline: none;
         }
-        button {
-            padding: 0 20px;
-            border-radius: 8px;
-            border: none;
+        .search-btn {
             background: #F0B90B;
             color: #000;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
             font-weight: bold;
-            cursor: pointer;
+            font-size: 16px;
         }
 
-        /* 차트 컨테이너 */
+        /* 차트 박스 (검은색 배경) */
         .chart-card {
             margin: 0 15px;
             background: #000;
             border: 1px solid #333;
             border-radius: 12px;
-            height: 300px; /* 차트 높이 고정 */
+            height: 250px;
             position: relative;
-            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
         }
-        /* JS가 여기다가 그림을 그립니다 */
-        #chart-container {
+        canvas {
             width: 100%;
             height: 100%;
         }
 
-        /* AI 분석 결과 카드 */
-        .ai-card {
+        /* 정보 표시 카드 */
+        .info-card {
             margin: 15px;
             padding: 20px;
             background: #1e1e1e;
@@ -77,80 +80,90 @@
             text-align: center;
         }
         .badge {
-            display: inline-block;
-            background: #F0B90B;
-            color: #000;
-            padding: 4px 8px;
-            border-radius: 4px;
+            background: #2a2a2a;
+            color: #F0B90B;
+            padding: 5px 10px;
+            border-radius: 15px;
             font-size: 12px;
-            font-weight: bold;
             margin-bottom: 10px;
+            display: inline-block;
+            border: 1px solid #F0B90B;
         }
-        .price-display {
-            font-size: 32px;
+        .price-text {
+            font-size: 36px;
             font-weight: bold;
             margin: 10px 0;
-            color: #fff;
+            letter-spacing: -1px;
         }
-        .sub-text {
+        .status-text {
             color: #888;
             font-size: 14px;
+            margin-bottom: 20px;
         }
-        .score-box {
+        
+        /* 점수 게이지 */
+        .score-row {
             display: flex;
             justify-content: space-between;
-            margin-top: 20px;
+            background: #252525;
             padding: 15px;
-            background: #2a2a2a;
             border-radius: 8px;
+            margin-top: 10px;
         }
+        .score-val { color: #F0B90B; font-weight: bold; font-size: 18px; }
 
         /* 하단 메뉴바 */
         .bottom-nav {
             position: fixed;
             bottom: 0;
+            left: 0;
             width: 100%;
             background: #1e1e1e;
+            border-top: 1px solid #333;
             display: flex;
             justify-content: space-around;
             padding: 10px 0;
-            border-top: 1px solid #333;
+            z-index: 100;
         }
         .nav-item {
             color: #666;
             text-decoration: none;
-            font-size: 12px;
-            text-align: center;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         .nav-item.active { color: #F0B90B; }
-        .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+        .nav-icon { font-size: 20px; margin-bottom: 4px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>MARKET <span>INSIGHT</span></h2>
+        MARKET <span>INSIGHT</span>
     </div>
 
-    <div class="search-box">
-        <input type="text" id="coin-input" placeholder="종목 코드 (예: ETH)">
-        <button id="search-btn">이동</button>
+    <div class="search-container">
+        <input type="text" id="symbol-input" class="search-input" placeholder="예: BTC, ETH, XRP">
+        <button id="btn-search" class="search-btn">이동</button>
     </div>
 
     <div class="chart-card">
-        <div id="chart-container"></div>
+        <canvas id="myChart"></canvas>
     </div>
 
-    <div class="ai-card">
-        <div class="badge">🤖 AI 실시간 분석</div>
-        
-        <div class="price-display" id="insight-price">Loading...</div>
-        
-        <div class="sub-text" id="analysis-text">데이터 수신 대기 중...</div>
+    <div class="info-card">
+        <div class="badge" id="coin-name">BTC / USDT</div>
+        <div class="price-text" id="price-display">Loading...</div>
+        <div class="status-text" id="status-msg">실시간 데이터 연결 중...</div>
 
-        <div class="score-box">
-            <span>신뢰도 점수</span>
-            <span id="ai-score" style="color:#F0B90B; font-weight:bold;">-- / 100</span>
+        <div class="score-row">
+            <span>AI 분석 점수</span>
+            <span class="score-val" id="ai-score">--</span>
+        </div>
+        <div class="score-row">
+            <span>추세 강도</span>
+            <span class="score-val" id="trend-strength">--</span>
         </div>
     </div>
 
@@ -159,18 +172,144 @@
             <span class="nav-icon">📊</span>거래소
         </a>
         <a href="wallet.html" class="nav-item">
-            <span class="nav-icon">💼</span>투자내역
+            <span class="nav-icon">💼</span>내 지갑
         </a>
         <a href="info.html" class="nav-item active">
-            <span class="nav-icon">🧠</span>AI설정
+            <span class="nav-icon">🧠</span>AI정보
         </a>
         <a href="transfer.html" class="nav-item">
             <span class="nav-icon">🏦</span>입출금
         </a>
     </div>
 
-    <script src="core.js"></script>
-    <script src="info.js"></script>
+    <script>
+        // 전역 변수
+        let ws = null;
+        let chartData = [];
+        let currentSymbol = 'btcusdt';
+        let lastPrice = 0;
 
+        // 1. 페이지 열리면 바로 시작
+        window.addEventListener('load', () => {
+            connectBinance('btcusdt'); // 기본: 비트코인
+
+            // 검색 버튼 클릭 이벤트
+            document.getElementById('btn-search').addEventListener('click', () => {
+                const input = document.getElementById('symbol-input').value;
+                if(input) {
+                    let sym = input.trim().toLowerCase();
+                    if(!sym.includes('usdt')) sym += 'usdt';
+                    connectBinance(sym);
+                }
+            });
+        });
+
+        // 2. 바이낸스 연결 함수
+        function connectBinance(symbol) {
+            // 기존 연결 끊기
+            if(ws) ws.close();
+            
+            // 데이터 초기화
+            chartData = [];
+            currentSymbol = symbol;
+            document.getElementById('coin-name').innerText = symbol.toUpperCase().replace('USDT', ' / USDT');
+            document.getElementById('price-display').innerText = "Loading...";
+            document.getElementById('status-msg').innerText = "데이터 수신 중...";
+
+            // 웹소켓 연결
+            const url = `wss://stream.binance.com:9443/ws/${symbol}@trade`;
+            ws = new WebSocket(url);
+
+            ws.onopen = () => { console.log('연결 성공'); };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                const price = parseFloat(data.p);
+
+                updateUI(price);
+                updateChart(price);
+            };
+
+            ws.onerror = () => {
+                document.getElementById('status-msg').innerText = "종목을 찾을 수 없습니다.";
+                document.getElementById('price-display').innerText = "Error";
+            };
+        }
+
+        // 3. 화면 숫자 업데이트
+        function updateUI(price) {
+            const elPrice = document.getElementById('price-display');
+            
+            // 가격 표시 (콤마 추가)
+            elPrice.innerText = '$ ' + price.toLocaleString(undefined, {minimumFractionDigits: 2});
+
+            // 색상 변경 (상승:초록, 하락:빨강)
+            if(lastPrice > 0) {
+                elPrice.style.color = price >= lastPrice ? '#0ecb81' : '#f6465d';
+            }
+            lastPrice = price;
+
+            // AI 점수 시뮬레이션 (랜덤 연출)
+            if(Math.random() > 0.7) { // 가끔씩만 변경
+                const score = Math.floor(Math.random() * 40) + 50; // 50~90점
+                document.getElementById('ai-score').innerText = score + ' / 100';
+                
+                let strength = "중립 (Neutral)";
+                if(score > 80) strength = "강력 매수 (Strong Buy)";
+                else if(score > 60) strength = "매수 우위 (Buy)";
+                else if(score < 40) strength = "매도 우위 (Sell)";
+                
+                document.getElementById('trend-strength').innerText = strength;
+            }
+        }
+
+        // 4. 차트 그리기 (캔버스 API)
+        function updateChart(price) {
+            const canvas = document.getElementById('myChart');
+            const ctx = canvas.getContext('2d');
+            
+            // 캔버스 크기 맞춤
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // 데이터 쌓기 (최대 60개 유지)
+            chartData.push(price);
+            if(chartData.length > 60) chartData.shift();
+
+            // 그리기 시작
+            ctx.clearRect(0, 0, w, h);
+            
+            if(chartData.length < 2) return;
+
+            // 최대/최소값 계산 (Y축 범위)
+            const min = Math.min(...chartData);
+            const max = Math.max(...chartData);
+            const range = max - min || 1;
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#0ecb81'; // 차트 선 색상
+            ctx.lineWidth = 2;
+            ctx.lineJoin = 'round';
+
+            // 선 잇기
+            chartData.forEach((p, i) => {
+                const x = (i / (chartData.length - 1)) * w;
+                // 위아래 여백 20px씩 두고 위치 계산
+                const y = h - 20 - ((p - min) / range) * (h - 40);
+                
+                if(i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // 그라데이션 채우기 효과
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.fillStyle = 'rgba(14, 203, 129, 0.15)'; // 반투명 초록
+            ctx.fill();
+        }
+    </script>
 </body>
 </html>
