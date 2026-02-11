@@ -10,28 +10,37 @@
         body { background-color: #000; color: #fff; margin: 0; padding-bottom: 80px; font-family: -apple-system, sans-serif; }
         * { box-sizing: border-box; }
 
+        /* 헤더 */
         .header { 
             position: sticky; top: 0; z-index: 100; 
             display: flex; justify-content: space-between; align-items: center;
             padding: 12px 15px; background: #121212; border-bottom: 1px solid #333; 
         }
-        .header-left h2 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.5px; }
+        .header-left h2 { margin: 0; font-size: 16px; font-weight: 800; }
         .header-left span { color: #F0B90B; }
         
-        .header-right { text-align: right; line-height: 1.2; }
+        .header-right { text-align: right; }
         .asset-balance { font-size: 14px; font-weight: bold; color: #fff; display: block; }
-        .asset-pnl { font-size: 11px; color: #888; font-weight: 500; }
+        .asset-pnl { font-size: 11px; color: #888; }
         .badge { font-size: 10px; color: #0ecb81; border: 1px solid #0ecb81; padding: 2px 4px; border-radius: 3px; margin-left: 6px; vertical-align: text-bottom; }
 
-        #chart-area { width: 100%; height: 400px; background: #000; }
+        /* [중요] 차트 영역: 높이를 강제로 400px 줌 */
+        #chart-area { 
+            width: 100%; 
+            height: 400px; 
+            background: #000; 
+            border-bottom: 1px solid #333; /* 경계선 추가 */
+        }
 
-        .control-panel { padding: 15px; background: #1e1e1e; border-top: 1px solid #333; }
+        /* 컨트롤 패널 */
+        .control-panel { padding: 15px; background: #1e1e1e; }
         .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
         .input-field { 
             flex: 1; padding: 12px; background: #2a2a2a; border: 1px solid #444; 
-            color: #fff; border-radius: 6px; font-size: 14px; width: 100%; min-width: 0; outline: none;
+            color: #fff; border-radius: 6px; font-size: 14px; width: 100%; min-width: 0;
         }
 
+        /* 탭 & 리스트 */
         .tab-menu { display: flex; background: #1e1e1e; border-bottom: 1px solid #333; }
         .tab-item { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: #888; cursor: pointer; }
         .tab-item.active { color: #F0B90B; border-bottom: 2px solid #F0B90B; font-weight: bold; background: #252525; }
@@ -41,6 +50,7 @@
         .col-3 { width: 30%; text-align:right; color:#fff; } .col-4 { width: 30%; text-align:right; color:#fff; }
         .text-buy { color: #0ecb81; } .text-sell { color: #f6465d; }
 
+        /* 하단 메뉴 */
         .bottom-nav { 
             position: fixed; bottom: 0; width: 100%; 
             background: #121212; border-top: 1px solid #333; z-index: 999; 
