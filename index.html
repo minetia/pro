@@ -3,100 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neural Node Exchange</title>
+    <title>Neural Node Pro</title>
     <style>
-        /* [공통 스타일] */
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding: 0;
-            padding-bottom: 70px; /* 하단 메뉴 가림 방지 */
-        }
+        /* [기본 스타일] */
+        body { background-color: #000; color: #fff; margin: 0; padding-bottom: 80px; font-family: -apple-system, sans-serif; }
+        * { box-sizing: border-box; }
+
+        /* 헤더 */
+        .header { display: flex; justify-content: space-between; padding: 15px; background: #121212; border-bottom: 1px solid #333; }
+        .header h2 { margin: 0; font-size: 18px; }
+        .header span { color: #F0B90B; }
+        .badge { font-size: 11px; color: #0ecb81; border: 1px solid #0ecb81; padding: 2px 6px; border-radius: 4px; }
+
+        /* 메인 카드 */
+        .card { width: 100%; overflow: hidden; }
+
+        /* 테이블 스타일 (깨짐 방지) */
+        .tab-menu { display: flex; border-bottom: 1px solid #333; background: #1e1e1e; }
+        .tab-item { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: #888; cursor: pointer; }
+        .tab-item.active { color: #F0B90B; border-bottom: 2px solid #F0B90B; font-weight: bold; }
         
-        /* 상단 헤더 */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background-color: #1e1e1e;
-            border-bottom: 1px solid #333;
-        }
-        .header h2 { margin: 0; font-size: 18px; color: #fff; }
-        .header span { color: #F0B90B; font-weight: bold; }
-        .status-badge {
-            font-size: 12px;
-            color: #0ecb81;
-            border: 1px solid #0ecb81;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
+        .list-header { display: flex; padding: 10px; background: #222; color: #888; font-size: 11px; }
+        .list-row { display: flex; padding: 12px 10px; border-bottom: 1px solid #222; font-size: 12px; align-items: center; }
+        .col-1 { width: 20%; } /* 시간 */
+        .col-2 { width: 20%; text-align: center; } /* 종류 */
+        .col-3 { width: 30%; text-align: right; } /* 가격 */
+        .col-4 { width: 30%; text-align: right; } /* 수량/손익 */
 
-        /* 메인 컨테이너 (여기에 JS가 내용을 그립니다) */
-        .card {
-            margin: 0;
-            padding: 0;
-            background: transparent;
-            border: none;
-            box-shadow: none;
-        }
+        /* 텍스트 컬러 */
+        .text-buy { color: #0ecb81; }
+        .text-sell { color: #f6465d; }
+        .text-white { color: #fff; }
+        .text-gray { color: #888; }
 
-        /* 하단 네비게이션 */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: #1e1e1e;
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            border-top: 1px solid #333;
-            z-index: 100;
-        }
-        .nav-item {
-            text-decoration: none;
-            color: #666;
-            font-size: 11px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        /* 하단 메뉴 */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #121212; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 999; }
+        .nav-item { text-decoration: none; color: #666; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
         .nav-item.active { color: #F0B90B; }
-        .nav-icon { font-size: 20px; margin-bottom: 4px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h2>NEURAL <span>NODE</span></h2>
-        <span class="status-badge">ONLINE</span>
+        <span class="badge">LIVE</span>
     </div>
 
-    <div class="card">
-        <div style="text-align:center; padding:50px; color:#555;">
-            시스템 초기화 중...
+    <div id="app-container" class="card">
+        <div style="padding:50px; text-align:center; color:#555;">
+            로딩 중...
         </div>
     </div>
 
     <div class="bottom-nav">
-        <a href="index.html" class="nav-item active">
-            <span class="nav-icon">📊</span>거래소
-        </a>
-        <a href="wallet.html" class="nav-item">
-            <span class="nav-icon">💼</span>투자내역
-        </a>
-        <a href="info.html" class="nav-item">
-            <span class="nav-icon">🧠</span>AI설정
-        </a>
-        <a href="transfer.html" class="nav-item">
-            <span class="nav-icon">🏦</span>입출금
-        </a>
+        <a href="index.html" class="nav-item active"><span>📊</span>거래소</a>
+        <a href="wallet.html" class="nav-item"><span>💼</span>투자내역</a>
+        <a href="info.html" class="nav-item"><span>🧠</span>AI설정</a>
+        <a href="transfer.html" class="nav-item"><span>🏦</span>입출금</a>
     </div>
 
-    <script src="appData.js"></script>
-    
     <script src="tradingEngine.js"></script>
 
 </body>
