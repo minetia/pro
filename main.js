@@ -163,3 +163,85 @@ function searchInfoCoin() {
     const v = document.getElementById('coin-search-input').value;
     if(v) location.href = `info.html?coin=${v.toUpperCase()}`;
 }
+// ===============================================
+// [긴급 패치] 가짜 돈 삭제하고 진짜 바이낸스 연결하기
+// 기존 코드는 두고, 이 코드를 파일 맨 밑에 붙여넣으세요.
+// ===============================================
+
+// 1. 혹시 돌아가고 있을 가짜 가격 생성기를 멈춥니다.
+var highestIntervalId = setInterval(";");
+for (var i = 0; i < highestIntervalId; i++) {
+    clearInterval(i);
+}
+
+// 2. 바이낸스(Binance) 실시간 서버에 접속합니다.
+var wsUrl = "wss://stream.binance.com:9443/ws/btcusdt@trade";
+var ws = new WebSocket(wsUrl);
+
+ws.onopen = function() {
+    console.log("★ 바이낸스 실제 시세 연결 성공!");
+    var priceDisplay = document.getElementById('price-display');
+    if(priceDisplay) priceDisplay.style.color = '#F0B90B'; // 연결되면 노란색 깜빡
+};
+
+ws.onmessage = function(event) {
+    var data = JSON.parse(event.data);
+    var realPrice = parseFloat(data.p); // 이게 진짜 비트코인 가격입니다.
+    
+    // 화면에 가격 표시 (소수점 2자리)
+    var el = document.getElementById('price-display');
+    if (el) {
+        el.innerText = '$ ' + realPrice.toLocaleString(undefined, {
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2
+        });
+        
+        // 가격 등락 색상 (이전 가격보다 높으면 초록, 낮으면 빨강)
+        if (window.lastPrice && realPrice > window.lastPrice) {
+            el.style.color = '#0ECB81'; // 상승
+        } else if (window.lastPrice && realPrice < window.lastPrice) {
+            el.style.color = '#F6465D'; // 하락
+        }
+        window.lastPrice = realPrice;
+    }
+
+    // 전역 변수에 진짜 가격 저장 (매수/매도할 때 이 가격 사용)
+    if (typeof appState !== 'undefined') {
+        appState.currentPrice = realPrice;
+        
+        // 수익률 실시간 계산 (포지션 잡았을 때만)
+        if (appState.position && appState.position.amount > 0) {
+            updateRealProfit(realPrice);
+        }
+    }
+};
+
+// 3. 진짜 수익률 계산 함수 (기존 가짜 계산 로직 덮어쓰기)
+function updateRealProfit(currentPrice) {
+    var entry = appState.position.entryPrice;
+    var leverage = appState.position.leverage || 1;
+    var margin = appState.position.margin;
+    
+    // 수익률 공식: ((현재가 - 진입가) / 진입가) * 100 * 레버리지
+    var pnlRate = ((currentPrice - entry) / entry) * 100 * leverage;
+    
+    // 숏(Short)이면 수익률 반대로
+    if (appState.position.side === 'short') pnlRate *= -1;
+    
+    // 수익금 계산
+    var pnlValue = (margin * pnlRate) / 100;
+
+    // 화면 업데이트
+    var elPnl = document.getElementById('pnl-display');
+    var elRoe = document.getElementById('roe-display');
+    
+    if (elPnl) {
+        elPnl.innerText = '$ ' + pnlValue.toFixed(2);
+        elPnl.className = pnlValue >= 0 ? 'text-green' : 'text-red';
+    }
+    if (elRoe) {
+        elRoe.innerText = pnlRate.toFixed(2) + '%';
+        elRoe.className = pnlRate >= 0 ? 'text-green' : 'text-red';
+    }
+}
+
