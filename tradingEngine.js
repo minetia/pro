@@ -1,13 +1,14 @@
-// [tradingEngine.js] 주소 수정 및 연결 강화 버전
+// [tradingEngine.js] 무조건 차트 띄우는 버전
 
 var chart = null;
 var candleSeries = null;
-var currentPrice = 0;
+var currentPrice = 65000; // 기본값
 var myPriceLine = null;
 var ws = null;
 var activeTab = 'history';
+var isFakeMode = false; // 가짜 데이터 모드인지 확인
 
-// 1. 데이터 로드 (시드머니 복구)
+// 1. 데이터 로드
 var savedData = localStorage.getItem('neuralNodeData');
 if (savedData) {
     window.appState = JSON.parse(savedData);
@@ -26,22 +27,40 @@ window.saveState = function() {
     localStorage.setItem('neuralNodeData', JSON.stringify(window.appState));
 };
 
-// 2. 실행
+// 2. 실행 (라이브러리 로딩 대기)
 window.addEventListener('load', function() {
-    initChart();       // 차트 틀 만들기
-    connectData();     // ★ 데이터 연결 (주소 변경됨)
-    updateAll();       // 자산 표시
-    switchTab('history', document.querySelector('.tab-item'));
+    // 0.1초마다 라이브러리 확인 (최대 5초)
+    var checkLib = setInterval(function() {
+        if (window.LightweightCharts) {
+            clearInterval(checkLib);
+            startApp(); // 앱 시작!
+        }
+    }, 100);
+
+    // 5초 지나도 안 되면 경고
+    setTimeout(function() {
+        if(!window.LightweightCharts) {
+            alert("차트 도구 로딩 실패! 인터넷 연결을 확인하세요.");
+        }
+    }, 5000);
 });
 
-// 3. 차트 생성
+function startApp() {
+    initChart();       // 차트 틀 생성
+    tryConnectData();  // ★ 데이터 연결 시도 (3초 타임아웃 적용)
+    updateAll();
+    switchTab('history', document.querySelector('.tab-item'));
+}
+
+// 3. 차트 틀 만들기
 function initChart() {
     var container = document.getElementById('chart-area');
     if (!container) return;
+    container.innerHTML = ''; // "로딩중" 글씨 삭제
 
     chart = LightweightCharts.createChart(container, {
         width: container.clientWidth,
-        height: 400, // 높이 고정
+        height: 400,
         layout: { background: { color: '#000' }, textColor: '#888' },
         grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
         timeScale: { borderColor: '#333', timeVisible: true },
@@ -56,29 +75,33 @@ function initChart() {
     window.addEventListener('resize', () => { chart.resize(container.clientWidth, 400); });
 }
 
-// 4. ★ 데이터 연결 (여기가 핵심!)
-function connectData() {
-    // 1단계: 바이낸스 공식 데이터 API (CORS 허용된 주소) 사용
-    // api.binance.com -> data-api.binance.vision 으로 변경!
-    fetch('https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100')
-        .then(res => res.json())
+// 4. ★ 데이터 연결 (3초 타임아웃 기능 추가)
+function tryConnectData() {
+    // 3초 안에 데이터 안 오면 강제로 에러 발생시킴
+    var timeout = new Promise((resolve, reject) => {
+        setTimeout(() => reject(new Error("시간 초과")), 3000);
+    });
+
+    var fetchData = fetch('https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100')
+        .then(res => res.json());
+
+    // 둘 중 먼저 끝나는 것 실행 (데이터 vs 3초)
+    Promise.race([fetchData, timeout])
         .then(data => {
-            // 성공 시 데이터 채우기
+            // 성공 시
             var candles = data.map(d => ({
                 time: d[0]/1000, open: parseFloat(d[1]), high: parseFloat(d[2]), low: parseFloat(d[3]), close: parseFloat(d[4])
             }));
             candleSeries.setData(candles);
             currentPrice = candles[candles.length-1].close;
-            
-            // 소켓 연결 시작
-            connectWebSocket();
+            connectWebSocket(); // 소켓 연결
             updateAll();
             drawAvgLine();
         })
         .catch(err => {
-            // 2단계: 만약 이것도 안 되면(인터넷 차단 등), 비상 모드 가동!
-            console.log("API 연결 실패, 자체 데이터로 전환합니다.");
-            loadFakeData();
+            // ★ 3초 지났거나 에러 나면 -> 무조건 가짜 데이터 실행
+            console.log("연결 실패/지연 -> 자체 엔진 가동");
+            runFakeEngine();
         });
 }
 
@@ -94,22 +117,29 @@ function connectWebSocket() {
         updateAll();
         checkPending();
     };
-    
-    // 소켓도 끊기면 가짜 데이터 실행
-    ws.onerror = function() { loadFakeData(); };
+    ws.onerror = function() { runFakeEngine(); }; // 소켓 에러나도 가짜 실행
 }
 
-// ★ 비상용 데이터 생성기 (차트가 절대 안 꺼지게 함)
-function loadFakeData() {
+// ★ 자체 엔진 (가짜 데이터 생성기)
+function runFakeEngine() {
+    if(isFakeMode) return; // 이미 실행 중이면 패스
+    isFakeMode = true;
+    
+    // 헤더에 빨간 점 표시 (오프라인)
+    var badge = document.querySelector('.badge');
+    if(badge) { badge.innerText = "OFFLINE"; badge.style.borderColor = "#f6465d"; badge.style.color = "#f6465d"; }
+
+    // 1. 초기 데이터 만들기 (최근 100분)
     var now = Math.floor(Date.now() / 1000);
-    var price = 95000; // 비트코인 기준가
+    var price = 65000; 
     var data = [];
-    for(var i=0; i<100; i++) {
-        var time = now - (99-i)*60;
+    for(var i=100; i>0; i--) {
+        var time = now - (i * 60);
+        var change = (Math.random() - 0.5) * 100;
         var open = price;
-        var close = price + (Math.random() - 0.5) * 50;
-        var high = Math.max(open, close) + Math.random() * 10;
-        var low = Math.min(open, close) - Math.random() * 10;
+        var close = price + change;
+        var high = Math.max(open, close) + Math.random() * 20;
+        var low = Math.min(open, close) - Math.random() * 20;
         data.push({ time: time, open: open, high: high, low: low, close: close });
         price = close;
     }
@@ -117,15 +147,20 @@ function loadFakeData() {
     currentPrice = price;
     updateAll();
     drawAvgLine();
-    
-    // 1초마다 움직이게 만듦
+
+    // 2. 1초마다 움직이기
     setInterval(function() {
-        var last = data[data.length-1];
-        var newTime = Math.floor(Date.now() / 1000);
-        var change = (Math.random() - 0.5) * 20;
+        var time = Math.floor(Date.now() / 1000);
+        var change = (Math.random() - 0.5) * 30; // 랜덤 등락
         var close = currentPrice + change;
+        var open = currentPrice;
+        
         candleSeries.update({
-            time: newTime, open: currentPrice, high: Math.max(currentPrice, close), low: Math.min(currentPrice, close), close: close
+            time: time,
+            open: open,
+            high: Math.max(open, close) + 5,
+            low: Math.min(open, close) - 5,
+            close: close
         });
         currentPrice = close;
         updateAll();
@@ -156,17 +191,18 @@ function updateAll() {
     }
 }
 
-// 6. 주문 및 기타 로직
+// 6. 평단가 표시
 function drawAvgLine() {
     if(!candleSeries) return;
     if(myPriceLine) { candleSeries.removePriceLine(myPriceLine); myPriceLine = null; }
     if(window.appState.position.amount > 0) {
         myPriceLine = candleSeries.createPriceLine({
-            price: window.appState.position.entryPrice, color: '#F0B90B', lineWidth: 2, lineStyle: 2, title: '평단가'
+            price: window.appState.position.entryPrice, color: '#F0B90B', lineWidth: 2, lineStyle: 2, title: '내 평단가'
         });
     }
 }
 
+// 7. 주문 로직
 window.order = function(side) {
     var pInput = document.getElementById('inp-price').value;
     var amtInput = parseFloat(document.getElementById('inp-amount').value);
