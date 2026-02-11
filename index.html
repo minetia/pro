@@ -7,9 +7,9 @@
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     
     <style>
-        /* [기본 스타일] */
+        /* 기본 스타일 */
         body { background-color: #000; color: #fff; margin: 0; padding-bottom: 80px; font-family: -apple-system, sans-serif; }
-        * { box-sizing: border-box; } /* 테두리 포함 크기 계산 (깨짐 방지 핵심) */
+        * { box-sizing: border-box; }
 
         /* 헤더 고정 */
         .header { 
@@ -24,15 +24,8 @@
         /* 입력창 스타일 (깨짐 방지) */
         .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
         .input-field { 
-            flex: 1; 
-            width: 100%; /* 부모 크기에 맞춤 */
-            min-width: 0; /* 플렉스 박스 튀어남 방지 */
-            padding: 12px; 
-            background: #2a2a2a; 
-            border: 1px solid #444; 
-            color: #fff; 
-            border-radius: 6px; 
-            font-size: 14px;
+            flex: 1; width: 100%; min-width: 0; padding: 12px; 
+            background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 14px;
         }
 
         /* 탭 메뉴 */
@@ -49,11 +42,11 @@
         .text-buy { color: #0ecb81; } .text-sell { color: #f6465d; } 
         .text-white { color: #fff; } .text-gray { color: #888; }
 
-        /* 하단 메뉴 (5개 아이콘 균등 배치) */
+        /* 하단 메뉴 */
         .bottom-nav { 
             position: fixed; bottom: 0; width: 100%; 
             background: #121212; border-top: 1px solid #333; z-index: 999; 
-            display: grid; grid-template-columns: repeat(5, 1fr); /* 5칸 나누기 */
+            display: grid; grid-template-columns: repeat(5, 1fr); 
             padding: 10px 0;
         }
         .nav-item { text-decoration: none; color: #666; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
@@ -69,8 +62,8 @@
     </div>
 
     <div id="app-container">
-        <div style="height:300px; display:flex; justify-content:center; align-items:center; color:#555;">
-            데이터 로딩 중...
+        <div style="height:350px; display:flex; justify-content:center; align-items:center; background:#000; color:#555;">
+            📊 차트 데이터 연결 중...
         </div>
     </div>
 
