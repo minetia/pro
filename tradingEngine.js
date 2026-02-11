@@ -1,4 +1,4 @@
-// [tradingEngine.js] 헤더 통합형 + 차트 위 박스 제거
+// [tradingEngine.js] 정적 HTML 연결 버전
 
 var chart = null;
 var candleSeries = null;
@@ -7,7 +7,7 @@ var myPriceLine = null;
 var ws = null;
 var activeTab = 'history';
 
-// 1. 데이터 로드 & 복구
+// 1. 데이터 로드
 var savedData = localStorage.getItem('neuralNodeData');
 if (savedData) {
     window.appState = JSON.parse(savedData);
@@ -17,11 +17,8 @@ if (savedData) {
     }
 } else {
     window.appState = {
-        balance: 100000,
-        position: { amount: 0, entryPrice: 0 },
-        pendingOrders: [],
-        tradeHistory: [],
-        pnlHistory: []
+        balance: 100000, position: { amount: 0, entryPrice: 0 },
+        pendingOrders: [], tradeHistory: [], pnlHistory: []
     };
 }
 
@@ -29,51 +26,69 @@ window.saveState = function() {
     localStorage.setItem('neuralNodeData', JSON.stringify(window.appState));
 };
 
+// 2. 실행 (HTML에 차트 박스가 이미 있으므로 바로 실행)
 window.addEventListener('load', function() {
-    renderUI();
-    setTimeout(() => {
-        initChart();
-        connectBinance();
-        updateAll();
-    }, 100);
+    initChart();       // 차트 생성
+    connectBinance();  // 시세 연결
+    updateAll();       // 데이터 표시
+    switchTab('history', document.querySelector('.tab-item')); // 탭 초기화
 });
 
-// 2. UI 그리기 (★ 차트 위 박스 삭제됨!)
-function renderUI() {
-    var app = document.getElementById('app-container');
-    if (!app) return;
+// 3. 차트 생성
+function initChart() {
+    var container = document.getElementById('chart-area');
+    // 컨테이너가 없으면 중단 (오류 방지)
+    if (!container) return console.error("차트 영역을 찾을 수 없습니다.");
 
-    app.innerHTML = `
-        <div id="chart-area" style="width:100%; height:400px; background:#000;"></div>
+    chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth,
+        height: 400, // CSS 높이와 일치
+        layout: { background: { color: '#000' }, textColor: '#888' },
+        grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
+        timeScale: { borderColor: '#333', timeVisible: true },
+        crosshair: { mode: 0 } // 자석 모드
+    });
 
-        <div style="padding:15px; background:#1e1e1e; border-top:1px solid #333;">
-            <div class="input-group">
-                <input type="number" id="inp-price" class="input-field" placeholder="지정가 (빈칸=시장가)">
-                <input type="number" id="inp-amount" class="input-field" placeholder="수량 (BTC)">
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button onclick="order('buy')" style="flex:1; padding:12px; background:#0ecb81; border:none; border-radius:6px; color:#fff; font-weight:bold;">매수</button>
-                <button onclick="order('sell')" style="flex:1; padding:12px; background:#f6465d; border:none; border-radius:6px; color:#fff; font-weight:bold;">매도</button>
-            </div>
-            <div style="text-align:center; margin-top:15px;" onclick="resetData()">
-                <span style="font-size:11px; color:#666; text-decoration:underline; cursor:pointer;">데이터 초기화 (Reset)</span>
-            </div>
-        </div>
+    candleSeries = chart.addCandlestickSeries({
+        upColor: '#0ecb81', downColor: '#f6465d',
+        borderVisible: false, wickUpColor: '#0ecb81', wickDownColor: '#f6465d'
+    });
 
-        <div class="tab-menu">
-            <div class="tab-item active" onclick="switchTab('history', this)">체결 내역</div>
-            <div class="tab-item" onclick="switchTab('open', this)">미체결</div>
-            <div class="tab-item" onclick="switchTab('pnl', this)">실현 손익</div>
-        </div>
-        <div style="min-height:300px; background:#121212;">
-            <div class="list-header" id="list-header"></div>
-            <div id="list-content"></div>
-        </div>
-    `;
-    switchTab('history', document.querySelector('.tab-item'));
+    // 반응형 리사이즈
+    window.addEventListener('resize', () => {
+        chart.resize(container.clientWidth, 400);
+    });
+
+    // 과거 데이터
+    fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100')
+        .then(res => res.json())
+        .then(data => {
+            var candles = data.map(d => ({
+                time: d[0]/1000, open: parseFloat(d[1]), high: parseFloat(d[2]), low: parseFloat(d[3]), close: parseFloat(d[4])
+            }));
+            candleSeries.setData(candles);
+            currentPrice = candles[candles.length-1].close;
+            updateAll();
+            drawAvgLine();
+        });
 }
 
-// 3. 데이터 업데이트 (★ 헤더 업데이트로 변경)
+// 4. 바이낸스 연결
+function connectBinance() {
+    if(ws) ws.close();
+    ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@kline_1m");
+    ws.onmessage = function(e) {
+        var k = JSON.parse(e.data).k;
+        currentPrice = parseFloat(k.c);
+        if(candleSeries) candleSeries.update({
+            time: k.t/1000, open: parseFloat(k.o), high: parseFloat(k.h), low: parseFloat(k.l), close: currentPrice
+        });
+        updateAll();
+        checkPending();
+    };
+}
+
+// 5. 화면 업데이트 (헤더 등)
 function updateAll() {
     var state = window.appState;
     var pos = state.position;
@@ -85,67 +100,19 @@ function updateAll() {
         pnlPct = (pnl / (pos.entryPrice * pos.amount)) * 100;
     }
 
-    // 헤더 요소 찾기
-    var headerBal = document.getElementById('header-balance');
-    var headerPnl = document.getElementById('header-pnl');
-
-    // 헤더 값 갱신
-    if(headerBal) headerBal.innerText = '$ ' + total.toLocaleString(undefined, {maximumFractionDigits:0});
+    // 헤더 업데이트
+    var hBal = document.getElementById('header-balance');
+    var hPnl = document.getElementById('header-pnl');
     
-    if(headerPnl) {
+    if(hBal) hBal.innerText = '$ ' + total.toLocaleString(undefined, {maximumFractionDigits:0});
+    if(hPnl) {
         var sign = pnl >= 0 ? '+' : '';
-        headerPnl.innerText = `${sign}$${pnl.toFixed(2)} (${pnlPct.toFixed(2)}%)`;
-        headerPnl.style.color = pnl >= 0 ? '#0ecb81' : '#f6465d';
+        hPnl.innerText = `${sign}$${pnl.toFixed(2)} (${pnlPct.toFixed(2)}%)`;
+        hPnl.style.color = pnl >= 0 ? '#0ecb81' : '#f6465d';
     }
 }
 
-// ... (이하 로직 동일) ...
-
-function initChart() {
-    var container = document.getElementById('chart-area');
-    if(!container) return; container.innerHTML = '';
-    chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth, height: 400, // 높이 맞춤
-        layout: { background: { color: '#000' }, textColor: '#888' },
-        grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
-        timeScale: { borderColor: '#333', timeVisible: true },
-    });
-    candleSeries = chart.addCandlestickSeries({
-        upColor: '#0ecb81', downColor: '#f6465d', borderVisible: false, wickUpColor: '#0ecb81', wickDownColor: '#f6465d'
-    });
-    fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100')
-        .then(res => res.json())
-        .then(data => {
-            var candles = data.map(d => ({ time: d[0]/1000, open: parseFloat(d[1]), high: parseFloat(d[2]), low: parseFloat(d[3]), close: parseFloat(d[4]) }));
-            candleSeries.setData(candles);
-            currentPrice = candles[candles.length-1].close;
-            updateAll();
-            drawAvgLine();
-        });
-}
-
-function connectBinance() {
-    if(ws) ws.close();
-    ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@kline_1m");
-    ws.onmessage = function(e) {
-        var k = JSON.parse(e.data).k;
-        currentPrice = parseFloat(k.c);
-        if(candleSeries) candleSeries.update({ time: k.t/1000, open: parseFloat(k.o), high: parseFloat(k.h), low: parseFloat(k.l), close: currentPrice });
-        updateAll();
-        checkPending();
-    };
-}
-
-function drawAvgLine() {
-    if(!candleSeries) return;
-    if(myPriceLine) { candleSeries.removePriceLine(myPriceLine); myPriceLine = null; }
-    if(window.appState.position.amount > 0) {
-        myPriceLine = candleSeries.createPriceLine({
-            price: window.appState.position.entryPrice, color: '#F0B90B', lineWidth: 2, lineStyle: 2, title: '내 평단가'
-        });
-    }
-}
-
+// 6. 주문 함수
 window.order = function(side) {
     var pInput = document.getElementById('inp-price').value;
     var amtInput = parseFloat(document.getElementById('inp-amount').value);
@@ -186,13 +153,21 @@ function executeTrade(side, amount, price) {
     alert("체결 완료!");
 }
 
+// 7. 유틸리티 (평단가, 리스트, 시간)
+function drawAvgLine() {
+    if(!candleSeries) return;
+    if(myPriceLine) { candleSeries.removePriceLine(myPriceLine); myPriceLine = null; }
+    if(window.appState.position.amount > 0) {
+        myPriceLine = candleSeries.createPriceLine({
+            price: window.appState.position.entryPrice, color: '#F0B90B', lineWidth: 2, lineStyle: 2, title: '내 평단가'
+        });
+    }
+}
+
 window.switchTab = function(tabName, el) {
     activeTab = tabName;
     document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    var header = document.getElementById('list-header');
-    if(tabName === 'pnl') header.innerHTML = '<span class="col-1">시간</span><span class="col-2">구분</span><span class="col-3">매도가</span><span class="col-4">손익($)</span>';
-    else header.innerHTML = '<span class="col-1">시간</span><span class="col-2">구분</span><span class="col-3">가격</span><span class="col-4">수량</span>';
+    if(el) el.classList.add('active');
     renderList();
 };
 
@@ -208,11 +183,11 @@ function renderList() {
     else {
         data.forEach(item => {
             if(activeTab === 'pnl') {
-                html += `<div class="list-row"><span class="col-1 text-gray">${item.time}</span><span class="col-2 text-sell">매도</span><span class="col-3 text-white">$${item.price.toLocaleString()}</span><span class="col-4 ${item.pnl>=0?'text-buy':'text-sell'}">${item.pnl>=0?'+':''}${item.pnl.toFixed(2)}</span></div>`;
+                html += `<div class="list-row"><span class="col-1">${item.time}</span><span class="col-2 text-sell">매도</span><span class="col-3">$${item.price.toLocaleString()}</span><span class="col-4 ${item.pnl>=0?'text-buy':'text-sell'}">${item.pnl>=0?'+':''}${item.pnl.toFixed(2)}</span></div>`;
             } else if(activeTab === 'open') {
-                html += `<div class="list-row"><span class="col-1 text-gray">대기</span><span class="col-2 ${item.side==='buy'?'text-buy':'text-sell'}">${item.side==='buy'?'매수':'매도'}</span><span class="col-3 text-white">$${item.price.toLocaleString()}</span><span class="col-4 text-white">${item.amount}</span></div>`;
+                html += `<div class="list-row"><span class="col-1">대기</span><span class="col-2 ${item.side==='buy'?'text-buy':'text-sell'}">${item.side==='buy'?'매수':'매도'}</span><span class="col-3">$${item.price.toLocaleString()}</span><span class="col-4">${item.amount}</span></div>`;
             } else {
-                html += `<div class="list-row"><span class="col-1 text-gray">${item.time}</span><span class="col-2 ${item.type==='매수'?'text-buy':'text-sell'}">${item.type}</span><span class="col-3 text-white">$${item.price.toLocaleString()}</span><span class="col-4 text-white">${item.amount}</span></div>`;
+                html += `<div class="list-row"><span class="col-1">${item.time}</span><span class="col-2 ${item.type==='매수'?'text-buy':'text-sell'}">${item.type}</span><span class="col-3">$${item.price.toLocaleString()}</span><span class="col-4">${item.amount}</span></div>`;
             }
         });
     }
@@ -231,8 +206,5 @@ function checkPending() {
     }
 }
 window.resetData = function() {
-    if(confirm("모든 데이터를 초기화하시겠습니까?")) {
-        localStorage.removeItem('neuralNodeData');
-        location.reload();
-    }
+    if(confirm("초기화 하시겠습니까?")) { localStorage.removeItem('neuralNodeData'); location.reload(); }
 };
