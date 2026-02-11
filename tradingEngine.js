@@ -1,19 +1,19 @@
-// [tradingEngine.js] 최종 수정본 (안전장치 포함)
+// [tradingEngine.js] 차트 우선 로딩 + 평단가 표시
 
 var chart = null;
 var candleSeries = null;
 var currentPrice = 0;
-var myPriceLine = null;
+var myPriceLine = null; // ★ 평단가 라인 변수
 var ws = null;
 var activeTab = 'history';
 
-// 1. 데이터 로드 (시드머니 0원 방지 로직)
+// 1. 데이터 복구 (0원 문제 해결)
 var savedData = localStorage.getItem('neuralNodeData');
 if (savedData) {
     window.appState = JSON.parse(savedData);
-    // 만약 잔고가 비정상(NaN)이거나 0원인데 거래내역도 없다면 초기화
-    if (!window.appState.balance || (window.appState.balance === 0 && window.appState.tradeHistory.length === 0)) {
-        window.appState.balance = 100000;
+    if (!window.appState.balance || window.appState.balance <= 0) {
+        window.appState.balance = 100000; // 강제 복구
+        window.saveState();
     }
 } else {
     window.appState = {
@@ -29,18 +29,19 @@ window.saveState = function() {
     localStorage.setItem('neuralNodeData', JSON.stringify(window.appState));
 };
 
-// 페이지 로드 시 실행
+// 2. 실행 (차트 그리기 -> 데이터 연결)
 window.addEventListener('load', function() {
-    renderUI();           
-    // 차트가 그려질 div가 생성된 후 실행 (매우 중요)
+    renderUI(); // 화면 뼈대 생성
+    
+    // 0.1초 뒤 차트 생성 (HTML이 다 그려진 후 실행하기 위함)
     setTimeout(() => {
-        initChart();      
-        connectBinance(); 
+        initChart();
+        connectBinance();
         updateAll();
     }, 100);
 });
 
-// 2. UI 그리기 (입력창 깨짐 수정)
+// 3. UI 그리기
 function renderUI() {
     var app = document.getElementById('app-container');
     if (!app) return;
@@ -64,7 +65,7 @@ function renderUI() {
                 <button onclick="order('sell')" style="flex:1; padding:12px; background:#f6465d; border:none; border-radius:6px; color:#fff; font-weight:bold;">매도</button>
             </div>
             <div style="text-align:center; margin-top:15px;" onclick="resetData()">
-                <span style="font-size:11px; color:#666; text-decoration:underline;">데이터 초기화 (Reset)</span>
+                <span style="font-size:11px; color:#666; text-decoration:underline; cursor:pointer;">데이터 초기화 (Reset)</span>
             </div>
         </div>
 
@@ -73,7 +74,6 @@ function renderUI() {
             <div class="tab-item" onclick="switchTab('open', this)">미체결</div>
             <div class="tab-item" onclick="switchTab('pnl', this)">실현 손익</div>
         </div>
-
         <div style="min-height:300px; background:#121212;">
             <div class="list-header" id="list-header"></div>
             <div id="list-content"></div>
@@ -82,11 +82,11 @@ function renderUI() {
     switchTab('history', document.querySelector('.tab-item'));
 }
 
-// 3. 차트 생성
+// 4. 차트 생성 (TradingView 라이브러리)
 function initChart() {
     var container = document.getElementById('chart-area');
-    if(!container) return; 
-    container.innerHTML = '';
+    if(!container) return;
+    container.innerHTML = ''; // "로딩중" 문구 삭제
 
     chart = LightweightCharts.createChart(container, {
         width: container.clientWidth, height: 350,
@@ -99,7 +99,7 @@ function initChart() {
         upColor: '#0ecb81', downColor: '#f6465d', borderVisible: false, wickUpColor: '#0ecb81', wickDownColor: '#f6465d'
     });
 
-    // 과거 데이터 로드
+    // 바이낸스 과거 데이터 로드
     fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100')
         .then(res => res.json())
         .then(data => {
@@ -109,11 +109,11 @@ function initChart() {
             candleSeries.setData(candles);
             currentPrice = candles[candles.length-1].close;
             updateAll();
-            drawAvgLine();
+            drawAvgLine(); // ★ 로딩되자마자 평단가 선 그리기
         });
 }
 
-// 4. 바이낸스 연결
+// 5. 바이낸스 실시간 연결
 function connectBinance() {
     if(ws) ws.close();
     ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@kline_1m");
@@ -128,12 +128,31 @@ function connectBinance() {
     };
 }
 
-// 5. 주문 로직
+// 6. 평단가 선 그리기 (핵심 기능)
+function drawAvgLine() {
+    if(!candleSeries) return;
+    // 기존 선 삭제
+    if(myPriceLine) { candleSeries.removePriceLine(myPriceLine); myPriceLine = null; }
+    
+    // 코인을 가지고 있을 때만 새로 그리기
+    if(window.appState.position.amount > 0) {
+        myPriceLine = candleSeries.createPriceLine({
+            price: window.appState.position.entryPrice,
+            color: '#F0B90B', // 노란색 (Gold)
+            lineWidth: 2,
+            lineStyle: 2,     // 점선
+            axisLabelVisible: true,
+            title: '내 평단가'
+        });
+    }
+}
+
+// 7. 주문 로직
 window.order = function(side) {
     var pInput = document.getElementById('inp-price').value;
     var amtInput = parseFloat(document.getElementById('inp-amount').value);
     
-    if(!amtInput || isNaN(amtInput)) return alert("수량을 정확히 입력하세요.");
+    if(!amtInput || isNaN(amtInput)) return alert("수량을 입력하세요.");
 
     if(pInput) { // 지정가
         window.appState.pendingOrders.push({
@@ -141,7 +160,7 @@ window.order = function(side) {
         });
         saveState();
         if(activeTab === 'open') renderList();
-        return alert("주문 접수 완료");
+        return alert("주문이 접수되었습니다.");
     }
 
     executeTrade(side, amtInput, currentPrice); // 시장가
@@ -153,6 +172,7 @@ function executeTrade(side, amount, price) {
         var cost = amount * price;
         if(state.balance < cost) return alert("잔고 부족!");
         state.balance -= cost;
+        // 평단가 계산
         state.position.entryPrice = ((state.position.amount * state.position.entryPrice) + cost) / (state.position.amount + amount);
         state.position.amount += amount;
     } else {
@@ -169,19 +189,16 @@ function executeTrade(side, amount, price) {
     state.tradeHistory.unshift({ time: getTime(), type: side==='buy'?'매수':'매도', price: price, amount: amount });
     saveState();
     updateAll();
-    drawAvgLine();
+    drawAvgLine(); // ★ 거래 후 즉시 선 그리기
     renderList();
-    alert("체결 완료!");
+    alert("체결되었습니다!");
 }
 
-// 6. 업데이트 및 유틸
+// 8. 업데이트 유틸
 function updateAll() {
     var state = window.appState;
     var pos = state.position;
-    // NaN 방지 처리
-    var balance = parseFloat(state.balance) || 0;
-    var currentVal = (pos.amount * currentPrice) || 0;
-    var total = balance + currentVal;
+    var total = state.balance + (pos.amount * currentPrice);
 
     var pnl = 0, pnlPct = 0;
     if(pos.amount > 0) {
@@ -231,16 +248,6 @@ function renderList() {
         });
     }
     list.innerHTML = html;
-}
-
-function drawAvgLine() {
-    if(!candleSeries) return;
-    if(myPriceLine) { candleSeries.removePriceLine(myPriceLine); myPriceLine = null; }
-    if(window.appState.position.amount > 0) {
-        myPriceLine = candleSeries.createPriceLine({
-            price: window.appState.position.entryPrice, color: '#F0B90B', lineWidth: 2, lineStyle: 2, title: '평단가'
-        });
-    }
 }
 
 function getTime() { var d = new Date(); return d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds(); }
