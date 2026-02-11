@@ -1,4 +1,4 @@
-// [tradingEngine.js] 헤더 통합형 (공간 절약 버전)
+// [tradingEngine.js] 헤더 통합형 + 차트 위 박스 제거
 
 var chart = null;
 var candleSeries = null;
@@ -7,7 +7,7 @@ var myPriceLine = null;
 var ws = null;
 var activeTab = 'history';
 
-// 1. 데이터 로드
+// 1. 데이터 로드 & 복구
 var savedData = localStorage.getItem('neuralNodeData');
 if (savedData) {
     window.appState = JSON.parse(savedData);
@@ -38,13 +38,13 @@ window.addEventListener('load', function() {
     }, 100);
 });
 
-// 2. UI 그리기 (큰 자산 카드 삭제됨!)
+// 2. UI 그리기 (★ 차트 위 박스 삭제됨!)
 function renderUI() {
     var app = document.getElementById('app-container');
     if (!app) return;
 
     app.innerHTML = `
-        <div id="chart-area" style="width:100%; height:380px; background:#000;"></div>
+        <div id="chart-area" style="width:100%; height:400px; background:#000;"></div>
 
         <div style="padding:15px; background:#1e1e1e; border-top:1px solid #333;">
             <div class="input-group">
@@ -73,7 +73,7 @@ function renderUI() {
     switchTab('history', document.querySelector('.tab-item'));
 }
 
-// 3. 업데이트 함수 (헤더를 업데이트하도록 변경)
+// 3. 데이터 업데이트 (★ 헤더 업데이트로 변경)
 function updateAll() {
     var state = window.appState;
     var pos = state.position;
@@ -85,11 +85,12 @@ function updateAll() {
         pnlPct = (pnl / (pos.entryPrice * pos.amount)) * 100;
     }
 
-    // ★ 헤더에 있는 요소 찾아서 업데이트
+    // 헤더 요소 찾기
     var headerBal = document.getElementById('header-balance');
     var headerPnl = document.getElementById('header-pnl');
 
-    if(headerBal) headerBal.innerText = '$ ' + total.toLocaleString(undefined, {maximumFractionDigits:0}); // 소수점 제거해서 깔끔하게
+    // 헤더 값 갱신
+    if(headerBal) headerBal.innerText = '$ ' + total.toLocaleString(undefined, {maximumFractionDigits:0});
     
     if(headerPnl) {
         var sign = pnl >= 0 ? '+' : '';
@@ -98,13 +99,13 @@ function updateAll() {
     }
 }
 
-// ... (이하 차트, 주문 로직은 동일) ...
+// ... (이하 로직 동일) ...
 
 function initChart() {
     var container = document.getElementById('chart-area');
     if(!container) return; container.innerHTML = '';
     chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth, height: 380, // 높이 맞춤
+        width: container.clientWidth, height: 400, // 높이 맞춤
         layout: { background: { color: '#000' }, textColor: '#888' },
         grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
         timeScale: { borderColor: '#333', timeVisible: true },
